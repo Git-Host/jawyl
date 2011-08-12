@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<xsd:include schemaLocation="xmldbquery.xsd" />
+
+<xsd:complexType name="t_insertdestination">
+	<xsd:sequence>
+		<xsd:element name="attribute" type="xsd:string" minOccurs="1" maxOccurs="unbounded" />
+	</xsd:sequence>
+	<xsd:attribute name="name" type="xsd:string" use="required" />
+</xsd:complexType>
+
+<xsd:group name="g_insertdest">
+	<xsd:choice>
+		<xsd:element name="class" type="t_insertdestination" />
+		<xsd:element name="association" type="t_insertdestination" />
+		<xsd:element name="aggregation" type="t_insertdestination" />
+		<xsd:element name="collection" type="t_insertdestination" />
+		<xsd:element name="vocabulary" type="t_insertdestination" />
+	</xsd:choice>
+</xsd:group>
+
+<xsd:complexType name="t_insert">
+	<xsd:sequence>
+		<xsd:group ref="g_insertdest" minOccurs="1" maxOccurs="1" />
+		<xsd:choice minOccurs="1" maxOccurs="1">
+			<xsd:sequence>
+				<xsd:element name="values" minOccurs="1" maxOccurs="unbounded">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:group ref="g_arguments" minOccurs="1" maxOccurs="unbounded" />
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+			<xsd:element name="select" type="t_select" />
+		</xsd:choice>
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:element name="insert" type="t_insert" />
+</xsd:schema>

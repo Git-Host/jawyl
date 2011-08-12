@@ -1,0 +1,79 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+<xsd:complexType name="t_setting">
+	<xsd:simpleContent>
+		<xsd:extension base="xsd:string">
+			<xsd:attribute name="name" type="xsd:string" use="required" />
+		</xsd:extension>
+	</xsd:simpleContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_route">
+	<xsd:sequence>
+	<xsd:element name="regexp" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+	<xsd:element name="request" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+	<xsd:element name="service" type="xsd:IDREF" minOccurs="0" maxOccurs="1"/>
+	<xsd:element name="parameter" minOccurs="0" maxOccurs="unbounded">
+		<xsd:complexType>
+			<xsd:simpleContent>
+				<xsd:extension base="xsd:string">
+					<xsd:attribute name="name" type="xsd:string" use="required" />
+				</xsd:extension>
+			</xsd:simpleContent>
+		</xsd:complexType>
+	</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_map">
+	<xsd:sequence>
+		<xsd:element name="route" type="t_route" minOccurs="0" maxOccurs="unbounded"/>
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_classinstance">
+	<xsd:attribute name="classname" type="xsd:string" use="required" />
+	<xsd:attribute name="name" type="xsd:ID" use="required" />
+</xsd:complexType>
+
+<xsd:complexType name="t_component">
+	<xsd:complexContent>
+		<xsd:extension base="t_classinstance">
+			<xsd:sequence>
+				<xsd:group ref="g_appitem" minOccurs="0" maxOccurs="unbounded" />
+			</xsd:sequence>
+			<xsd:attribute name="membername" type="xsd:string" use="optional" />
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:group name="g_appitem">
+	<xsd:choice>
+		<xsd:element name="component" type="t_component" />
+		<xsd:element name="setting" type="t_setting" />
+	</xsd:choice>
+</xsd:group>
+
+<xsd:complexType name="t_service">
+	<xsd:complexContent>
+		<xsd:extension base="t_classinstance">
+			<xsd:sequence>
+				<xsd:group ref="g_appitem" minOccurs="0" maxOccurs="unbounded" />
+			</xsd:sequence>
+			<xsd:attribute name="default" type="xsd:boolean" use="optional" default="false"/>
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:element name="application">
+	<xsd:complexType>
+		<xsd:sequence>
+			<xsd:element name="requestmap" type="t_map" minOccurs="0" maxOccurs="1" />
+			<xsd:group ref="g_appitem" minOccurs="0" maxOccurs="unbounded" />
+			<xsd:element name="service" type="t_service"  minOccurs="1" maxOccurs="unbounded" />
+		</xsd:sequence>
+		<xsd:attribute name="name" type="xsd:ID" use="required" />
+	</xsd:complexType>
+</xsd:element>
+
+</xsd:schema>

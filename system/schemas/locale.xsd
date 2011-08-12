@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xsd:element name="locale">
+	<xsd:complexType>
+		<xsd:sequence>
+			<xsd:element name="description" type="xsd:string" minOccurs="0" />
+			<xsd:element name="syslocale" type="xsd:string" minOccurs="0" />
+			<xsd:element name="symbols">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="decseparator" type="xsd:string" />
+						<xsd:element name="digseparator" type="xsd:string" />
+						<xsd:element name="negativesign" type="xsd:string" />
+						<xsd:element name="intercurrency" type="xsd:string" />
+						<xsd:element name="localcurrency" type="xsd:string" />
+						<xsd:element name="timeseparator" type="xsd:string" />
+						<xsd:element name="dateseparator" type="xsd:string" />
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="formats">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="number" type="xsd:string" />
+						<xsd:element name="currency" type="xsd:string" />
+						<xsd:element name="date" type="xsd:string" />
+						<xsd:element name="time" type="xsd:string" />
+						<xsd:element name="datetime" type="xsd:string" />
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="months">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="month" minOccurs="12" maxOccurs="12">
+							<xsd:complexType>
+								<xsd:simpleContent>
+									<xsd:extension base="xsd:string">
+										<xsd:attribute name="order" type="xsd:int" use="required" />
+										<xsd:attribute name="shortname" type="xsd:string" use="required" />
+									</xsd:extension>
+								</xsd:simpleContent>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="weekdays">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="weekday" minOccurs="7" maxOccurs="7">
+							<xsd:complexType>
+								<xsd:simpleContent>
+									<xsd:extension base="xsd:string">
+										<xsd:attribute name="order" type="xsd:byte" use="required" />
+										<xsd:attribute name="shortname" type="xsd:string" use="required" />
+										<xsd:attribute name="minname" type="xsd:string" use="required" />
+									</xsd:extension>
+								</xsd:simpleContent>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+					<xsd:attribute name="firstday" type="xsd:int" use="optional" />
+				</xsd:complexType>			
+			</xsd:element>			
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:element>
+</xsd:schema>

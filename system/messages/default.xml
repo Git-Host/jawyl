@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../schemas/messages.xsd">
+	<message id="ERR_UNKNOWN" code="1">Unknown error!</message>
+	<message id="ERR_NOT_BOOLEAN" code="2">Specified value %value can not be cast to boolean!</message>
+	<message id="ERR_NO_APP_CONFIG" code="3">Application config file not found!</message>
+	<message id="ERR_APP_CONFIG_INCORRECT" code="4">Application config file incorrect!</message>
+	<message id="ERR_SERVICE_NOT_FOUND" code="5">Service not found!</message>
+	<message id="ERR_NOT_ACL" code="6">Specified ACL component does not implement IACLManager interface!</message>
+	<message id="ERR_NOT_POLICY" code="7">Specified policy component does not implement IPolicyManager interface!</message>
+</domain>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xsd:complexType name="t_structure">
+	<xsd:attribute name="name" type="xsd:string" use="required" />
+	<xsd:attribute name="alias" type="xsd:string" use="optional" />
+	<xsd:attribute name="description" type="xsd:string" use="optional" />
+</xsd:complexType>
+
+<xsd:simpleType name="t_attrtype">
+	<xsd:restriction base="xsd:string">
+		<xsd:enumeration value="STRING" />
+		<xsd:enumeration value="DATETM" />
+		<xsd:enumeration value="BOOL" />
+		<xsd:enumeration value="INT" />
+		<xsd:enumeration value="BIGINT" />
+		<xsd:enumeration value="FLOAT" />
+		<xsd:enumeration value="DEC" />
+		<xsd:enumeration value="TEXT" />
+		<xsd:enumeration value="REFER" />	
+		<xsd:enumeration value="HTML" />
+		<xsd:enumeration value="IMAGE" />
+		<xsd:enumeration value="FILE" />
+		<xsd:enumeration value="FILLNK" />
+		<xsd:enumeration value="IMGLNK" />
+		<xsd:enumeration value="PWD" />
+		<xsd:enumeration value="GUID" />
+	</xsd:restriction>
+</xsd:simpleType>
+
+<xsd:element name="meta">
+	<xsd:complexType>
+		<xsd:sequence>
+			<xsd:choice minOccurs="0" maxOccurs="unbounded">
+				<xsd:element name="class">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="attribute" minOccurs="0" maxOccurs="unbounded">
+								<xsd:complexType>
+									<xsd:attribute name="name" type="xsd:string" use="required" />
+									<xsd:attribute name="alias" type="xsd:string" use="optional" />
+									<xsd:attribute name="type" type="t_attrtype" use="required" />
+									<xsd:attribute name="size" type="xsd:integer" use="optional" />
+									<xsd:attribute name="decimals" type="xsd:integer" use="optional" />
+									<xsd:attribute name="unique" type="xsd:boolean" use="optional" />
+									<xsd:attribute name="index" type="xsd:boolean" use="optional" />
+									<xsd:attribute name="nullable" type="xsd:boolean" use="optional" />
+									<xsd:attribute name="default" type="xsd:anySimpleType" use="optional" />
+									<xsd:attribute name="referto" type="xsd:string" use="optional" />									
+									<xsd:attribute name="autogenerate" type="xsd:boolean" use="optional" default="false" />
+									<xsd:attribute name="static" type="xsd:boolean" use="optional" default="false" />
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="name" type="xsd:string" use="required"/>
+						<xsd:attribute name="alias" type="xsd:string" use="optional"/>
+						<xsd:attribute name="parent" type="xsd:string" use="optional"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="agregation" type="t_structure" />
+				<xsd:element name="association" type="t_structure" />
+				<xsd:element name="collection" type="t_structure" />
+				<xsd:element name="vocabulary" type="t_structure" />
+			</xsd:choice>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:element>
+</xsd:schema>

@@ -1,0 +1,1320 @@
+<?php
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
+ * @copyright Copyright (c) 2009, Dan Krasilnikov
+ * @license http://opensource.org/licenses/gpl-license.php GNU Public License
+ * @version 0.0.1 alpha  
+*/
+
+/**
+ * @ignore 
+ */
+TApplication::import("common::eventsystem");
+/**
+ * @ignore 
+ */
+TApplication::import("common::iterator");
+/**
+ * @ignore
+ */
+TApplication::import("common::controller::interfaces");
+/**
+ * @ignore 
+ */
+TApplication::import("core::TConfigurable");
+/**
+ * @ignore 
+ */
+TApplication::import("core::utils::TConvertions");
+/**
+ * @ignore 
+ */
+TApplication::import("common::theme::interfaces");
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * basic class for all MVC objects. 
+ * Enables event processing for MVC objects, and allows them to be configurable.
+ * @uses TConfigurablePattern 
+ */
+abstract class TMVCObject extends TConfigurable implements IEventListener, IEventSender {
+	private $_broad_casters_ = array();
+	private $_delegation_provider_ = null; 
+	
+	private $_explicit_handlers_ = array();
+	
+	public function __toString(){
+		return $this->Name();
+	}
+	
+/**
+ * @ignore
+ */		
+	public function __set($nm,$value){
+		switch ($nm){
+			case "BroadCasters":TConfigurablePattern::SetIocArrayMember($this->_broad_casters_, $value, "IEventBroadCaster");break;
+			case "DelegationProvider":TConfigurablePattern::SetIocMember($this->_delegation_provider_, $value, "IEventHandler");break;
+			default:{
+				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0){
+					if (!is_array($this->_explicit_handlers_[$matches[1]]))
+						$this->_explicit_handlers_[$matches[1]] = array();
+					$this->_explicit_handlers_[$matches[1]][] = $value;
+				}
+				parent::__set($nm, $value);
+			}break;
+		}
+	}
+	
+/**
+ * calls method
+ * @param string $method method name
+ * $param array $arguments array of arguments, which can be an associative array. In this case method argument values are set according to argument name but not order.
+ * @return mixed return value of method called. If methhod can not be called returns false.
+ */	
+	public function __call($method,array $arguments){
+		$c = new ReflectionClass(get_class($this));
+		$m = $c->getMethod($method);
+		if ($m->isPublic()){
+			$args = array();
+			$margs = $m->getParameters();
+			
+			$assignedkeys = array();
+			
+			foreach ($margs as $marg){
+				$v = null;
+				if (key_exists($marg->getName(),$arguments)){
+					$args[] = $arguments[$marg->getName()];
+					$assignedkeys[] = $marg->getName();
+				}
+				else if (key_exists($marg->getPosition(),$arguments)){
+					$args[] = $arguments[$marg->getPosition()];
+					$assignedkeys[] = $marg->getPosition();
+				}
+				else
+					$args[] = $marg->getDefaultValue();
+			}
+			
+			$unassignedkeys = array_diff($assignedkeys, array_keys($arguments));
+			foreach ($unassignedkeys as $key)
+				$args[] = $arguments[$key]; 			
+			
+			if ($m->isStatic())
+				return $m->invokeArgs(null,$args);
+			else
+				return $m->invokeArgs($this,$args);	
+		}
+		return false;
+	}
+	
+	protected function methodHttpName($method){
+		return "http_".$method;
+	}
+	
+	public function HttpMethodCall($method, THttpRequest $request){
+		$m = $this->methodHttpName($method);
+		$cparams = $request->Parameters();
+		$cparams["__RequesT_ObjecT__"] = $request;
+		$this->__call($m, $cparams);
+	}
+
+/**
+ * @see IEventSender::Invoke()
+ */	
+	public function Invoke(TEvent $event){
+		foreach ($this->_broad_casters_ as $bc)
+			$bc->BroadCastEvent($event);
+	}
+
+	protected function checkEvent(TEvent $event){
+		return true;
+	}
+	
+	public function Dispatch(TEvent $event){
+		if ($event->StopHandling) return;
+		if (!$this->checkEvent($event)) return;
+		$rc = new ReflectionClass(get_class($this));
+		if ($m = $rc->getMethod("onEvent")){
+			if ($m->getNumberOfRequiredParameters() == 1){
+				if ($pc = $params[0]->getClass()){
+					$pc = $pc->getName();
+					if ($pc == "TEvent")
+						if ($event instanceof TEvent)
+							$m->invoke($this,$event);
+				}
+			}
+		}
+		
+		if ($m = $rc->getMethod("on".$event->Name."Event")){
+			if ($m->getNumberOfRequiredParameters() == 1){
+				$params = $m->getParameters();
+				if ($pc = $params[0]->getClass()){
+					$pc = $pc->getName();
+					if (($pc == "TEvent") || (is_subclass_of($pc,"TEvent")))
+					if ($event instanceof $pc){
+						$m->invoke($this,$event);
+						if ($event->StopHandling) return;
+					}
+				}
+			}
+		}
+		
+		$explicit = $this->__get("On".$event->Name."Event");
+		if (is_array($explicit)){
+			foreach ($explicit as $handler){
+				$h = $handler;
+				if (!is_callable($h,false))
+					if ($this->DelegationProvider)
+						$h = array($this->DelegationProvider,$h);
+				if (is_callable($h))
+					call_user_func_array($h,array($event,$this));
+				if ($event->StopHandling) return;	
+			}
+		}
+		
+		if ($this->DelegationProvider){
+			$implicit = $this->DelegationProvider->EventHandlingDelegates($this,$event);
+			foreach ($implicit as $handler){
+				call_user_func_array($handler,array($event,$this));
+				if ($event->StopHandling) return;
+			}	
+		}
+	}
+	
+	public function AddBroadCaster(IEventBroadCaster $broadcaster){
+		TConfigurablePattern::SetIocArrayMember($this->_broad_casters_, $broadcaster, "IBroadCaster");
+	}
+		
+	public function IsHttpCallable($method){
+		$m = $this->methodHttpName($method);
+		$rm = new ReflectionMethod($this,$m);
+		return $rm->isPublic() && (!$rm->isStatic());
+	}
+
+/**
+ * @ignore
+ */	
+	public function __get($nm){
+		switch ($nm){
+			case "BroadCasters":return TConfigurablePattern::GetIocArrayMember($this->_broad_casters_,"IEventBroadCaster");break;
+			case "DelegationProvider":return TConfigurablePattern::GetIocMember($this->_delegation_provider_,"IEventHandler");break;
+			default:{
+				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0){
+					if (key_exists($matches[1], $this->_explicit_handlers_))
+						return $this->_explicit_handlers_[$matches[1]];
+					else 
+						return null;
+				}	
+				return parent::__get($nm);
+			}break;
+		}
+	}
+	
+/**
+ * @ignore
+ */	
+	public function __isset($nm){
+		switch ($nm){
+			case "BroadCasters":return !empty($this->_broad_casters_);break;
+			case "DelegationProvider":return isset($this->_delegation_provider_);break;
+			default:{
+				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0)
+					return !empty($this->_explicit_handlers_[$matches[1]]);
+				return parent::__isset($nm);
+			}break;
+		}
+	}
+	
+/**
+ * @ignore
+ */		
+	public function __unset($nm){
+		switch ($nm){
+			case "BroadCasters":$this->_broad_casters_ = array();break;
+			case "DelegationProvider":unset($this->_delegation_provider_);break;
+			default:{
+				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0)
+					$this->_explicit_handlers_[$matches[1]] = array();
+				parent::__unset($nm);
+			}break;
+		}
+	} 
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * basic class for all MVC models
+ * @property-read string $Name component name
+ * TModel derives settings from current service (and through service from application).
+ * @see TService
+ */
+abstract class TModel extends TConfigurable {
+	
+/**
+ * @ignore
+ */	
+	public function __get($nm){
+		if ($nm == "Name") return $this->name;
+		$result = parent::__get($nm);
+		if (!$result && !is_null(TApplication::CurrentService()))
+			$result = TApplication::CurrentService()->__get($nm);
+		if (!$result)
+			$result = TApplication::$Application->__get($nm);
+		return $result;
+	}
+/**
+ * @ignore
+ */	
+ 	public function __isset($nm){
+		$result = parent::__isset($nm);
+		if (!$result) $result = TApplication::$Application->__isset(get_class($this).".".$nm);
+		if (!$result) {
+			$service = TApplication::CurrentService();
+			$result = $service->__isset($nm);
+		}
+		if (!$result) $result = TApplication::$Application->__isset($nm);
+		return $result; 
+	}
+	
+	public static function Instanciate($name,$classname){
+		return TApplication::Instantiate($classname,array("name"=>$name));
+	}
+
+	public function __toString(){
+		return $this->Name();
+	}
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * interface for implementing objects that are part of response
+ * @see TResponse
+ */
+interface IResponseElement {
+/**
+ * gets element unique identifier
+ * @return string
+ */	
+	public function UniqueId();
+	public function Response();
+} 
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * basic class for all mvc objects that are also reponse elements
+ * @property string $SaveState sets up where element should store its state. Should be one of TResponseElement::SS_SESSION, TResponseElement::SS_COOKIE constants. If not explicitly specified for element then derived from response object.  
+ * @see TResponse
+ */
+abstract class TResponseElement extends TMVCObject implements IResponseElement {
+/**
+ * @var TResponse response object element belogs to
+ */	
+	protected $response;
+
+/**
+ * @ignore
+ */	
+	private $_save_state_ = null;
+/**
+ * @ignore
+ */	
+	const SESS_STATE_SAVER = "mvc_state";
+	
+	const SS_SESSION = "session";
+	const SS_COOKIE = "cookie";
+
+/**
+ * proxy method for setting up element before constructor settings are done. 
+ */	
+	protected function preSetting(){
+		
+	} 
+/**
+ * proxy method for setting up element after constructor settings are done. 
+ */	
+	protected function postSetting(){
+		
+	}
+/**
+ * constructor.
+ * @param string $name element name
+ * @param TResponse $response response object element belongs to
+ * @param array $settings associative array of element settings
+ */	
+	public function __construct ($name,TResponse $response, array $settings = array(), IConfigurable $container = null){
+		parent::__construct($name,$container);
+		$this->response = $response;
+		$this->BroadCasters = $this->response;
+		$this->DelegationProvider = $this->response;
+		$this->response->AddEventListener($this);
+		$this->preSetting();
+		foreach ($settings as $key=>$value)
+			if (is_array($value)){
+				foreach ($value as $v)
+					$this->__set($key,$v);
+			} else $this->__set($key,$value);
+		$this->postSetting();
+	}
+	
+	public function Response(){
+		return $this->response;
+	}
+
+/**
+ * gets element unique identifier
+ * @return string
+ */	
+	public function UniqueId(){
+		return md5($this->response->UniqueId()."::".$this->Name());	
+	}
+
+/**
+ * @ignore 
+ */	
+	public function __set($nm,$value){
+		switch ($nm){ 
+			case "SaveState":$this->_save_state_ = $value;break;
+			default:parent::__set($nm,$value);break;
+		}
+	}
+	
+/**
+ * @ignore 
+ */	
+	public function __get($nm){
+		switch ($nm) { 
+			case "SaveState":{
+				if (is_null($this->_save_state_)){
+					$result = $this->response->SaveState;
+					if (is_null($result)) 
+						$result = self::SS_COOKIE;
+					return $result; 
+				}
+				return $this->_save_state_;
+			}break;
+			default:return parent::__get($nm);break;
+		}
+	}
+	
+/**
+ * gets element state parameter value according to element SaveState property
+ */	
+	protected function loadStateParameter($name){
+		$value = null;
+		switch ($this->SaveState){
+			case self::SS_SESSION:{
+				$ss = TApplicationSession::Get(self::SESS_STATE_SAVER);
+				if (!is_null($ss))
+					if (key_exists($this->UniqueId(),$ss))
+						if (key_exists($name,$ss[$this->UniqueId()]))
+							$value = $ss[$this->UniqueId()][$name];
+			}break;
+			case self::SS_COOKIE:$value = TApplication::Request()->Cookie(urlencode($this->UniqueId().$name));break;
+		}
+		if ($value == "none") $value = null;
+		if ($value == "") $value = null;
+		return $value;
+	}
+/**
+ * saves element state parameter according to element SaveState property
+ */	
+	protected function saveStateParameter($name,$value){
+		switch ($this->SaveState){
+			case self::SS_SESSION:{
+				$ss = TApplicationSession::Get(self::SESS_STATE_SAVER);
+				if (is_null($ss)) $ss = array();
+				if (!key_exists($this->UniqueId(),$ss)) $ss[$this->UniqueId()] = array(); 
+				$ss[$this->UniqueId()][$name] = $value;
+				TApplicationSession::Set(self::SESS_STATE_SAVER,$ss);
+			}break;
+			case self::SS_COOKIE:$this->response->SetCookie(urlencode($this->UniqueId().$name), $value);break;
+		}
+	}
+} 
+
+interface IActionParameter {
+	public function Name();
+	public function Type();
+	public function Title();
+	public function Value();
+	public function SetValue($value);
+	public function Selectors();
+	public function SetSelectors(array $selectors);
+}
+	
+interface IAction extends IConfigurable {
+	public function Title();
+	public function Parameters();
+	public function AddParameter(IActionParameter $param);
+	public function GetParameter($name);
+	public function DeleteParameter($name);
+	public function ClearParameters();
+	public function ParametersArray();
+	public function Execute();
+	public function Perform();
+	public function Available();
+	public function CallLink();
+}
+	
+/**
+ * @package Controllers
+ * @category System
+ * interface for implementing controllers with actions
+ */	
+interface IActionsList {
+/**
+ * gets controller actions list
+ * @return TControllerAction[]
+ * @see TControllerAction
+ */		
+	public function Actions();
+/**
+ * checks whether specified action can be executed
+ * @param TControllerAction $action
+ * @return boolean
+ */
+	public function ActionAvailable(IAction $action);
+/**
+ * gets name of action group
+ * @return string
+ */
+	public function ActionGroup(IAction $action);
+}
+
+
+abstract class TAction extends TResponseElement implements IAction {
+	protected $title;
+	private $_parameters_;
+	
+	public function __construct($name, TResponse $response, array $settings = array(), IConfigurable $container = null, $title = "", TActionParameterIterator $parameters = null){
+		$this->title = $title;
+		$this->_parameters_ = $parameters;
+		parent::__construct($name,$response,$settings,$container);
+	}
+	
+/**
+ * gets action title
+ * @return string
+ */	
+	public function Title(){return $this->title;}
+	
+/**
+ * gets action parameters iterator
+ * @return TActionParameterIterator
+ */	
+	public function Parameters(){
+		return $this->_parameters_;
+	}
+	
+	public function AddParameter(IActionParameter $param){
+		$params = $this->ParametersArray();
+		$params[] = $param;
+		$this->_parameters_ = new TActionParameterIterator($params);
+	}
+	
+	public function GetParameter($name){
+		return $this->_parameters_->ValueByKey($name);
+	}
+	
+	public function DeleteParameter($name){
+		$result = array();
+		$this->_parameters_->Reset();
+		while ($this->_parameters_->Next())
+			if ($this->_parameters_->Key() != $name)
+			$result[] = $this->_parameters_->Item();
+		$this->_parameters_ = new TActionParameterIterator($result);
+	}
+	
+	public function ClearParameters(){
+		$this->_parameters_ = new TActionParameterIterator(array());
+	}
+	
+/**
+ * gets action parameters as an array
+ * @return TActionParameter[] array of TActionParameter
+ */	
+	public function ParametersArray(){
+		$result = array();
+		if (isset($this->_parameters_)){
+			$this->_parameters_->Reset();
+			while ($this->_parameters_->Next())
+				$result[$this->_parameters_->Item()->Name()] = $this->_parameters_->Item();
+			$this->_parameters_->Reset();
+		} 
+		return $result;
+	}
+	
+	protected function checkEvent(TEvent $event){
+		if ($event->Name == TMvcEvent::ACTION_EVENT_NAME)
+			if ($event->ActionName == $this->name)
+				return true;
+		return false;
+	}
+	
+	protected function onActionEvent(TActionCallEvent $event){
+		$this->Perform();
+	}
+	
+	public function Perform(){
+		if (count($this->_parameters_) > 0){
+			$pe = new TActionParametersEvent($this,$this);
+			//$this->Invoke(
+			new TActionParametersEvent($this,$this);
+			//);
+		} else $this->Execute();
+	}
+	
+	public function CallLink(){
+		return $this->response->Url($this);
+	}
+	
+	public function IsHttpCallable($method){
+		return ($method == "Perform") || ($method == "Execute");
+	}
+	
+	protected function methodHttpName($method){
+		return $method;
+	}	
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * basic class for all controllers.
+ * @property IEventSender $Reloaders list of event senders causing controller reloading
+ * @see TResponseElement
+ */
+abstract class TController extends TResponseElement implements IActionsList {
+	private $_reloaders_ = array();
+	
+	protected $actions = array();
+	
+	public function __construct($name, TResponse $response, array $settings = array()){
+		parent::__construct($name,$response,$settings);
+		$this->actions = $this->actionsList();		
+		foreach ($this->actions as $a)
+			$this->setupAction($a);
+	}
+	
+	public function __set($nm,$value){
+		switch ($nm){
+			case "Reloaders":TConfigurablePattern::SetIocArrayMember($this->_reloaders_, $value, "IEventSender");break;
+			default:parent::__set($nm, $value);break;
+		}
+	}
+	
+	public function __get($nm){
+		switch ($nm){
+			case "Reloaders":return TConfigurablePattern::GetIocArrayMember($this->_reloaders_, "IEventSender");break;
+			default:return parent::__get($nm);break;
+		}
+	}
+	
+	protected function onEvent(TEvent $event){
+		if (in_array($event->Sender,$this->_reloaders_))
+			if ($event instanceof TDataReloadEvent)
+				$event->ReSend($this);
+			else
+				new TDataReloadEvent($this);
+	}
+	
+	protected function setupAction(TControllerAction $action){}
+	
+	protected function actionsList(){return array();}
+	
+	public function Actions(){return $this->actions;}
+/**
+ * checks whether specified action can be executed
+ * @param TControllerAction $action
+ * @return boolean
+ */
+	public function ActionAvailable(IAction $action){return false;}
+/**
+ * gets name of action group
+ * @return string
+ */
+	public function ActionGroup(IAction $action){return $this->Name();}	
+}
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * basic class for all widgets.
+ * @see TResponseElement
+ */
+abstract class TWidget extends TResponseElement {
+/**
+ * @var TWidget[] array of subwidgets
+ */	
+	protected $widgets = array();
+/**
+ * @var IThemeEngine
+ */
+	protected $currentEngine;
+/**
+ * adds a widget as a subwidget
+ */	
+	public function AddWidget(TWidget $widget){
+		$this->widgets[$widget->Name()] = $widget;	
+	}
+
+/**
+ * gets subwidgets
+ * @return TWidget[]
+ */	
+	public function Widgets(){
+		return $this->widgets;
+	}
+	
+/**
+ * @ignore
+ */	
+	protected function getTemplateByClass($classname,$path,$extension, $subname = null){
+		$tfilename = $classname;
+		if ($subname) $tfilename .= "_".$subname;
+		$tfilename .= ".".$extension;
+		
+    	if (file_exists($path."/".$tfilename))	
+			return $path."/".$tfilename;
+		$parent_class = get_parent_class($classname);
+		if (isset($parent_class))
+			if ($parent_class != "TWidget")
+				return $this->getTemplateByClass($parent_class,$path,$extension,$subname);
+		return false;
+	}
+
+/**
+ * gets widget skin file
+ * @return string
+ */	
+	public function Skin(IThemeEngine $engine, $subname = null){
+		$templatefile = false;
+		$tfilename = $this->SkinName;
+		if (!$tfilename)
+			$tfilename = $this->Name();
+		if ($subname) $tfilename .= "_".$subname;
+		$tfilename .= ".".$engine->TemplateExtension();
+		if (file_exists($engine->TemplateDir()."/".$tfilename))
+			$templatefile = $engine->TemplateDir()."/".$tfilename;	
+		if (!$templatefile)
+			$templatefile = $this->getTemplateByClass(get_class($this),$engine->TemplateDir(),$engine->TemplateExtension(),$subname);
+		if (!$templatefile) return null;	
+		return $templatefile;
+	}
+
+	protected function startCache(IThemeEngine $engine, $cachename, $lifetime){
+		if ($engine->OutputCache){
+			if (!$engine->OutputCache->CachedOutput($cachename,$lifetime)){
+				TOutputBuffer::StartRecording();
+				return true;
+			}
+			return false;
+		}
+		return true;
+	}
+	
+	protected function stopCache(IThemeEngine $engine,$cachename,$lifetime){
+		if ($engine->OutputCache){
+			$contents = TOutputBuffer::StopRecording();
+			$engine->OutputCache->SaveCache($cachename,$contents,$lifetime);
+			echo $contents;
+		}		
+	}
+	
+	
+/**
+ * outputs widget, using specified theme engine
+ */	
+	public function Output(IThemeEngine $engine,$skinfile = null){
+		$this->currentEngine = $engine;
+		$skin = $skinfile;
+		if (!$skin)
+			$skin = $this->SkinFile;
+		if (!$skin)
+			$skin = $this->Skin($engine);
+		if ($skin) 
+			$engine->ProcessTemplate($this,$skin,$this->CacheLifeTime);
+		else {
+			if ($this->CacheLifeTime > 0)
+				if (!$this->startCache($engine,$this->Name(),$this->CacheLifeTime)) return; 
+			$this->defaultOutput($this->currentEngine);
+			if ($this->CacheLifeTime > 0)
+				$this->stopCache($engine,$this->Name(),$this->CacheLifeTime);
+		}
+	}
+
+/**
+ * loads resources needed for widget functionality
+ */	
+	public abstract function LoadResources();
+
+/**
+ * default widget output
+ */	
+	protected abstract function defaultOutput(IThemeEngine $engine);
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * basic class for all views.
+ * @property string $ContentType response content type
+ * @property array $Headers response additional headers. Can be set both as an array and as multiline text with 'name:value' pairs in each line
+ * @property boolean $DenyCallClean when set to true denies request parameter cleaning. Can be set by string that can be parsed by TConvertions::ConvertToBoolean
+ * @property string $SaveState specifies response elements SaveSate option default value. If not explicitly set then is derived from current service. 
+ * @see TConvertions::ConvertToBoolean()
+ * @see TMVCObject
+ */
+abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEventHandler {
+	const TYPE_XML = "xml";
+	const TYPE_JSON = "json";
+	const TYPE_HTML = "html";
+	const TYPE_CSS = "css";
+	const TYPE_GIF = "gif";
+	const TYPE_JPEG = "jpg";
+	const TYPE_PNG = "png";
+	const TYPE_BMP = "bmp";
+	const TYPE_ICON = "icon";
+	const TYPE_TEXT = "text";
+
+	public $CacheLifeTime = 0;
+	
+/**
+ * @var string
+ * stores value of SaveState property
+ */	
+	protected $stateSave = null;
+/**
+ * @var boolean
+ * stores value of DenyCallClean property 
+ */	
+	protected $denyCallClean = false;
+
+/**
+ * @var string
+ * stores response ContentType property value
+ */	
+	protected $contentType = self::TYPE_TEXT;
+/**
+ * @var array
+ * stores response headers as an associative array
+ */	
+	protected $headers = array();
+/**
+ * @var TService
+ * service response belongs to
+ */	
+	protected $service;
+	
+	protected $request;
+	
+	private $_event_listeners_ = array();
+	
+	public function BroadCastEvent(TEvent $event){
+		foreach ($this->_event_listeners_ as $l)
+			$l->Dispatch($event);
+	}
+	
+	public function AddEventListener(IEventListener $listener){
+		$this->_event_listeners_[] = $listener;
+	}
+	
+	public function EventHandlingDelegates(IEventListener $listener, TEvent $event){
+		$rc = new ReflectionClass(get_class($this));
+		$methods = $rc->getMethods();
+		$result = array();
+		foreach ($methods as $m){
+			if ($m->IsPublic()){
+				$checkname = "";
+				if ($listener instanceof TResponseElement)
+					$checkname .= $listener->Name();
+				$checkname .= "handlerof";
+				if ($event->Sender instanceof TResponseElement)
+					 $checkname .= $event->Sender->Name();
+				$checkname .= $event->Name."event";	 
+				if (strtolower($m->getName()) == strtolower($checkname))
+					$result[] = array($this,$m->getName());
+			}
+		}
+		return $result;
+	}
+
+/**
+ * gets response content types as an array
+ */	
+	protected static function ContentTypes(){
+		return array(
+			self::TYPE_XML,
+			self::TYPE_JSON,
+			self::TYPE_HTML,
+			self::TYPE_CSS,
+			self::TYPE_BMP,
+			self::TYPE_GIF,
+			self::TYPE_JPEG,
+			self::TYPE_PNG,
+			self::TYPE_ICON,
+			self::TYPE_TEXT);
+	} 
+
+/**
+ * @ignore
+ */	
+	public function __set($nm,$value){
+		switch ($nm){
+			case "ContentType":{
+				if (!in_array($value,self::ContentTypes()))
+					throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+				$this->contentType = $value;
+			}break;
+			case "Headers":{
+				if (is_array($value))
+					$this->headers = $value;
+				preg_match_all('/([^:]*):([^:\r\n]*)/',$value,$h);
+				$this->headers = array_combine($h[1],$h[2]);
+			}break;
+			case "DenyCallClean":$this->denyCallClean = TConvertions::ConvertToBoolean($value);
+			case "SaveState":$this->stateSave = $value;break;
+			default:parent::__set($nm,$value);
+		}
+	}
+/**
+ * @ignore
+ */	
+	public function __get($nm){
+		switch ($nm){
+			case "ContentType":return $this->contentType;break;
+			case "Headers":return $this->headers;break;
+			case "DenyCallClean":return $this->denyCallClean;break;
+			case "SaveState":{if (is_null($this->stateSave)) return $this->service->SaveState;return $this->stateSave;}break;
+			case "Service":return $this->Service();break;
+			case "Request":return $this->Request();break;
+			default:{
+					$item = $this->Item($nm);
+					if ($item) return $item;
+					$v = $this->service->__get($nm);
+					if ($v) return $v;
+					return parent::__get($nm);
+			}break;
+		}
+	}
+/**
+ * sends response additional headers
+ */
+	public function SendHeaders(){
+		foreach ($this->headers as $key=>$value)
+			header($key.":".$value);			
+	}
+/**
+ * Sets a cookie
+ * @param string $nm
+ * @param mixed $value
+ */	
+	public function SetCookie($name,$value,$expire = null){
+		if (is_null($expire)) $expire = time()+60*60*24;
+		if (is_null($value)) $expire = -1000;
+		setcookie($name,$value,$expire,$this->Url());
+	}
+	
+/**
+ * gets current content type
+ * @return string
+ */
+	public function CurrentContentType(){
+		return $this->contentType;
+	}
+		
+/**
+ * sends content type header
+ * @param string $contentType optional content type. When not specified current content type is used.
+ */	
+	public function ContentTypeHeader($contentType = null){
+		if (is_null($contentType))
+			$contentType = $this->contentType;
+		switch ($contentType){
+			case self::TYPE_XML:return "Content-Type:text/xml; charset=utf-8";break;
+			case self::TYPE_JSON:return "Content-Type:text/javascript; charset=utf-8";break;
+			case self::TYPE_HTML:return "Content-Type:text/html; charset=utf-8";break;
+			case self::TYPE_CSS:return "Content-Type:text/css; charset=utf-8";break;
+			case self::TYPE_GIF:return "Content-Type:img/gif";break;
+			case self::TYPE_PNG:return "Content-Type:img/png";break;
+			case self::TYPE_JPEG:return "Content-Type:img/jpeg";break;
+			case self::TYPE_BMP:return "Content-Type:img/bmp";break;
+			case self::TYPE_ICON:return "Content-Type:img/x-icon";break;
+			case self::TYPE_TEXT:return "Content-Type:text/plain; charset=utf-8";break;
+		}
+	}
+/**
+ * gets service response belongs to
+ * @return TService
+ */	
+	public function Service(){return $this->service;}
+	
+	public function Request(){return $this->request;}
+
+/**
+ * constructor
+ * @param TService $service service response belongs to 
+ */	
+	public function __construct(TService $service){
+		$this->service = $service;
+		$this->DelegationProvider = $this;
+		$this->BroadCasters = $this;
+		$this->AddEventListener($this);
+	}
+
+/**
+ * cleans request parameters by redirecting to response url.
+ * if call cleaning is denied does nothing.
+ * @see TResponse::$DenyCallClean
+ */	
+	public function CleanCall(){
+		if (!$this->denyCallClean)
+			TApplication::Redirect($this->Url());
+	}
+	
+	protected function PreHandle(THttpRequest $request){return true;}
+	protected function PostHandle(THttpRequest $request,array $caller){return true;}
+/**
+ * handles request. 
+ * If request 'controller' and 'method' parameters are set, 
+ * it tries to call specified method of specified response element, passing it other request parameters as arguments.
+ * The request object itself is also passes to method as the last argument.
+ * After method is called CleanCall method is called.
+ * @see THttpRequest
+ * @see TResponse::CleanClass()
+ */	
+	public function Handle(THttpRequest $request){
+		$this->request = $request;
+		if (!$this->PreHandle($request)) return false;
+		$controllers = array();
+		if (isset($request->controller)) 
+			$controllers[] = $this->Item($request->controller);
+		if ($this->DefaultController && ($this->DefaultController != $request->controller))
+			$controllers[] = $this->Item($this->DefaultController);	
+		$controllers[] = $this;
+		$controllers = array_filter($controllers);
+		
+		$controller = null;
+		$method = null;
+		foreach ($controllers as $c){
+			$methods = array($request->method);
+			if ($c->DefaultMethod)
+				$methods[] = $c->DefaultMethod;
+			if ($c instanceof TAction)
+				$methods[] = "Perform";
+			$methods = array_filter($methods);		
+			foreach ($methods as $m)
+				if ($c->IsHttpCallable($m)){
+					$controller = $c;
+					$method = $m;
+					break;
+				}
+			if ($method) break;
+		}
+		if (!$method) return false;	
+		$controller->HttpMethodCall($method,$request);
+		$result = $this->PostHandle($request,array($controller,$method));
+		if ($result)
+			$this->CleanCall();
+		return $result;
+	}
+
+/**
+ * constructs an url refering to specified response element of the response.
+ */	
+	public abstract function Url($controller = null,$method = null,array $parameters = array());
+	
+	public function UniqueId(){
+		return $this->Url();
+	}
+	
+/**
+ * gets response element by name
+ * @param string $name element name
+ * @return TResponseElement
+ */	
+	public function Item($name){
+		return TConfigurable::Instance($name);
+	}	
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * class representing controller action parameter types.
+ */
+final class TActionParameterType {
+	private $_code_;
+	const TYPE_BOOLEAN = "bool";
+	const TYPE_INTEGER = "int";
+	const TYPE_REAL = "real";
+	const TYPE_STRING = "str";
+	const TYPE_DATE = "date";
+	const TYPE_PICTURE = "pic";
+	const TYPE_FILE = "file";
+	const TYPE_SELECT = "select";
+	const TYPE_SET = "set";
+	const TYPE_PASSWORD = "pwd";
+	const TYPE_TEXT = "text";
+	const TYPE_HTML = "html";
+	const TYPE_UNSUPPORTED = "unknown";
+/**
+ * checks if specified type is equal to one of class constants
+ * @param string $type
+ * @return boolean 
+ */	
+	public static function CheckType($type){
+		$checker = array(self::TYPE_BOOLEAN,self::TYPE_DATE,self::TYPE_FILE,self::TYPE_INTEGER,self::TYPE_PASSWORD,self::TYPE_PICTURE,self::TYPE_REAL,self::TYPE_SELECT,self::TYPE_SET,self::TYPE_STRING,self::TYPE_TEXT,self::TYPE_HTML);
+		if (in_array($type,$checker))
+			return $type;
+		return self::TYPE_UNSUPPORTED;
+	}
+	
+	public function __construct($code){
+		if (!self::CheckType($code))
+			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		$this->_code_ = $code;	
+	}
+	
+	public static function GetType($code){
+		return new TActionParameterType($code);
+	}
+	
+	public function __toString(){
+		return $this->_code_;
+	}
+}
+	
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * class for holding item creation information
+ */
+final class TCreateInfo {
+	private $_item_type_;
+	private $_attributes_ = array();
+/**
+ * gets type of item
+ * @return mixed
+ */		
+	public function ItemType(){return $this->_item_type_;}
+/**
+ * constructor
+ * @param mixed $itemtype type of item
+ * @param array $attributes associatiove array of item attribute values
+ */	
+	public function __construct($itemtype,array $attributes = array()){
+		$this->_item_type_ = $itemtype;
+		$this->_attributes_ = $attributes;
+	}
+/**
+ * gets creation parameter value
+ * @param string $name
+ * @return mixed
+ */
+	public function Parameter($name){
+		return $this->_attributes_[$name];
+	}
+/**
+ * gets array of creation parameters
+ * @return array
+ */	
+	public function Parameters(){return $this->_attributes_;}
+/**
+ * method for serialization
+ * @return string
+ */	
+	public function __toString(){
+		$result = "itemtype:".$this->ItemType();
+		foreach ($this->_attributes_ as $key=>$value)
+			$result = $result."|".$key.":".$value;
+		return $result;
+	}
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * class for holding controller action parameters
+ */
+class TActionParameter implements IActionParameter {	
+	private $_name_;
+	private $_type_;
+	private $_value_;
+	private $_title_;
+	private $_group_;
+	private $_optional_ = false;
+	private $_selectors_ = array();
+/**
+ * gets parameter name
+ * @return string
+ */		
+	public function Name(){return $this->_name_;}
+/**
+ * gets parameter type. Return one of TActionParameterType constants
+ * @return TActionParameterType
+ */	
+	public function Type(){return $this->_type_;}
+/**
+ * gets parameter title
+ * @return string 
+ */	
+	public function Title(){return $this->_title_;}
+	
+	public function Optional(){return $this->_optional_;}
+	
+	public function Group(){return $this->_group_;}
+/**
+ * gets parameter value
+ * @return mixed
+ */	
+	public function Value(){
+		if ($this->_type_ == TActionParameterType::TYPE_BOOLEAN)
+			return ($this->_value_ == true)?"on":"off";
+		return $this->_value_;
+	}
+		
+/**
+ * sets parameter value
+ * @param mixed $value
+ */	
+	public function SetValue($value){
+		$this->_value_ = $value;
+	}
+
+/**
+ * gets parameter value selection list
+ * @return array
+ */	
+	public function Selectors(){return $this->_selectors_;}
+/**
+ * constructor.
+ * @param string $name parameter name
+ * @param string $title parameter title
+ * @param mixed $type parameter type. must be one of TActionParameterType constants
+ * @param mixed $value optional parameter value
+ * @param array $selectors optional parameter value selection list. Selection list should be an array. which keys are treated as values for selection and values as value titles.
+ */	 
+	public function __construct($name,$title, $type,$value=null,$selectors = null, $group = null, $optional = false){
+		$this->_name_ = $name;
+		$this->_title_ = $title;
+		$this->_value_ = $value;
+		if ($type instanceof TActionParameterType)
+			$this->_type_ = $type;
+		else 
+			$this->_type_ = TActionParameterType::GetType($type);
+		if ($this->_type_ == TActionParameterType::TYPE_UNSUPPORTED)
+			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		if (is_array($selectors))
+			$this->_selectors_ = $selectors;
+		$this->_group_ = $group;
+		$this->_optional_ = $optional;	
+	}
+	public function SetSelectors(array $selectors){
+		$this->_selectors_ = $selectors;
+	}
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * iterator of TActionParameter
+ */
+class TActionParameterIterator extends TArrayIterator {
+/**
+ * adds parameter to iterator
+ */	
+	public function addParameter(TActionParameter $param){
+		$this->array[] = $param;
+	}
+/**
+ * constructor. constructs an iterator from an array of TActionParameter
+ * @param TActionParameter[] $array array of TActionParameter
+ */		
+	public function __construct(array $array = array()){
+		$temp = array();
+		foreach ($array as $value)
+		  if ($value instanceof TActionParameter)
+		  	$temp[$value->Name()] = $value;
+		parent::__construct($temp);
+	}
+}
+
+/**
+ * @package Common
+ * @subpackage Mvc
+ * @category System
+ * class for holding controller actions
+ */
+final class TControllerAction extends TAction {
+	private $_controller_;
+	private $_method_;
+	
+	private $_local_name_;
+
+	public function Controller(){
+		return $this->_controller_;
+	}
+/**
+ * gets name of method action should call
+ * @return string
+ */	
+	public function Method(){return $this->_method_;}
+	
+	public function Execute(){
+		$this->_controller_->__call($this->_method_,$this->response->Request->Parameters());
+	}
+	
+	public function LocalName(){
+		return $this->_local_name_;
+	}
+	
+	public function Available(){
+		return $this->_controller_->ActionAvailable($this);
+	}
+	
+/**
+ * invokes state invalidation event on action controllers events
+ * @see TAction::Dispatch()
+ */	
+	public function Dispatch(TEvent $event){
+		if ($event->Sender === $this->_controller_)
+			//$this->Invoke(
+			new TActionStateEvent($this,$event->Sender);
+			//);
+		else parent::Dispatch($event);
+	}
+	
+/**
+ * constructor
+ * @param string $name action name
+ * @param string $method name of method action should call
+ * @param string $title action title
+ * @param TActionParameterIterator $parameters iterator of action parameters 
+ */	
+	public function __construct(TController $controller, $name, $method, $title,TActionParameterIterator $parameters = null){
+			$this->_local_name_ = $name;
+			$this->_controller_ = $controller;
+			$this->_method_ = $method;
+			parent::__construct($controller->Name().".".$name,$controller->Response(),array(),$controller,$title,$parameters);
+	}
+}
+
+
+?>
