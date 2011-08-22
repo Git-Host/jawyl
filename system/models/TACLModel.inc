@@ -157,19 +157,24 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  */	
 	public function Install(){
 		$this->begin();	
-		$this->dbDriver->DefineClass(self::SECURITY_SUBJECT_CLASS,self::SECURITY_SUBJECT_CLASS);
-		$this->dbDriver->DefineAttribute(self::SECURITY_SUBJECT_CLASS,"guid","guid", new TGuidType(true,false,true));
+		try {
+			$this->dbDriver->DefineClass(self::SECURITY_SUBJECT_CLASS,self::SECURITY_SUBJECT_CLASS);
+			$this->dbDriver->DefineAttribute(self::SECURITY_SUBJECT_CLASS,"guid","guid", new TGuidType(true,false,true));
 			
-		$this->dbDriver->DefineClass(self::SECURITY_GROUP_CLASS,self::SECURITY_GROUP_CLASS,self::SECURITY_SUBJECT_CLASS);
-		$this->dbDriver->DefineAttribute(self::SECURITY_GROUP_CLASS,"name","name", new TStringType(50,true,true,false));
+			$this->dbDriver->DefineClass(self::SECURITY_GROUP_CLASS,self::SECURITY_GROUP_CLASS,self::SECURITY_SUBJECT_CLASS);
+			$this->dbDriver->DefineAttribute(self::SECURITY_GROUP_CLASS,"name","name", new TStringType(50,true,true,false));
 			
-		$this->dbDriver->DefineClass(self::SECURITY_USER_CLASS,self::SECURITY_USER_CLASS,self::SECURITY_SUBJECT_CLASS);
-		$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"login","login", new TStringType(20,true,true,false));
-		$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"password","pwd", new TPasswordType(32,false,true,true,""));
-		$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"disabled","disabled", new TBooleanType(false,false,0));
+			$this->dbDriver->DefineClass(self::SECURITY_USER_CLASS,self::SECURITY_USER_CLASS,self::SECURITY_SUBJECT_CLASS);
+			$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"login","login", new TStringType(20,true,true,false));
+			$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"password","pwd", new TPasswordType(32,false,true,true,""));
+			$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"disabled","disabled", new TBooleanType(false,false,0));
 			
-		$this->dbDriver->DefineStructure(self::SECURITY_RELATIONS,"Group assignments",TStructureType::ASSOCIATION,"GroupAssignments");
-		$this->commit();
+			$this->dbDriver->DefineStructure(self::SECURITY_RELATIONS,"Group assignments",TStructureType::ASSOCIATION,"GroupAssignments");
+			$this->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 		return true;
 	}
 
@@ -190,11 +195,16 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  */	
 	public function UnInstall(){
 		$this->begin();
-		$this->dbDriver->UnDefineStructure(self::SECURITY_RELATIONS);
-		$this->dbDriver->UndefineClass(self::SECURITY_USER_CLASS);
-		$this->dbDriver->UndefineClass(self::SECURITY_GROUP_CLASS);
-		$this->dbDriver->UndefineClass(self::SECURITY_SUBJECT_CLASS);
-		$this->commit();
+		try {
+			$this->dbDriver->UnDefineStructure(self::SECURITY_RELATIONS);
+			$this->dbDriver->UndefineClass(self::SECURITY_USER_CLASS);
+			$this->dbDriver->UndefineClass(self::SECURITY_GROUP_CLASS);
+			$this->dbDriver->UndefineClass(self::SECURITY_SUBJECT_CLASS);
+			$this->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 	} 
 
 /**

@@ -560,6 +560,10 @@
 */		
 		public static function Run($callerPath){
 			global $Application;
+/**
+ * @todo Maybe implement dependency from error reporting
+ */			
+			set_error_handler(create_function('$errno,$errstr,$errfile,$errline','throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);'));
 			$Application = new TApplication(realpath(dirname($callerPath)));
 			$Application->_app_run();
 		}

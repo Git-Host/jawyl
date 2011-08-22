@@ -38,12 +38,17 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
  * @see IInstallable::Install()
  */	
 	public function Install(){
-		$this->begin();	
-		$this->dbDriver->DefineClass(self::POLICY_CLASS_POLICY,self::POLICY_CLASS_POLICY);
-		$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"subject","subject", new TStringType(32,false, true, false, null, false, false));
-		$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"object","object", new TStringType(32,false, true, true, null, false, false));
-		$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"code","code", new TStringType(15,false, true, false, null, false, false));
-		$this->dbDriver->commit();
+		$this->begin();
+		try {	
+			$this->dbDriver->DefineClass(self::POLICY_CLASS_POLICY,self::POLICY_CLASS_POLICY);
+			$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"subject","subject", new TStringType(32,false, true, false, null, false, false));
+			$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"object","object", new TStringType(32,false, true, true, null, false, false));
+			$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"code","code", new TStringType(15,false, true, false, null, false, false));
+			$this->dbDriver->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 		return true;
 	}
 	
@@ -59,8 +64,13 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
  */	
 	public function UnInstall(){
 		$this->begin();
-		$this->dbDriver->UndefineClass(self::POLICY_CLASS_POLICY);
-		$this->dbDriver->commit();
+		try {
+			$this->dbDriver->UndefineClass(self::POLICY_CLASS_POLICY);
+			$this->dbDriver->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 	} 
 	
 /**
@@ -103,14 +113,19 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
  */	
 	public function Deny(TPolicy $policy, ISecuritySubject $subject){
 		$this->begin();
-		$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-		$ds = new TOrmClassDataSource($c, null);
-		$ds->IsTarget = true;
-		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("code",null,$ds),$policy->Type()));
-		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("object",null,$ds),is_null($policy->SecurityObject())?null:$policy->SecurityObject()->Soid())); 
-		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("subject",null,$ds),$subject->Guid()));
-		$this->dbDriver->DeleteInstances($ds);
-		$this->commit();
+		try {
+			$c = $this->GetClass(self::POLICY_CLASS_POLICY);
+			$ds = new TOrmClassDataSource($c, null);
+			$ds->IsTarget = true;
+			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("code",null,$ds),$policy->Type()));
+			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("object",null,$ds),is_null($policy->SecurityObject())?null:$policy->SecurityObject()->Soid())); 
+			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("subject",null,$ds),$subject->Guid()));
+			$this->dbDriver->DeleteInstances($ds);
+			$this->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 		return true;
 	}
 

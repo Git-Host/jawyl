@@ -424,17 +424,22 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 			
 		if (isset($prk)) {
 			$this->BeginTransaction();
-			$this->startCapture('$this->RollbackTransaction();$this->Execute("unlock tables");');
-			$this->Execute("update ".$table." set ".self::CLASS_RKEY_FIELD." = ".self::CLASS_RKEY_FIELD." + 2, ".self::CLASS_LKEY_FIELD." = if(".self::CLASS_LKEY_FIELD." >= :prk,".self::CLASS_LKEY_FIELD." + 2,".self::CLASS_LKEY_FIELD.") where ".self::CLASS_RKEY_FIELD." >= :prk", array("prk"=>$prk));
-			$this->Execute("insert ".$table." (".self::CLASS_NAME_FIELD.",".self::CLASS_LKEY_FIELD.",".self::CLASS_RKEY_FIELD.",".self::CLASS_ANCESTOR_FIELD.") values (:name,:lkey,:rkey,:ancestor)",array("name"=>$c->Name(),"lkey"=>$prk,"rkey"=>$prk+1,"ancestor"=>$parentid));
-			$cid = $this->lastInsertId();
-			$this->query("CREATE TABLE `".$enttable."_".$cid."` (`".self::ENTITY_PK_FIELD."` bigint(20) NOT NULL PRIMARY KEY, constraint `fk_".$enttable."_".$cid."` FOREIGN KEY (".self::ENTITY_PK_FIELD.") references ".$enttable." (".self::ENTITY_PK_FIELD.") on delete cascade) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-			$this->CommitTransaction();
-			$this->stopCapture();
-			$this->query("unlock tables");
-			return true;
+			try {
+				$this->Execute("update ".$table." set ".self::CLASS_RKEY_FIELD." = ".self::CLASS_RKEY_FIELD." + 2, ".self::CLASS_LKEY_FIELD." = if(".self::CLASS_LKEY_FIELD." >= :prk,".self::CLASS_LKEY_FIELD." + 2,".self::CLASS_LKEY_FIELD.") where ".self::CLASS_RKEY_FIELD." >= :prk", array("prk"=>$prk));
+				$this->Execute("insert ".$table." (".self::CLASS_NAME_FIELD.",".self::CLASS_LKEY_FIELD.",".self::CLASS_RKEY_FIELD.",".self::CLASS_ANCESTOR_FIELD.") values (:name,:lkey,:rkey,:ancestor)",array("name"=>$c->Name(),"lkey"=>$prk,"rkey"=>$prk+1,"ancestor"=>$parentid));
+				$cid = $this->lastInsertId();
+				$this->query("CREATE TABLE `".$enttable."_".$cid."` (`".self::ENTITY_PK_FIELD."` bigint(20) NOT NULL PRIMARY KEY, constraint `fk_".$enttable."_".$cid."` FOREIGN KEY (".self::ENTITY_PK_FIELD.") references ".$enttable." (".self::ENTITY_PK_FIELD.") on delete cascade) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+				$this->CommitTransaction();
+				$this->query("unlock tables");
+				$result = true;
+			} catch (Exception $e){
+				$this->RollbackTransaction();
+				$this->query("unlock tables");
+				throw $e;
+				$result = false;
+			}
+			return $result;
 		}
-		$this->query("unlock tables");
 		return false;
 	}
 	
@@ -454,16 +459,15 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 				
 			$table = $this->RealTableName(self::ATTRDEFINITIONS_TABLE);				
 			$this->BeginTransaction();
-			$this->startCapture('$this->RollbackTransaction();');
-			
-			$this->Execute("insert into ".$table." (".self::CLASS_PK_FIELD.",".self::CLASS_ATTR_NAME_FIELD.",".self::CLASS_ATTR_TYPE_FIELD.",".self::CLASS_ATTR_OPTIONS_FIELD.",".self::CLASS_ATTR_REFCLASS_FIELD.",".self::CLASS_ATTR_STATIC_FIELD.") values (:class,:name,:type,:opt,:refclass,:static)", array("class"=>$a->Class->Id(),"name"=>$a->Name(),"type"=>$a->Type->TypeCode,"opt"=>$a->__toString(),"refclass"=>$refclass,"static"=>$a->Static));
-			$caid = $this->lastInsertId();
-			$fieldname = "field".$caid;
-			$this->Execute("update ".$table." set ".self::CLASS_ATTR_FIELD_FIELD." = :fld where ".self::CLASS_ATTR_PK_FIELD." = :id",array("fld"=>"field".$caid,"id"=>$caid));
+			try {
+				$this->Execute("insert into ".$table." (".self::CLASS_PK_FIELD.",".self::CLASS_ATTR_NAME_FIELD.",".self::CLASS_ATTR_TYPE_FIELD.",".self::CLASS_ATTR_OPTIONS_FIELD.",".self::CLASS_ATTR_REFCLASS_FIELD.",".self::CLASS_ATTR_STATIC_FIELD.") values (:class,:name,:type,:opt,:refclass,:static)", array("class"=>$a->Class->Id(),"name"=>$a->Name(),"type"=>$a->Type->TypeCode,"opt"=>$a->__toString(),"refclass"=>$refclass,"static"=>$a->Static));
+				$caid = $this->lastInsertId();
+				$fieldname = "field".$caid;
+				$this->Execute("update ".$table." set ".self::CLASS_ATTR_FIELD_FIELD." = :fld where ".self::CLASS_ATTR_PK_FIELD." = :id",array("fld"=>"field".$caid,"id"=>$caid));
 					
-			$_table_ = $a->Static?$this->RealTableName(self::CLASSES_STATICS):$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Class->Id();
-			if (($a->Periodic) && (!$a->Static)) 
-				$this->query("CREATE TABLE IF NOT EXISTS `".$_table_.self::SNAPSHOTS_PREFIX."` (
+				$_table_ = $a->Static?$this->RealTableName(self::CLASSES_STATICS):$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Class->Id();
+				if (($a->Periodic) && (!$a->Static)) 
+					$this->query("CREATE TABLE IF NOT EXISTS `".$_table_.self::SNAPSHOTS_PREFIX."` (
 							`".self::ENTITY_PK_FIELD."` bigint(20) NOT NULL, 
 							`date_since` datetime NOT NULL, 
 							`date_till` datetime, 
@@ -471,33 +475,37 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 							primary key (`".self::ENTITY_PK_FIELD."`,`date_since`)
 							) ENGINE=InnoDB CHARSET=utf8");
 					
-			if ($a->Static) 
-				$q = "ALTER TABLE ".$_table_." ADD COLUMN `".$fieldname."` ".$coltype." NULL ";
-			else 
-				$q = "ALTER TABLE ".$_table_." ADD COLUMN `".$fieldname."` ".$coltype." ".($a->Nullable?"NULL":"NOT NULL")." ".(isset($a->Default)?(sprintf("DEFAULT %s ",$this->quoteValue($a->Default))):" ");
+				if ($a->Static) 
+					$q = "ALTER TABLE ".$_table_." ADD COLUMN `".$fieldname."` ".$coltype." NULL ";
+				else 
+					$q = "ALTER TABLE ".$_table_." ADD COLUMN `".$fieldname."` ".$coltype." ".($a->Nullable?"NULL":"NOT NULL")." ".(isset($a->Default)?(sprintf("DEFAULT %s ",$this->quoteValue($a->Default))):" ");
 					
-			if ($a->Type instanceof TOrmReferenceType)
-				$q = $q." , ADD INDEX `i".$fieldname."` (`".$fieldname."`), ADD CONSTRAINT fk_".$_table_."_".$fieldname." FOREIGN KEY `".$fieldname."` (`".$fieldname."`) REFERENCES `".$this->RealTableName(self::ENTITIES_TABLE).(is_null($a->ReferenceClass)?"":"_".$a->Type->ReferenceClass->Id())."` (`".self::ENTITY_PK_FIELD."`) ON DELETE ".($a->Type->IntergrityDelete?"CASCADE":($a->Nullable?"SET NULL":"RESTRICT"))." ON UPDATE RESTRICT";
-			else if ($a->Type instanceof TTableReferenceType)
-				$q = $q." , ADD INDEX `i".$fieldname."` (`".$fieldname."`), ADD CONSTRAINT fk_".$_table_."_".$fieldname." FOREIGN KEY `".$fieldname."` (`".$fieldname."`) REFERENCES `".$a->Type->MasterField->Table->Name."` (`".$a->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($a->Type->OnDelete)." ON UPDATE ".self::transformRefIntegrity($a->Type->OnUpdate);
-			else 
-				{
+				if ($a->Type instanceof TOrmReferenceType)
+					$q = $q." , ADD INDEX `i".$fieldname."` (`".$fieldname."`), ADD CONSTRAINT fk_".$_table_."_".$fieldname." FOREIGN KEY `".$fieldname."` (`".$fieldname."`) REFERENCES `".$this->RealTableName(self::ENTITIES_TABLE).(is_null($a->ReferenceClass)?"":"_".$a->Type->ReferenceClass->Id())."` (`".self::ENTITY_PK_FIELD."`) ON DELETE ".($a->Type->IntergrityDelete?"CASCADE":($a->Nullable?"SET NULL":"RESTRICT"))." ON UPDATE RESTRICT";
+				else if ($a->Type instanceof TTableReferenceType)
+					$q = $q." , ADD INDEX `i".$fieldname."` (`".$fieldname."`), ADD CONSTRAINT fk_".$_table_."_".$fieldname." FOREIGN KEY `".$fieldname."` (`".$fieldname."`) REFERENCES `".$a->Type->MasterField->Table->Name."` (`".$a->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($a->Type->OnDelete)." ON UPDATE ".self::transformRefIntegrity($a->Type->OnUpdate);
+				else 
+					{
 					if ($a->Unique && (!$a->Periodic) && (!$a->Static))
 						$q = $q.", ADD UNIQUE `i".$fieldname."` (`".$fieldname."`)";
 					else if ($a->Indexed)
 						$q = $q.", ADD INDEX `i".$fieldname."` (`".$fieldname."`)";
-				}
+					}
 							
-			$this->query($q);
+				$this->query($q);
 					
-			if ($a->Static && $a->Default){
-				if ($a->Periodic)
-					$this->SaveStatic($a->Class, $a, $a->Default,new TDate());
-				else
-					$this->SaveStatic($a->Class, $a, $a->Default);
+				if ($a->Static && $a->Default){
+					if ($a->Periodic)
+						$this->SaveStatic($a->Class, $a, $a->Default,new TDate());
+					else
+						$this->SaveStatic($a->Class, $a, $a->Default);
+				}
+				$this->CommitTransaction();
+			} catch (Exception $e) {
+				$this->RollbackTransaction();
+				throw $e;
+				return false;
 			}
-			$this->CommitTransaction();
-			$this->stopCapture();
 			return true;
 		} 
 		return false;			
@@ -509,14 +517,19 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
   		if ($temp = mysql_fetch_assoc($res)){
   			if ($temp[self::CLASS_RKEY_FIELD] == $temp[self::CLASS_LKEY_FIELD] + 1){   
   					$this->BeginTransaction();
-  					$this->startCapture('$this->RollbackTransaction();');
   					$this->query("lock tables ".$table." write");
-    				$this->Execute("delete from ".$table." where (".self::CLASS_LKEY_FIELD." >= :lkey) and (".self::CLASS_RKEY_FIELD." <= :rkey)",array("lkey"=>$temp[self::CLASS_LKEY_FIELD],"rkey"=>$temp[self::CLASS_RKEY_FIELD]));
-			    	$this->Execute("update ".$table." set ".self::CLASS_RKEY_FIELD." = ".self::CLASS_RKEY_FIELD." - (:rkey - :lkey + 1), ".self::CLASS_LKEY_FIELD." =  if(".self::CLASS_LKEY_FIELD." > :rkey,".self::CLASS_LKEY_FIELD." - (:rkey - :lkey + 1),".self::CLASS_LKEY_FIELD.") where ".self::CLASS_RKEY_FIELD." > :rkey",array("lkey"=>$temp[self::CLASS_LKEY_FIELD],"rkey"=>$temp[self::CLASS_RKEY_FIELD]));
-			    	$this->query("DROP TABLE `".$this->RealTableName(self::ENTITIES_TABLE)."_".$temp[self::CLASS_PK_FIELD]."`");
-			    	$this->query("unlock tables");
-			    	$this->CommitTransaction();
-			    	$this->stopCapture();
+  					try {
+    					$this->Execute("delete from ".$table." where (".self::CLASS_LKEY_FIELD." >= :lkey) and (".self::CLASS_RKEY_FIELD." <= :rkey)",array("lkey"=>$temp[self::CLASS_LKEY_FIELD],"rkey"=>$temp[self::CLASS_RKEY_FIELD]));
+			    		$this->Execute("update ".$table." set ".self::CLASS_RKEY_FIELD." = ".self::CLASS_RKEY_FIELD." - (:rkey - :lkey + 1), ".self::CLASS_LKEY_FIELD." =  if(".self::CLASS_LKEY_FIELD." > :rkey,".self::CLASS_LKEY_FIELD." - (:rkey - :lkey + 1),".self::CLASS_LKEY_FIELD.") where ".self::CLASS_RKEY_FIELD." > :rkey",array("lkey"=>$temp[self::CLASS_LKEY_FIELD],"rkey"=>$temp[self::CLASS_RKEY_FIELD]));
+			    		$this->query("DROP TABLE `".$this->RealTableName(self::ENTITIES_TABLE)."_".$temp[self::CLASS_PK_FIELD]."`");
+			    		$this->CommitTransaction();
+			    		$this->query("unlock tables");
+  					} catch (Exception $e){
+  						$this->RollbackTransaction();
+  						$this->query("unlock tables");
+  						throw $e;
+  						return false;
+  					}
 			    	return true;
   			} else throw new TMySqlException($this,TMySqlException::ERR_STORE_CLASS_NO_UNDEFINE,array("class"=>$c->Name()));
   		}
@@ -526,19 +539,23 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 	private function _undefine_attribute(TDBAttributeDefinition $a){
 		if ($a->Class instanceof TDBDefinedClass){	
 			$this->BeginTransaction();
-			$this->startCapture('$this->RollbackTransaction();');
-			$table = $this->RealTableName(self::ATTRDEFINITIONS_TABLE);
-			if (!($a instanceof TDBDefinedAttribute)){
-				if ($temp = mysql_fetch_assoc($this->query("select * from ".self::ATTRDEFINITIONS_TABLE." where (".self::CLASS_PK_FIELD." = ".$this->quoteValue($a->Id()).") and (".self::CLASS_ATTR_NAME_FIELD." = ".$this->quoteValue($a->Name()).")")))
-					$a = TMySqlRowConverter::ToAttrDefinition($temp, $this);
+			try {
+				$table = $this->RealTableName(self::ATTRDEFINITIONS_TABLE);
+				if (!($a instanceof TDBDefinedAttribute)){
+					if ($temp = mysql_fetch_assoc($this->query("select * from ".self::ATTRDEFINITIONS_TABLE." where (".self::CLASS_PK_FIELD." = ".$this->quoteValue($a->Id()).") and (".self::CLASS_ATTR_NAME_FIELD." = ".$this->quoteValue($a->Name()).")")))
+						$a = TMySqlRowConverter::ToAttrDefinition($temp, $this);
+				}
+				if (!($a instanceof TDBDefinedAttribute))
+					throw new TOrmStorageException(TOrmStorageException::ERR_ORM_ATTR_NOT_DEFINED, array("attr"=>$a->Name,"class"=>$a->Class->Name()));
+				$_table_ = 	$a->Static?($this->RealTableName(self::CLASSES_STATICS).($a->Periodic?self::SNAPSHOTS_PREFIX:"")):$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Class->Id();
+				$this->query("ALTER TABLE ".$_table_." DROP COLUMN ".$a->Field);
+				$this->Execute("delete from ".$table." where (".self::CLASS_ATTR_NAME_FIELD." = :name) and (".self::CLASS_PK_FIELD." = :cid)",array("name"=>$a->Name(),"cid"=>$a->Class->Id()));
+				$this->CommitTransaction();
+			} catch (Exception $e){
+				$this->RollbackTransaction();
+				throw $e;
+				return false;
 			}
-			if (!($a instanceof TDBDefinedAttribute))
-				throw new TOrmStorageException(TOrmStorageException::ERR_ORM_ATTR_NOT_DEFINED, array("attr"=>$a->Name,"class"=>$a->Class->Name()));
-			$_table_ = 	$a->Static?($this->RealTableName(self::CLASSES_STATICS).($a->Periodic?self::SNAPSHOTS_PREFIX:"")):$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Class->Id();
-			$this->query("ALTER TABLE ".$_table_." DROP COLUMN ".$a->Field);
-			$this->Execute("delete from ".$table." where (".self::CLASS_ATTR_NAME_FIELD." = :name) and (".self::CLASS_PK_FIELD." = :cid)",array("name"=>$a->Name(),"cid"=>$a->Class->Id()));
-			$this->CommitTransaction();
-			$this->stopCapture();
 			return true;
 		} 
 		return false;				
@@ -720,17 +737,20 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 		$result = 0;
 		if ($adef->IsStatic()){
 			$this->BeginTransaction();
-			$this->startCapture('$this->RollbackTransaction();');
-			if ($adef->IsPeriodic()){
-				if (is_null($date)) $date = new TDate();
-				$result = $this->_set_snapshot_values($this->RealTableName(self::CLASSES_STATICS).self::SNAPSHOTS_PREFIX, $date, self::CLASS_PK_FIELD, $class->Id(), array($adef->Field=>$value));	
-			} else {
-				$result = $this->Execute("update ".$this->RealTableName(self::CLASSES_STATICS)." set ".$adef->Field." = :value where ".self::CLASS_PK_FIELD." = :cid",array("value"=>$value,"cid"=>$class->Id()));
-				if ($result == 0)
-					$result = $this->Execute("insert ".$this->RealTableName(self::CLASSES_STATICS)." (".self::CLASS_PK_FIELD.",".$adef->Field.") values (:cid,:value)",array("value"=>$value,"cid"=>$class->Id()));
+			try {
+				if ($adef->IsPeriodic()){
+					if (is_null($date)) $date = new TDate();
+					$result = $this->_set_snapshot_values($this->RealTableName(self::CLASSES_STATICS).self::SNAPSHOTS_PREFIX, $date, self::CLASS_PK_FIELD, $class->Id(), array($adef->Field=>$value));	
+				} else {
+					$result = $this->Execute("update ".$this->RealTableName(self::CLASSES_STATICS)." set ".$adef->Field." = :value where ".self::CLASS_PK_FIELD." = :cid",array("value"=>$value,"cid"=>$class->Id()));
+					if ($result == 0)
+						$result = $this->Execute("insert ".$this->RealTableName(self::CLASSES_STATICS)." (".self::CLASS_PK_FIELD.",".$adef->Field.") values (:cid,:value)",array("value"=>$value,"cid"=>$class->Id()));
+				}
+				$this->CommitTransaction();
+			} catch (Exception $e) {
+				$this->RollbackTransaction();
+				throw $e;
 			}
-			$this->CommitTransaction();
-			$this->stopCapture();
 		}
 		return $result > 0;
 	}		
@@ -765,14 +785,17 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 				
 	private function _create_instance(IInstance $instance, TDate $date = null){
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();');
-		$this->Execute("insert into ".$this->RealTableName(self::ENTITIES_TABLE)." (".self::CLASS_PK_FIELD.") values (:cid)",array("cid"=>$instance->InstanceClass()->Id()));
-		$id = $this->lastInsertId();
-		$this->_create_class_section($id,$instance,$date,$instance->InstanceClass());
-		$this->CommitTransaction();
-		$instance = new TMySqlDBInstance($id,$instance->InstanceClass());
-		$this->LoadInstance($instance,$date);
-		$this->stopCapture();
+		try {
+			$this->Execute("insert into ".$this->RealTableName(self::ENTITIES_TABLE)." (".self::CLASS_PK_FIELD.") values (:cid)",array("cid"=>$instance->InstanceClass()->Id()));
+			$id = $this->lastInsertId();
+			$this->_create_class_section($id,$instance,$date,$instance->InstanceClass());
+			$this->CommitTransaction();
+			$instance = new TMySqlDBInstance($id,$instance->InstanceClass());
+			$this->LoadInstance($instance,$date);
+		} catch (Exception $e) {
+			$this->RollbackTransaction();
+			throw $e;
+		}
 		return $instance;	
 	}	
 
@@ -784,49 +807,52 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 		if (!is_null($instance->Id()))
 		{
 			$this->BeginTransaction();
-			$this->startCapture('$this->RollbackTransaction();');
-			$attributes = $instance->Attributes();
-			$updates = array();
-			$values = array();
-			$periodic_updates = array();						
+			try {
+				$attributes = $instance->Attributes();
+				$updates = array();
+				$values = array();
+				$periodic_updates = array();						
 					
-			foreach ($attributes as $a)
-			 	if ($a->NeedSave()){ 
-			 		if ($a->Definition()->IsPeriodic()){
-			 			$classname = $a->Definition()->AttributeClass()->Name();
-						if (!key_exists($classname,$periodic_updates)){
+				foreach ($attributes as $a)
+			 		if ($a->NeedSave()){ 
+			 			if ($a->Definition()->IsPeriodic()){
+			 				$classname = $a->Definition()->AttributeClass()->Name();
+							if (!key_exists($classname,$periodic_updates)){
 								$periodic_updates[$classname] = array();
 				  				$periodic_updates[$classname]["table"] = $this->RealTableName(self::ENTITIES_TABLE)."_".$a->Definition()->AttributeClass()->Id().self::SNAPSHOTS_PREFIX;
 				  				$periodic_updates[$classname]["values"] = array();
-						}
-						$periodic_updates[$classname]["values"][$a->Definition()->Field] = $this->_get_attr_value($a);
-			 		} 
-			 		else {
-						$updates[] = "e".$a->Definition()->AttributeClass()->Id().".".$a->Definition()->Field." = :".$a->Definition()->Field;
-						$values[$a->Definition()->Field] = $this->_get_attr_value($a);
+							}
+							$periodic_updates[$classname]["values"][$a->Definition()->Field] = $this->_get_attr_value($a);
+			 			} 
+			 			else {
+							$updates[] = "e".$a->Definition()->AttributeClass()->Id().".".$a->Definition()->Field." = :".$a->Definition()->Field;
+							$values[$a->Definition()->Field] = $this->_get_attr_value($a);
+			 			}
 			 		}
-			 	}
 				 	
-			$q = "update ".$this->RealTableName(self::ENTITIES_TABLE)."_".$instance->InstanceClass()->Id()." e".$instance->InstanceClass()->Id();
-			$c = $instance->InstanceClass();
-			$a = $instance->InstanceClass()->Ancestor();
-			while ($a instanceof IClass){
-				$q .= " inner join ".$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Id()." e".$a->Id()." on e".$a->Id().".".self::ENTITY_PK_FIELD." = e".$c->Id().".".self::ENTITY_PK_FIELD;
-				$c = $a;
-				$a = $a->Ancestor();
-			}
-			$q .= " set ".join(",",$updates)." where e".$instance->InstanceClass()->Id().".".self::ENTITY_PK_FIELD." = :id"; 
-			$values["id"] = $instance->Id();	
-			$this->Execute($q, $values);	
+				$q = "update ".$this->RealTableName(self::ENTITIES_TABLE)."_".$instance->InstanceClass()->Id()." e".$instance->InstanceClass()->Id();
+				$c = $instance->InstanceClass();
+				$a = $instance->InstanceClass()->Ancestor();
+				while ($a instanceof IClass){
+					$q .= " inner join ".$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Id()." e".$a->Id()." on e".$a->Id().".".self::ENTITY_PK_FIELD." = e".$c->Id().".".self::ENTITY_PK_FIELD;
+					$c = $a;
+					$a = $a->Ancestor();
+				}
+				$q .= " set ".join(",",$updates)." where e".$instance->InstanceClass()->Id().".".self::ENTITY_PK_FIELD." = :id"; 
+				$values["id"] = $instance->Id();	
+				$this->Execute($q, $values);	
 
-			if (!($date instanceof TDate))
-				$date = new TDate();
-			foreach ($periodic_updates as $pu)
-				$this->_set_snapshot_values($pu["table"], $date, self::ENTITY_PK_FIELD, $instance->Id(), $pu["values"]);
+				if (!($date instanceof TDate))
+					$date = new TDate();
+				foreach ($periodic_updates as $pu)
+					$this->_set_snapshot_values($pu["table"], $date, self::ENTITY_PK_FIELD, $instance->Id(), $pu["values"]);
 						
-			$this->CommitTransaction();
-			$this->stopCapture();
-				//$instance = $this->FillInstance(new TMySqlDBInstance($instance->Id(),$instance->InstanceClass()),$date);
+				$this->CommitTransaction();
+			} catch (Exception $e) {
+				$this->RollbackTransaction();
+				throw $e;
+			}
+			//$instance = $this->FillInstance(new TMySqlDBInstance($instance->Id(),$instance->InstanceClass()),$date);
 			return $instance;	
 		} 
 		else 
@@ -969,10 +995,13 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
  */		
 	public function DeleteInstance(IInstance $instance){
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();');			
-		$this->Execute("delete from ".$this->RealTableName(self::ENTITIES_TABLE)." where ".self::ENTITY_PK_FIELD." = :id",array("id"=>$instance->Id()));
-		$this->CommitTransaction();
-		$this->stopCapture();
+		try {			
+			$this->Execute("delete from ".$this->RealTableName(self::ENTITIES_TABLE)." where ".self::ENTITY_PK_FIELD." = :id",array("id"=>$instance->Id()));
+			$this->CommitTransaction();
+		} catch (Exception $e){
+			$this->RollbackTransaction();
+			throw $e;
+		}
 		return true;
 	}
 /**

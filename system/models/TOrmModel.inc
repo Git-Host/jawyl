@@ -651,32 +651,37 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 		$meta = $this->_get_meta();
 		if (is_null($meta)) return true;
 		 
-		$this->begin();	
-	  	$metaitems = $meta->query("/meta/*");
-	  	foreach ($metaitems as $mi){
-	  		switch ($mi->tagName){
-	  			case "class":{
-	  				$parent = null;
-	  				if (!is_null($mi->getAttribute("parent")))
-	  					if ($mi->getAttribute("parent") != "")
-	  						$parent = $mi->getAttribute("parent");
-	  				if (!$this->dbDriver->IsClass($mi->getAttribute("name")))		
-	  					$this->dbDriver->DefineClass($mi->getAttribute("name"),$mi->getAttribute("alias"),$parent);
-	  				$classname = $mi->getAttribute("name");
-	  				$attrdefs = $meta->query("attribute",$mi);
-	  				foreach ($attrdefs as $ad){
-	  					$type = TAttributeType::getType(strtoupper($ad->getAttribute("type")),$ad->getAttribute("size"),$ad->getAttribute("decimals"),$ad->getAttribute("unique"),$ad->getAttribute("index"),$ad->getAttribute("nullable"),$ad->getAttribute("default"),$ad->getAttribute("referto"),$ad->getAttribute("autogenerate"));
-						$this->dbDriver->DefineAttribute($classname,$ad->getAttribute("name"),$ad->getAttribute("alias"), $type,$ad->getAttribute("static"));	  					
-	  				}
-	  			}break;
+		$this->begin();
+		try {	
+	  		$metaitems = $meta->query("/meta/*");
+	  		foreach ($metaitems as $mi){
+	  			switch ($mi->tagName){
+	  				case "class":{
+	  					$parent = null;
+	  					if (!is_null($mi->getAttribute("parent")))
+	  						if ($mi->getAttribute("parent") != "")
+	  							$parent = $mi->getAttribute("parent");
+	  					if (!$this->dbDriver->IsClass($mi->getAttribute("name")))		
+	  						$this->dbDriver->DefineClass($mi->getAttribute("name"),$mi->getAttribute("alias"),$parent);
+	  					$classname = $mi->getAttribute("name");
+	  					$attrdefs = $meta->query("attribute",$mi);
+	  					foreach ($attrdefs as $ad){
+	  						$type = TAttributeType::getType(strtoupper($ad->getAttribute("type")),$ad->getAttribute("size"),$ad->getAttribute("decimals"),$ad->getAttribute("unique"),$ad->getAttribute("index"),$ad->getAttribute("nullable"),$ad->getAttribute("default"),$ad->getAttribute("referto"),$ad->getAttribute("autogenerate"));
+							$this->dbDriver->DefineAttribute($classname,$ad->getAttribute("name"),$ad->getAttribute("alias"), $type,$ad->getAttribute("static"));	  					
+	  					}
+	  				}break;
 /*	  			case "association":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::ASSOCIATION)) $this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::ASSOCIATION,$mi->getAttribute("description"));break;
 	  			case "agregation":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::AGREGATION))$this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::AGREGATION,$mi->getAttribute("description"));break;
 	  			case "collection":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::COLLECTION))$this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::COLLECTION,$mi->getAttribute("description"));break;
 	  			case "vocabulary":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::VOCABULARY))$this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::VOCABULARY,$mi->getAttribute("description"));break;
 */	  			
-	  		}
-	  	}
-		$this->commit();
+		  		}
+		  	}
+			$this->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 	  return true;
 	}
 
@@ -687,26 +692,31 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 		$meta = $this->_get_meta();
 		if (is_null($meta)) return true;
 		$this->begin();	
-	  	$metaitems = $meta->query("/meta/*");
-	  	$classes = array();
-	  	$structures = array();
-	  	foreach ($metaitems as $mi){
-	  		switch ($mi->tagName){
-	  			case "class":$classes[] = $mi->getAttribute("name");break;
+		try {
+	  		$metaitems = $meta->query("/meta/*");
+	  		$classes = array();
+	  		$structures = array();
+	  		foreach ($metaitems as $mi){
+	  			switch ($mi->tagName){
+	  				case "class":$classes[] = $mi->getAttribute("name");break;
 /*	  				case "association":
 	  				case "agregation":
 	  				case "collection":
 	  				case "vocabulary":$structures[] = $mi->getAttribute("name");break;
 */	  				
+	  			}
 	  		}
-	  	}
 	  		
 /*	  		for ($i = count($structures); $i > 0; $i--)
 	  			$this->dbDriver->UnDefineStructure($structures[$i]);*/
-	  	for ($i = count($classes); $i > 0; $i--)
-	  		$this->dbDriver->UnDefineClass($classes[$i]);
+	  		for ($i = count($classes); $i > 0; $i--)
+	  			$this->dbDriver->UnDefineClass($classes[$i]);
 	  			
-		$this->commit();
+			$this->commit();
+		} catch (Exception $e){
+			$this->rollback();
+			throw $e;
+		}
 	  	return true;
 	} 
 
@@ -957,14 +967,14 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
  */	
 	protected function begin(){
 		$this->dbDriver->BeginTransaction();
-		$this->startCapture('$this->rollback();');
+		//$this->startCapture('$this->rollback();');
 	}
 /**
  * commits transaction
  */	
 	protected function commit(){
 		$this->dbDriver->CommitTransaction();
-		$this->stopCapture();
+		//$this->stopCapture();
 	}
 /**
  * rollbacks transaction

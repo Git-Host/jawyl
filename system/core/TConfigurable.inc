@@ -259,7 +259,7 @@ interface IConfigurable {
  * @see TConfigurablePattern
  */ 
 
- abstract class TConfigurable extends TExceptionHandler implements IConfigurable {
+ abstract class TConfigurable implements IConfigurable {
 /**
   * @var string name of configurable object 
 */	

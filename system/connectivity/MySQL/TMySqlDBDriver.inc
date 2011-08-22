@@ -777,15 +777,20 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		array_walk($records,array(&$this,"_prepare_record"));
 	
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();');
-		$i = 0;
-		$n = count($records);
-		while ($i < $n){
-			$this->query($q1."values ".join(",",array_slice($records,$i,$this->BulkInsertAmount)));
-			$i = $i + $this->BulkInsertAmount;
+		try {
+			$i = 0;
+			$n = count($records);
+			while ($i < $n){
+				$this->query($q1."values ".join(",",array_slice($records,$i,$this->BulkInsertAmount)));
+				$i = $i + $this->BulkInsertAmount;
+			}
+			$this->CommitTransaction();
+			return true;
+		} catch (Exception $e) {
+			$this->RollbackTransaction();
+			throw $e;
+			return false;
 		}
-		$this->CommitTransaction();
-		$this->stopCapture();
 	}
 	
 	public function DeleteRecords(TDataSource $records){
@@ -873,18 +878,24 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			$this->_prepare_ns_bulkrows($s,$rows);
 
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();$this->Execute("unlock tables");');
-		$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = :rk + ".$delta.", ".self::NS_LKEY_FIELD." = if(".self::NS_LKEY_FIELD." >= :rk,".self::NS_LKEY_FIELD." + ".$delta.",".self::NS_LKEY_FIELD.") where ".self::NS_RKEY_FIELD." >= :rk",array("rk"=>$prk));
+		try {
+			$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = :rk + ".$delta.", ".self::NS_LKEY_FIELD." = if(".self::NS_LKEY_FIELD." >= :rk,".self::NS_LKEY_FIELD." + ".$delta.",".self::NS_LKEY_FIELD.") where ".self::NS_RKEY_FIELD." >= :rk",array("rk"=>$prk));
 			
-		$i = 0;
-		$n = count($rows);
-		while ($i < $n){
-			$q = "insert ".$tname." (".join(",",$fields).",".self::NS_LKEY_FIELD.",".self::NS_RKEY_FIELD.",".self::NS_LEVEL_FIELD.") values ".join(",",array_slice($rows,$i,$this->BulkInsertAmount));
-			$this->query($q);
-			$i = $i+$this->BulkInsertAmount;
+			$i = 0;
+			$n = count($rows);
+			while ($i < $n){
+				$q = "insert ".$tname." (".join(",",$fields).",".self::NS_LKEY_FIELD.",".self::NS_RKEY_FIELD.",".self::NS_LEVEL_FIELD.") values ".join(",",array_slice($rows,$i,$this->BulkInsertAmount));
+				$this->query($q);
+				$i = $i+$this->BulkInsertAmount;
+			}
+			$this->CommitTransaction();
+			$this->Execute("unlock tables");
+		} catch (Exception $e){
+			$this->RollbackTransaction();
+			$this->Execute("unlock tables");
+			throw $e;
+			return false;
 		}
-		$this->CommitTransaction();
-		$this->stopCapture();
 		return true;
 	}
 	
@@ -910,13 +921,19 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		list($plk,$prk,$plevel) = $this->_ns_findparent($target, $parents);
 		$result = false;
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();$this->Execute("unlock tables");');
+		try {
 		$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." + 2, ".self::NS_LKEY_FIELD." = if(".self::NS_LKEY_FIELD." >= :rk,".self::NS_LKEY_FIELD." + 2,".self::NS_LKEY_FIELD.") where ".self::NS_RKEY_FIELD." >= :rk", array("rk"=>$prk));
 		$this->Execute("insert ".$tname." (".join(",",array_keys($record)).",".self::NS_LKEY_FIELD.",".self::NS_RKEY_FIELD.",".self::NS_PARENTLKEY_FIELD.") values (".join(",",$this->prepare_record_result(array_values($record))).",:lk,:rk,:pl)",array("lk"=>$prk,"rk"=>$prk+1,"plk"=>$plk,"pl"=>$plevel+1));
 		$this->CommitTransaction();
 		$this->query("unlock tables");
-		$this->stopCapture();
-		return true;
+		$result = true;
+		} catch (Exception $e){
+			$this->RollbackTransaction();
+			$this->query("unlock tables");
+			throw $e;
+			$result = false;
+		}
+		return $result;
 	}
 	
 	private function _ns_eject_branches($target, TDataSource $branches){
@@ -950,13 +967,19 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$tname = $this->RealTableName($target->Name);
 		$this->query("lock tables ".$tname." write");
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();$this->Execute("unlock tables");');
-		$this->_ns_eject_branches($tname, $branches);
-		$result = $this->Execute("delete ".$target." where ".self::NS_DELETED_FIELD." = 1");
-		$this->CommitTransaction();
-		$this->query("unlock tables");
-		$this->stopCapture();
-		return true;		
+		try {
+			$this->_ns_eject_branches($tname, $branches);
+			$result = $this->Execute("delete ".$target." where ".self::NS_DELETED_FIELD." = 1");
+			$this->CommitTransaction();
+			$this->query("unlock tables");
+			$result = true;
+		} catch (Exception $e){
+			$this->RollbackTransaction();
+			$this->query("unlock tables");
+			throw $e;
+			$result = false; 
+		}
+		return $result;		
 	}	
 	
 	public function NestedSetBranchesMove(TDataSource $branches, TDataSource $destination){
@@ -969,28 +992,34 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$tname = $this->RealTableName($target->Name);
 		$this->query("lock tables ".$tname." write");
 		$this->BeginTransaction();
-		$this->startCapture('$this->RollbackTransaction();$this->Execute("unlock tables");');
-		$ranges = $this->_ns_eject_branches($tname, $branches);
-		$destination->Filter(new TCondition(TCondition::C_EQUAL, array(new TNestedSetsField(self::NS_DELETED_FIELD,TNestedSetsField::BASE_FIELD,null,$dest_target),1)));
-		list($plk,$prk,$plevel) = $this->_ns_findparent($dest_target, $destination);
+		try {
+			$ranges = $this->_ns_eject_branches($tname, $branches);
+			$destination->Filter(new TCondition(TCondition::C_EQUAL, array(new TNestedSetsField(self::NS_DELETED_FIELD,TNestedSetsField::BASE_FIELD,null,$dest_target),1)));
+			list($plk,$prk,$plevel) = $this->_ns_findparent($dest_target, $destination);
 			
-		if (is_null($plk)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+			if (is_null($plk)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 			
-		$delta = 0;
-		$n = count($ranges);
-		for ($i = $n - 1; $i >= 0; $i--){
-			$r = $ranges[$i];
-			$this->Execute("update ".$tname." set ".self::NS_LKEY_FIELD." = ".self::NS_LKEY_FIELD." - :lk + :delta + 1, ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." - :lk + :delta + 1, ".self::NS_LEVEL_FIELD." = ".self::NS_LEVEL_FIELD." - :level + 1 where (".self::NS_DELETED_FIELD." = 1) and (".self::NS_LKEY_FIELD." >= :lk) and (".self::NS_RKEY_FIELD." <= :rk)", array("lk"=>$r[0],"rk"=>$r[1],"level"=>$r[2],"delta"=>$delta)); 
-			$delta += $r[1] - $r[0] + 1;
+			$delta = 0;
+			$n = count($ranges);
+			for ($i = $n - 1; $i >= 0; $i--){
+				$r = $ranges[$i];
+				$this->Execute("update ".$tname." set ".self::NS_LKEY_FIELD." = ".self::NS_LKEY_FIELD." - :lk + :delta + 1, ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." - :lk + :delta + 1, ".self::NS_LEVEL_FIELD." = ".self::NS_LEVEL_FIELD." - :level + 1 where (".self::NS_DELETED_FIELD." = 1) and (".self::NS_LKEY_FIELD." >= :lk) and (".self::NS_RKEY_FIELD." <= :rk)", array("lk"=>$r[0],"rk"=>$r[1],"level"=>$r[2],"delta"=>$delta)); 
+				$delta += $r[1] - $r[0] + 1;
+			}
+			
+			$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." + :delta, ".self::NS_LKEY_FIELD." = if(".self::NS_LKEY_FIELD." >= :lk,".self::NS_LKEY_FIELD." + :delta,".self::NS_LKEY_FIELD.") where (".self::NS_RKEY_FIELD." >= :lk) and (".self::NS_DELETED_FIELD." = 0)", array("lk"=>$plk,"delta"=>$delta));
+			$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." + :lk, ".self::NS_LKEY_FIELD." = ".self::NS_LKEY_FIELD." + :lk, ".self::NS_LEVEL_FIELD." = ".self::NS_LEVEL_FIELD." + :level, ".self::NS_DELETED_FIELD." = 0 where (".self::NS_DELETED_FIELD." = 1)", array("lk"=>$plk,"level"=>$plevel));
+			
+			$this->CommitTransaction();
+			$this->query("unlock tables");
+			$result = true;
+		} catch (Exception $e){
+			$this->RollbackTransaction();
+			$this->query("unlock tables");
+			throw $e;
+			$result = false;
 		}
-			
-		$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." + :delta, ".self::NS_LKEY_FIELD." = if(".self::NS_LKEY_FIELD." >= :lk,".self::NS_LKEY_FIELD." + :delta,".self::NS_LKEY_FIELD.") where (".self::NS_RKEY_FIELD." >= :lk) and (".self::NS_DELETED_FIELD." = 0)", array("lk"=>$plk,"delta"=>$delta));
-		$this->Execute("update ".$tname." set ".self::NS_RKEY_FIELD." = ".self::NS_RKEY_FIELD." + :lk, ".self::NS_LKEY_FIELD." = ".self::NS_LKEY_FIELD." + :lk, ".self::NS_LEVEL_FIELD." = ".self::NS_LEVEL_FIELD." + :level, ".self::NS_DELETED_FIELD." = 0 where (".self::NS_DELETED_FIELD." = 1)", array("lk"=>$plk,"level"=>$plevel));
-			
-		$this->CommitTransaction();
-		$this->stopCapture();
-		$this->query("unlock tables");
-		return true;		
+		return $result;		
 	}
 /**
  * fetches nestings

@@ -192,11 +192,6 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		$this->AjaxEngine->CommitResponse($this);
 	}
 	
-	protected function ajaxRequestExceptionHandling($exception){
-		$this->AjaxEngine->Error($this,$e->getMessage());
-		$this->__ajax_response();
-	}
-	
 /**
  * tests request for being ajax request
  * When request is not ajax handles request as TResponse do, then calls Respond method
@@ -213,9 +208,11 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		$this->denyCallClean = true;
 		TOutputBuffer::StartRecording();
 		$result = false;
-		$this->startCapture('ajaxRequestExceptionHandling');
-		$result = parent::Handle($request);
-		$this->stopCapture();
+		try {
+			$result = parent::Handle($request);
+		} catch (Exception $e){
+			$this->AjaxEngine->Error($this,$e->getMessage());
+		}
 		$this->__ajax_response();
 		return $result;
 	}
