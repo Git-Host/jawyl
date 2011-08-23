@@ -36,26 +36,21 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 	private $_current_;
 	
 	private static $_menu_script_loaded_ = false;
-	
-	private $_item_nav_;
+
+/**
+ * @var IItemNavigation
+ */	
+	private $_ioc_item_navigator_;
 	
 	public function __get($nm){
 		switch ($nm){
 			case "Items":return $this->Items();break;
 			case "Current":return $this->CurrentItem();break;
-			case "ItemNavigator":return TConfigurablePattern::GetIocMember($this->_item_nav_, 'IItemNavigation');break;
 		}			
 		return parent::__get($nm);
 	}
 	
-	public function __set($nm,$value){
-		switch ($nm){
-			case "ItemNavigator":TConfigurablePattern::SetIocMember($this->_item_nav_, $value, 'IItemNavigation');break;
-			default:parent::__set($nm,$value);break;
-		}
-	}
-
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return ($src instanceof IMenuStructure) && parent::checkSource($src);
 	}
 	

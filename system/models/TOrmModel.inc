@@ -783,7 +783,7 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	public function __set($nm,$val){
 		switch ($nm){
 			case "DataSource":{
-				TConfigurablePattern::SetIocMember($this->dbDriver, $val, 'IORMDriver');
+				$this->setIocMember($this->dbDriver, $val, 'IORMDriver');
 				if ($this->dbDriver instanceof IORMDBDriver){
 					if ($this->CheckInstall) {
 						if (!$this->IsInstalled())

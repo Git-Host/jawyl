@@ -147,7 +147,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 		}	
 	}
 	
-	public function CheckDataSource($src){
+	protected function checkDataSource($src){
 		return $src instanceof TOrmModel;
 	}
 	
@@ -157,7 +157,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  */	
 	public function __set($nm,$value){
 		switch ($nm){
-			case "DataSource":TConfigurablePattern::SetIocMember($this->__datasource__, $value, array(&$this,"CheckDataSource"));break;
+			case "DataSource":$this->getIocMember($this->__datasource__, $value, "checkDataSource");break;
 			case "BaseClass":{
 				$this->_baseClass_ = $value;
 				if ($this->BaseClass && $this->DataSource && (key_exists(TOrmList::AN_CREATE,$this->_actions_)))
@@ -193,7 +193,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  */	
 	public function __get($nm){
 		switch ($nm){
-			case "DataSource":return TConfigurablePattern::GetIocMember($this->__datasource__,array(&$this,"CheckDataSource"));break;
+			case "DataSource":return $this->getIocMember($this->__datasource__,array(&$this,"checkDataSource"));break;
 			case "BaseClass":return $this->_baseClass_;break;
 			case "CreationAttributes":return $this->create_params;break; 
 			case "FilterAttributes":return $this->filter_attributes;break;			

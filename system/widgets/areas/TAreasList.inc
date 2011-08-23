@@ -36,32 +36,27 @@ TApplication::import("widgets::areas::TAreasWidget");
  * list view widget 
  */
 class TAreasList extends TAreasWidget implements IList {
-	private $_item_nav_;
+/**
+ * @var IItemNavigation
+ */	
+	private $_ioc_item_navigator_;
 /**
  * @ignore
  */	
 	public function __get($nm){
 		switch ($nm){
 			case "Items":return $this->Items();break;
-			case "ItemNavigator":return TConfigurablePattern::GetIocMember($this->_item_nav_, 'IItemNavigation');break;
 		}	
 		return parent::__get($nm);
 	}
 	
-	public function __set($nm,$value){
-		switch ($nm){
-			case "ItemNavigator":TConfigurablePattern::SetIocMember($this->_item_nav_, $value, 'IItemNavigation');break;
-			default:parent::__set($nm,$value);break;
-		}
-	}
-	
 	protected function preSetting(){
 		if ($this instanceof IItemNavigation)
-			$this->_item_nav_ = $this;
+			$this->_ioc_item_navigator_ = $this;
 		else if ($this->response instanceof IItemNavigation)
-			$this->_item_nav_ = $this->response;		
+			$this->_ioc_item_navigator_ = $this->response;		
 		else if ($this->response->Service() instanceof IItemNavigation)
-			$this->_item_nav_ = $this->response->Service();		
+			$this->_ioc_item_navigator_ = $this->response->Service();		
 	}
 /**
  * currently selected list item

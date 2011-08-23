@@ -74,7 +74,7 @@ class TAreasActionProcessor extends TAreasWidget {
 				$this->_editors_[$widget->FieldName()] = $widget;
 	}
 	
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return (($src instanceof IActionsList) || ($src instanceof IAction)) && parent::checkSource($src);
 	}	
 	

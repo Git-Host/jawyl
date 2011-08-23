@@ -53,7 +53,7 @@ class TAreasTreeView extends TAreasList implements ITree {
 		if (!is_array($this->_expanded_)) $this->_expanded_ = array();
 	}
 	
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return ($src instanceof IItemsStructure) && parent::checkSource($src);
 	}	
 

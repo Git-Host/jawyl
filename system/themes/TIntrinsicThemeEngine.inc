@@ -52,7 +52,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private $_cleaner_;
 	
-	private $_cacher_; 
+	private $_ioc_output_cache_; 
 	
 	private $_current_cache_name_ = array();
 	private $_current_cache_lifetime_ = array();
@@ -260,14 +260,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		switch ($nm){
 			case "TemplateDir":return $this->ThemeDir().'/templates';break;
 			case "CompileDir":return $this->ThemeDir().'/compile';break;
-			case "OutputCache":return TConfigurablePattern::GetIocMember($this->_cacher_, 'IOutputCache');break;
 			default:return parent::__get($nm);break;
 		}
 	}
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case "OutputCache":TConfigurablePattern::SetIocMember($this->_cacher_, $value, 'IOutputCache');break;
 			default:parent::__set($nm,$value);break;
 		}
 	}

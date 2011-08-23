@@ -66,7 +66,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 		return $result;
 	}
 	
-	public function CheckDataSource($src){
+	protected function checkDataSource($src){
 		return ($src instanceof IStructuresManager) && parent::CheckDataSource($src);
 	}	
 

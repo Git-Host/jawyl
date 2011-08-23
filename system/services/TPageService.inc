@@ -40,8 +40,14 @@ class TPagePolicy extends TPolicy {
  * @property IAjaxEngine $AjaxEngine component used foe ajax interactions  
  */
 abstract class TPage extends TResponse implements ISecurityObject, ISecurityChild {
-	private $_theme_engine_;
-	private $_ajax_engine_;	
+/**
+ * @var IThemeEngine
+ */	
+	private $_ioc_theme_engine_;
+/**
+ * @var IAjaxEngine
+ */	
+	private $_ioc_ajax_engine_;	
 /**
  * @var string
  */	
@@ -91,8 +97,6 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 					throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 				$this->ajaxContentType = $value;
 			}break;
-			case "AjaxEngine":TConfigurablePattern::SetIocMember($this->_ajax_engine_, $value, 'IAjaxEngine');break;
-			case "ThemeEngine":TConfigurablePattern::SetIocMember($this->_theme_engine_, $value, 'IThemeEngine');break;
 			default:parent::__set($nm,$value);break;
 		}
 	}
@@ -104,13 +108,13 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			case "AjaxContentType":return $this->ajaxContentType;break;
 			case "ContentType":return $this->isAjax?$this->ajaxContentType:parent::__get($nm);break;
 			case "AjaxEngine":{
-				$result = TConfigurablePattern::GetIocMember($this->_ajax_engine_, 'IAjaxEngine');
+				$result = parent::__get($nm);
 				if (!($result instanceof IAjaxEngine))
 					$result = $this->service->AjaxEngine;
 				return $result;	
 			}break;
 			case "ThemeEngine":{
-				$result = TConfigurablePattern::GetIocMember($this->_theme_engine_, 'IThemeEngine');
+				$result = parent::__get($nm);
 				if (!($result instanceof IThemeEngine))
 					$result = $this->service->ThemeEngine;
 				return $result;	
@@ -251,8 +255,14 @@ abstract class TPageService extends TService {
  */	
 	protected $page;
 	
-	private $_theme_engine_;
-	private $_ajax_engine_;
+/**
+ * @var IThemeEngine
+ */	
+	private $_ioc_theme_engine_;
+/**
+ * @var IAjaxEngine
+ */	
+	private $_ioc_ajax_engine_;
 	
 /**
  * gets page by page id 
@@ -330,22 +340,6 @@ abstract class TPageService extends TService {
 	
 	public function CurrentPage(){
 		return $this->page;
-	}
-	
-	public function __get($nm){
-		switch ($nm){
-			case "AjaxEngine":return TConfigurablePattern::GetIocMember($this->_ajax_engine_, 'IAjaxEngine');break;
-			case "ThemeEngine":return TConfigurablePattern::GetIocMember($this->_theme_engine_, 'IThemeEngine');break;
-			default:return parent::__get($nm);break;
-		}
-	}
-	
-	public function __set($nm,$value){
-		switch ($nm){
-			case "AjaxEngine":TConfigurablePattern::SetIocMember($this->_ajax_engine_, $value, 'IAjaxEngine');break;
-			case "ThemeEngine":TConfigurablePattern::SetIocMember($this->_theme_engine_, $value, 'IThemeEngine');break;
-			default:parent::__set($nm, $value);break;
-		}
-	}
+	}	
 }
 ?>

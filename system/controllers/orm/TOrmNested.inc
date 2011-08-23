@@ -27,11 +27,11 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 /**
  * @var TOrmList
  */	
-	protected $navigation;
+	private $_ioc_navigation_;
 /**
  * @var TOrmNested 
  */	
-	protected $partner;
+	private $_ioc_partner_;
 /**
  * @var mixed
  */	
@@ -41,9 +41,9 @@ class TOrmNested extends TOrmStructure implements INestedItems {
  * adjusts current container to navigation list current item 
  */	
 	protected function syncNavigation(){
-		if ($this->navigation instanceof TOrmList){
-			if ($this->currentContainer != $this->navigation->CurrentItemId()){
-				$this->currentContainer = $this->navigation->CurrentItemId();
+		if ($this->_ioc_navigation_ instanceof TOrmList){
+			if ($this->currentContainer != $this->_ioc_navigation_->CurrentItemId()){
+				$this->currentContainer = $this->_ioc_navigation_->CurrentItemId();
 				$this->saveStateParameter("container",$this->currentContainer);
 			}
 		}
@@ -96,14 +96,14 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 	public function __set($nm,$value){
 		switch ($nm){
 			case "Navigation":{
-				TConfigurablePattern::SetIocMember($this->navigation, $value, 'TOrmList');
+				parent::__set($nm,$value);
 				$this->syncNavigation();
 			}break;
 			case "Partner":{
-				if ($this->partner != $value){
-					TConfigurablePattern::SetIocMember($this->partner, $value, 'TOrmNested');
-					if ($this-partner instanceof TOrmNested)
-						$this->partner->Partner = $this;
+				if ($this->_ioc_partner_ != $value){
+					parent::__set($nm, $value);
+					if ($this->_ioc_partner_ instanceof TOrmNested)
+						$this->_ioc_partner_->Partner = $this;
 				}	
 			}break;
 			default:parent::__set($nm,$value);break;
@@ -115,12 +115,12 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 	public function __get($nm){
 		switch ($nm){
 			case "Navigation":{
-				$n = TConfigurablePattern::GetIocMember($this->navigation, 'TOrmList');
+				$n = parent::__get($nm);
 				$this->syncNavigation();
 				return $n;
 			}break;
 			case "Partner":{
-				$p = TConfigurablePattern::GetIocMember($this->partner, 'TOrmNested');
+				$p = parent::__get($nm);
 				if ($p instanceof TOrmNested)
 					$p->Partner = $this;
 				return $p;
@@ -128,26 +128,6 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 			default:return parent::__get($nm);break;
 		}
 	}
-/**
- * @ignore
- */	
-	public function __isset($nm){
-		switch ($nm){
-			case "Navigation":return isset($this->navigation);break;
-			case "Partner":return isset($this->partner);break;
-		}
-		return parent::__isset($nm);
-	}
-/**
- * @ignore
- */	
-	public function __unset($nm){
-		switch ($nm){
-			case "Navigation":unset($this->navigation);break;
-			case "Partner":unset($this->partner);break;
-			default:parent::__unset($nm);break;
-		}
-	} 
 /**
  * constructor
  * @param string $name

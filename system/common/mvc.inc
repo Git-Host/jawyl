@@ -43,8 +43,15 @@ TApplication::import("common::theme::interfaces");
  * @uses TConfigurablePattern 
  */
 abstract class TMVCObject extends TConfigurable implements IEventListener, IEventSender {
-	private $_broad_casters_ = array();
-	private $_delegation_provider_ = null; 
+	
+/**
+ * @var IEventBroadCaster[]
+ */	
+	private $_ioc_broad_casters_ = array();
+/**
+ * @var IEventHandler
+ */	
+	private $_ioc_delegation_provider_ = null; 
 	
 	private $_explicit_handlers_ = array();
 	
@@ -57,8 +64,6 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  */		
 	public function __set($nm,$value){
 		switch ($nm){
-			case "BroadCasters":TConfigurablePattern::SetIocArrayMember($this->_broad_casters_, $value, "IEventBroadCaster");break;
-			case "DelegationProvider":TConfigurablePattern::SetIocMember($this->_delegation_provider_, $value, "IEventHandler");break;
 			default:{
 				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0){
 					if (!is_array($this->_explicit_handlers_[$matches[1]]))
@@ -186,7 +191,7 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 	}
 	
 	public function AddBroadCaster(IEventBroadCaster $broadcaster){
-		TConfigurablePattern::SetIocArrayMember($this->_broad_casters_, $broadcaster, "IBroadCaster");
+		$this->BroadCasters = $broadcaster;
 	}
 		
 	public function IsHttpCallable($method){
@@ -200,8 +205,6 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  */	
 	public function __get($nm){
 		switch ($nm){
-			case "BroadCasters":return TConfigurablePattern::GetIocArrayMember($this->_broad_casters_,"IEventBroadCaster");break;
-			case "DelegationProvider":return TConfigurablePattern::GetIocMember($this->_delegation_provider_,"IEventHandler");break;
 			default:{
 				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0){
 					if (key_exists($matches[1], $this->_explicit_handlers_))
@@ -219,8 +222,6 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  */	
 	public function __isset($nm){
 		switch ($nm){
-			case "BroadCasters":return !empty($this->_broad_casters_);break;
-			case "DelegationProvider":return isset($this->_delegation_provider_);break;
 			default:{
 				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0)
 					return !empty($this->_explicit_handlers_[$matches[1]]);
@@ -234,8 +235,6 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  */		
 	public function __unset($nm){
 		switch ($nm){
-			case "BroadCasters":$this->_broad_casters_ = array();break;
-			case "DelegationProvider":unset($this->_delegation_provider_);break;
 			default:{
 				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0)
 					$this->_explicit_handlers_[$matches[1]] = array();
@@ -596,7 +595,10 @@ abstract class TAction extends TResponseElement implements IAction {
  * @see TResponseElement
  */
 abstract class TController extends TResponseElement implements IActionsList {
-	private $_reloaders_ = array();
+/**
+ * @var IEventSender
+ */
+	private $_ioc_reloaders_ = array();
 	
 	protected $actions = array();
 	
@@ -605,20 +607,6 @@ abstract class TController extends TResponseElement implements IActionsList {
 		$this->actions = $this->actionsList();		
 		foreach ($this->actions as $a)
 			$this->setupAction($a);
-	}
-	
-	public function __set($nm,$value){
-		switch ($nm){
-			case "Reloaders":TConfigurablePattern::SetIocArrayMember($this->_reloaders_, $value, "IEventSender");break;
-			default:parent::__set($nm, $value);break;
-		}
-	}
-	
-	public function __get($nm){
-		switch ($nm){
-			case "Reloaders":return TConfigurablePattern::GetIocArrayMember($this->_reloaders_, "IEventSender");break;
-			default:return parent::__get($nm);break;
-		}
 	}
 	
 	protected function onEvent(TEvent $event){

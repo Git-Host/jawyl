@@ -25,7 +25,7 @@ class TAreasPagedList extends TAreasList {
 /**
  * @see TSourcedWidget::linkSource()
  */	
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return ($src instanceof IPagedItems) && parent::checkSource($src); 
 	}
 	

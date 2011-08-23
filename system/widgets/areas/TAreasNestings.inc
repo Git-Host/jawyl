@@ -22,7 +22,7 @@ TApplication::import("widgets::areas::TAreasPagedList");
  * @see INestedItems
  */
 class TAreasNestings extends TAreasPagedList {
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return ($src instanceof INestedItems) && parent::checkSource($src); 
 	}	
 /**

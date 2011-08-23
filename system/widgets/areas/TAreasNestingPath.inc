@@ -35,7 +35,7 @@
 			$this->RenderArea($this->GetArea($this,"Path"));
 		}
 		
-		public function CheckSource($src){
+		protected function checkSource($src){
 			return ($src instanceof INestedItems) && parent::checkSource($src);
 		}
 		

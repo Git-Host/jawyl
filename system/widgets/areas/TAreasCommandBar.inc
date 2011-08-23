@@ -51,7 +51,7 @@ class TAreasCommandBar extends TAreasWidget {
 	}
 	
 	
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return ($src instanceof IActionsList) && parent::checkSource($src);
 	}
 	

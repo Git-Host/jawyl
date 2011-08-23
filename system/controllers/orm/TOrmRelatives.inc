@@ -26,7 +26,7 @@ class TOrmRelatives extends TOrmReferedList {
  */	
 	public $Association;
 
-	public function CheckDataSource($src){
+	protected function checkDataSource($src){
 		return ($src instanceof IAssociationsManager) && parent::CheckDataSource($src);
 	}	
 	

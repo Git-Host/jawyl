@@ -1154,7 +1154,10 @@ interface IDBDriver {
  */
 abstract class TDBDriver extends TConfigurable implements IDBDriver {
 	private $_auth_type_ = IDBDriver::AUTH_DEFAULT;
-	private $_acl_;
+/**
+ * @var IDBACLManager
+ */	
+	private $_ioc_acl_;
 	
 	public function __construct($name, IConfigurable $container = null){
 		if ($container)
@@ -1167,7 +1170,7 @@ abstract class TDBDriver extends TConfigurable implements IDBDriver {
 		switch ($nm){
 			case "AuthType":return $this->_auth_type_;break;
 			case "Acl":{
-				$result = TConfigurablePattern::GetIocMember($this->_acl_, 'IDBACLManager');
+				$result = parent::__get($nm);
 				if ($this->_auth_type_ == IDBDriver::AUTH_EXPLICIT_ACL)
 					return $result;
 				if ($this->_auth_type_ == IDBDriver::AUTH_IMPLICIT_ACL){
@@ -1193,7 +1196,6 @@ abstract class TDBDriver extends TConfigurable implements IDBDriver {
 					$this->_auth_type_ = $value;
 				else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 			}break;
-			case "Acl":TConfigurablePattern::SetIocMember($this->_acl_, $value, 'IDBACLManager');break;
 			default:parent::__set($nm,$value);break;
 		}
 	}

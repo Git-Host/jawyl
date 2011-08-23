@@ -31,7 +31,7 @@ abstract class TSourcedWidget extends TWidget  {
  */
 	private $_source_ = array();
 
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return $src instanceof TMVCObject;
 	}
 	
@@ -44,8 +44,8 @@ abstract class TSourcedWidget extends TWidget  {
  */
 	public function __get($nm){
 		switch ($nm){
-			case "Source":return TConfigurablePattern::GetIocArrayMember($this->_source_, array(&$this,"CheckSource"), null,true);break;
-			case "Sources":return TConfigurablePattern::GetIocArrayMember($this->_source_, array(&$this,"CheckSource"));break;
+			case "Source":return $this->getIocArrayMember($this->_source_, array(&$this,"checkSource"), null,true);break;
+			case "Sources":return $this->getIocArrayMember($this->_source_, array(&$this,"checkSource"));break;
 			default:return parent::__get($nm);break;
 		}
 	}
@@ -55,7 +55,7 @@ abstract class TSourcedWidget extends TWidget  {
  */
 	public function __set($nm,$val){
 		switch ($nm){
-			case "Source":TConfigurablePattern::SetIocArrayMember($this->_source_, $val, array(&$this,"CheckSource"));break;
+			case "Source":$this->setIocArrayMember($this->_source_, $val, array(&$this,"checkSource"));break;
 			default:parent::__set($nm,$val);break;
 		}
 	}	

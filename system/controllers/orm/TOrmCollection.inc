@@ -26,7 +26,7 @@ class TOrmCollection extends TOrmReferedList {
  */	
 	public $Collection;
 	
-	public function CheckDataSource($src){
+	protected function checkDataSource($src){
 		return ($src instanceof ICollectionsManager) && parent::CheckDataSource($src);
 	}	
 

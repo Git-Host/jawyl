@@ -2,7 +2,7 @@
 TApplicatuion::import("widgets::areas::TAreasWidget");
 	
 class TAreasPageNavigation extends TAreasWidget {
-	public function CheckSource($src){
+	protected function checkSource($src){
 		return ($src instanceof IPagedItems) && parent::checkSource($src);
 	}
 		

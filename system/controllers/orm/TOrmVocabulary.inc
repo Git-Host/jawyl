@@ -31,7 +31,7 @@ class TOrmVocabulary extends TOrmReferedList {
  */	
 	public $Key;
 	
-	public function CheckDataSource($src){
+	protected function checkDataSource($src){
 		return ($src instanceof IVocabulariesManager) && parent::CheckDataSource($src);
 	}	
 

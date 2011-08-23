@@ -36,7 +36,7 @@ abstract class TItemsList extends TSecuredController implements IItemsList, IIte
  * @var IItemsList
  * holds controller master list object.
  */	
-	protected $master;
+	private $_ioc_master_list_;
 
 	protected function onRefresh(TEvent $event){
 		$this->innerSelect(null);
@@ -46,53 +46,15 @@ abstract class TItemsList extends TSecuredController implements IItemsList, IIte
 	}
 	
 	protected function onReloadEvent(TDataReloadEvent $event){
-		if ($event->Sender === $this->master)
+		if ($event->Sender === $this->_ioc_master_list_)
 			$this->onRefresh($event);
 	}
 	
 	protected function onSelectEvent(TItemSelectEvent $event){
-		if ($event->Sender === $this->master)
+		if ($event->Sender === $this->_ioc_master_list_)
 			$this->onRefresh($event);
 	}
-
-/**
- * @ignore
- */
-	public function __set($nm,$value){
-		switch ($nm){
-			case "MasterList":TConfigurablePattern::SetIocMember($this->master, $value, 'IItemsList');break;
-			default:parent::__set($nm,$value);break;
-		}
-	}
-		
-/**
- * @ignore
- */
-	public function __get($nm){
-		switch ($nm){
-			case "MasterList":return TConfigurablePattern::GetIocMember($this->master, 'IItemsList');break;
-			default:return parent::__get($nm);break;
-		}
-	}	
 	
-/**
- * @ignore
- */
-	public function __isset($nm){
-		if ($nm == "MasterList") return isset($this->master);
-		return parent::__isset($nm);
-	}
-	
-/**
- * @ignore
- */
-	public function __unset($nm){
-		if ($nm == "MasterList") 
-			unset($this->master);
-		else
-			parent::__unset($nm);
-	}
-
 /**
  * constructor. Sets current item if saved in controller state.
  */	
