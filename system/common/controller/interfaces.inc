@@ -296,4 +296,29 @@
 		public function Roots();
 	/*	public function Children($id);*/
 	}
+	
+	interface IWizardProvider {
+/** 
+ * @return boolean
+ */		
+		public function StepBack();
+/**
+ * @param array $parameters
+ * @return boolean
+ */		
+		public function StepNext(array $parameters = array());
+/**
+ * @return IActionParameter[]
+ */		
+		public function StepParameters();
+/**
+ * @return boolean
+ */		
+		public function BackAllowed();
+/**
+ * 
+ * @return boolean
+ */		
+		public function Finished();
+	}
 ?>

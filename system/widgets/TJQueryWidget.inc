@@ -120,7 +120,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 /**
  * loads custom widget resources
  */	
-	protected abstract function linkCustomResources();
+	protected function linkCustomResources(){}
 		
 /**
  * 

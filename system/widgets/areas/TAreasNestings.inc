@@ -30,20 +30,20 @@ class TAreasNestings extends TAreasPagedList {
  * @param string $id item id
  * @param string $parent parent id
  */	
-	public function http_MoveItem($id,$parent){
+	protected function http_MoveItem($id,$parent){
 		$this->Source->MoveItem($this->extractWrappedId($id),$this->extractWrappedId($parent));
 	}
 /**
  * opens item
  * @param string $id
  */	
-	public function http_OpenItem($id){
+	protected function http_OpenItem($id){
 		$this->Source->OpenItem($this->extractWrappedId($id));
 	}
 /**
  * opens previous nesting level
  */	
-	public function http_LevelUp(){
+	protected function http_LevelUp(){
 		$this->Source->LevelUp();
 	}
 /**

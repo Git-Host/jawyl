@@ -75,6 +75,7 @@
 		const ERR_SESS_CLOSED = 109;
 		const ERR_NOT_CLASS = 110;
 		const ERR_FILE_MISSING = 111;
+		const ERR_RESOURCE_NOT_FOUND = 112;
 
 /**
  * @param int $msgcode
@@ -94,6 +95,7 @@
 				case self::ERR_SESS_OPEN:return 'Can not set session handler on opened session!';break;
 				case self::ERR_NOT_CLASS:return 'Object must be of %class class!';break;
 				case self::ERR_FILE_MISSING:return 'File %file missing!';break;
+				case self::ERR_RESOURCE_NOT_FOUND: return 'Resource not found!';break;
 			}
 		}
 	}

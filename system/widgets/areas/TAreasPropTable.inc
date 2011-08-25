@@ -60,7 +60,7 @@ class TAreasPropTable extends TAreasWidget {
  * @param string $name property name
  * @param string $value value to set
  */	
-	public function http_Edit($name,$value){
+	protected function http_Edit($name,$value){
 		if (!($this->Source instanceof IItemsSource))
 			throw new TCoreException(TCoreException::ERR_NO_INTERFACE);
 		if ($value == "") 

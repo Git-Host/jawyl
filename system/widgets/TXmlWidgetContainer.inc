@@ -47,10 +47,5 @@
 				return html_entity_decode($titles->item(0)->nodeValue); 
 			return "";
 		}
-
-/**
- * @see TJQueryWidget::linkCustomResources()
- */		
-		protected function linkCustomResources(){}		
 	}
 ?>

@@ -110,7 +110,7 @@ class TAreasNestedTable extends TAreasNestings {
  * @param string $attrname name of the attribute
  * @param string $value value to assign
  */	
-	public function http_EditItem($attrname,$value){
+	protected function http_EditItem($attrname,$value){
 		if (!($this->Source instanceof IItemsSource))
 			throw new TCoreException(TCoreException::ERR_NO_INTERFACE);
 		$this->Source->EditCurrentItem($attrname,$value);
@@ -173,7 +173,7 @@ class TAreasNestedTable extends TAreasNestings {
 		$area->SkipWrapper = true;			
 	} 
 	
-	public function http_Editor($name){
+	protected function http_Editor($name){
 		$item = $this->Source->CurrentItem();
 		if ($item)
 			$this->refreshArea($this->GetArea($item->Property($name),"Editor"));

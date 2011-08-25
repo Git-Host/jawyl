@@ -57,7 +57,5 @@
 		public function http_SelectItem($id){
 			$this->Source->OpenItem($this->extractWrappedId($id));
 		}
-		
-		protected function linkCustomResources(){}		
 	}
 ?>

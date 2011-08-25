@@ -37,15 +37,6 @@
 <?php } ?>
 </div>
 <?php			
-		}
-
-/**
- * @see TJQueryWidget::linkCustomResources()
- */
-		protected function linkCustomResources(){}
-/**
- * @see TJQueryWidget::jsCode()
- */
-		protected function jsCode(){}		
+		}	
 	}
 ?>

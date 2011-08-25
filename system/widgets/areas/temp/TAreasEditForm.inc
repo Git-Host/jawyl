@@ -125,8 +125,5 @@
 			jQuery(document).one("ready",function(e){jQuery("form#<?php echo $this->Name(); ?> input.date").datepicker({dateFormat:jQuery.racoon_date_format,constrainInput:true});});
 		<?php
 		}
-
-		protected function linkCustomResources(){
-		}	
 	}
 ?>

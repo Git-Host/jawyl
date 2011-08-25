@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Services
- * @subpackage PageServices
+ * @subpackage SysServices
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov

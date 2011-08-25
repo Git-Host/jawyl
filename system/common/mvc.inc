@@ -76,15 +76,15 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 	}
 	
 /**
- * calls method
+ * calls http method
  * @param string $method method name
  * $param array $arguments array of arguments, which can be an associative array. In this case method argument values are set according to argument name but not order.
  * @return mixed return value of method called. If methhod can not be called returns false.
  */	
 	public function __call($method,array $arguments){
 		$c = new ReflectionClass(get_class($this));
-		$m = $c->getMethod($method);
-		if ($m->isPublic()){
+		$m = $c->getMethod($this->methodHttpName($method));
+		if ($m){
 			$args = array();
 			$margs = $m->getParameters();
 			
@@ -121,10 +121,10 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 	}
 	
 	public function HttpMethodCall($method, THttpRequest $request){
-		$m = $this->methodHttpName($method);
+		//$m = $this->methodHttpName($method);
 		$cparams = $request->Parameters();
 		$cparams["__RequesT_ObjecT__"] = $request;
-		$this->__call($m, $cparams);
+		$this->__call($method, $cparams);
 	}
 
 /**
@@ -515,8 +515,11 @@ abstract class TAction extends TResponseElement implements IAction {
 		return $this->_parameters_;
 	}
 	
+	protected function onAddParameter(IActionParameter $param){}
+	
 	public function AddParameter(IActionParameter $param){
 		$params = $this->ParametersArray();
+		$this->onAddParameter($param);
 		$params[] = $param;
 		$this->_parameters_ = new TActionParameterIterator($params);
 	}
