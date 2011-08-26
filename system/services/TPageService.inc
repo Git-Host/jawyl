@@ -73,6 +73,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  * stores response widgets
  */	
 	protected $widgets = array();	
+	
+	protected $exception;
 /**
  * constructor
  * @param string $name 
@@ -188,14 +190,6 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		return true;
 	}
 	
-	private function __ajax_response(){
-		$content = TOutputBuffer::StopRecording();
-		$this->SendHeaders();
-		$this->AjaxEngine->StartResponse($this,$this->request);
-		echo $content;
-		$this->AjaxEngine->CommitResponse($this);
-	}
-	
 /**
  * tests request for being ajax request
  * When request is not ajax handles request as TResponse do, then calls Respond method
@@ -205,19 +199,28 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  */
 	public function Handle(THttpRequest $request){
 		$this->isAjax = $request->IsAjax;
-		if (!$this->isAjax){	
-			parent::Handle($request);
-			return $this->respond($request);
-		}
-		$this->denyCallClean = true;
-		TOutputBuffer::StartRecording();
-		$result = false;
-		try {
+		$this->denyCallClean = $this->isAjax; 
+		
+		if ($this->isAjax)
+			TOutputBuffer::StartRecording();
+			
+		try {	
 			$result = parent::Handle($request);
+			$this->exception = null;
 		} catch (Exception $e){
-			$this->AjaxEngine->Error($this,$e->getMessage());
+			$this->exception = $e;
+			if ($this->isAjax)
+				$this->AjaxEngine->Error($this,$e->getMessage());
 		}
-		$this->__ajax_response();
+		
+		if (!$this->isAjax)
+			return $this->respond($request);
+			
+		$content = TOutputBuffer::StopRecording();
+		$this->SendHeaders();
+		$this->AjaxEngine->StartResponse($this,$this->request);
+		echo $content;
+		$this->AjaxEngine->CommitResponse($this);
 		return $result;
 	}
 	

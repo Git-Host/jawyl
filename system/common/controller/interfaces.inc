@@ -316,9 +316,12 @@
  */		
 		public function BackAllowed();
 /**
- * 
  * @return boolean
  */		
 		public function Finished();
+/**
+ * @return boolean
+ */		
+		public function IsLastStep();
 	}
 ?>

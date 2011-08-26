@@ -121,10 +121,7 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 	}
 	
 	public function HttpMethodCall($method, THttpRequest $request){
-		//$m = $this->methodHttpName($method);
-		$cparams = $request->Parameters();
-		$cparams["__RequesT_ObjecT__"] = $request;
-		$this->__call($method, $cparams);
+		$this->__call($method, $request->Parameters());
 	}
 
 /**
@@ -459,7 +456,7 @@ interface IAction extends IConfigurable {
 	public function DeleteParameter($name);
 	public function ClearParameters();
 	public function ParametersArray();
-	public function Execute();
+	public function Execute(array $parameters);
 	public function Perform();
 	public function Available();
 	public function CallLink();
@@ -586,7 +583,14 @@ abstract class TAction extends TResponseElement implements IAction {
 	
 	protected function methodHttpName($method){
 		return $method;
-	}	
+	}
+
+	public function HttpMethodCall($method, THttpRequest $request){
+		if ($method == 'Execute')
+			$this->Execute($request->Parameters());
+		else	
+			$this->Perform();
+	}
 }
 
 /**
@@ -1201,7 +1205,7 @@ class TActionParameter implements IActionParameter {
  * @param mixed $value optional parameter value
  * @param array $selectors optional parameter value selection list. Selection list should be an array. which keys are treated as values for selection and values as value titles.
  */	 
-	public function __construct($name,$title, $type,$value=null,$selectors = null, $group = null, $optional = false){
+	public function __construct($name, $title, $type, $value = null,$selectors = null, $group = null, $optional = false){
 		$this->_name_ = $name;
 		$this->_title_ = $title;
 		$this->_value_ = $value;
@@ -1268,8 +1272,8 @@ final class TControllerAction extends TAction {
  */	
 	public function Method(){return $this->_method_;}
 	
-	public function Execute(){
-		$this->_controller_->__call($this->_method_,$this->response->Request->Parameters());
+	public function Execute(array $parameters){
+		$this->_controller_->__call($this->_method_,$parameters);
 	}
 	
 	public function LocalName(){
