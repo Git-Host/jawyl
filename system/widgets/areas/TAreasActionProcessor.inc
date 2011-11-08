@@ -32,10 +32,6 @@ TApplication::import("widgets::aspects::TJQueryFormAspect");
  */
 class TAreasActionProcessor extends TAreasWidget {
 	public $BlockActions;
-/**
- * @var boolean
- */	
-	public static $LOADED = false; 
 	
 	private $_popup_ = false;
 	private $_ajax_submit_ = false;

@@ -202,12 +202,10 @@
 		const GUID13 = 13;
 		
 		private $_guid_length_;
-		private $_auto_generate_; 
 		
 		public function __get($nm){
 			switch ($nm){
 				case "Length":return $this->_guid_length_;break;
-				case "AutoGenerate":return $this->_auto_generate_;
 			}
 		} 
 		
@@ -215,7 +213,6 @@
 			if (!in_array($length,array(self::GUID13,self::GUID23,self::GUID32)))
 				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 			$this->_guid_length_ = $length;
-			$this->_auto_generate_ = $autogenerate;
 			$this->typeCode = TDataType::GUID;
 		} 
 		
@@ -228,7 +225,7 @@
 		}
 		
 		public function __toString(){
-			return parent::__toString().";size=".$this->_guid_length_.";".($this->_auto_generate_?"autogenerate":"");
+			return parent::__toString().";size=".$this->_guid_length_;
 		} 		
 	}
 	

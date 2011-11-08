@@ -95,13 +95,13 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 						$classes = array();
 						$descs = $this->DataSource->ClassDescenders($this->BaseClass);
 						$abstractbc = TConvertions::ConvertToBoolean($this->AbstractBaseClass);
-						while ($descs->Next())
-							if ((!$abstractbc) || ($descs->Item()->Id() != $c->Id()))
-								$classes[$descs->Item()->Name()] = $descs->Item()->Name();
+						foreach ($descs as $desc)
+							if ((!$abstractbc) || ($desc->Id() != $c->Id()))
+								$classes[$desc->Name()] = $desc->Name();
 
-							$action->AddParameter(new TActionParameter("ormclass","Class",TActionParameterType::TYPE_SELECT,null,$classes));
+						$action->AddParameter(new TActionParameter("ormclass","Class",TActionParameterType::TYPE_SELECT,null,$classes));
 		
-							if ($this->CreationAttributes){
+						if ($this->CreationAttributes){
 								$ca = $this->CreationAttributes;
 								$captions = array();
 								if ($this->CreationAttributesCaptions)
@@ -298,8 +298,8 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 					$type = TActionParameterType::TYPE_SELECT;
 					$ci = $ca->Type()->Class->ClassInstances();
 					$sellist["null"]="";
-					while ($ci->Next()){
-						$wi = TOrmModel::GlobalWrap($ci->Item());
+					foreach ($ci as $i){
+						$wi = TOrmModel::GlobalWrap($i);
 						if (!is_null($wi)) 
 							$sellist[$wi->Instance()->Id()] = $wi->__toString();
 					}
@@ -676,13 +676,13 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 	
 /**
- * @return IPolicyManager
- * @see TSecuredController::getPolicyManager()
+ * @return IPolicyChecker
+ * @see TSecuredController::getPolicyChecker()
  */
-	protected function getPolicyManager(){
-		if ($this->__datasource__ instanceof IPolicyManager)
+	protected function getPolicyChecker(){
+		if ($this->__datasource__ instanceof IPolicyChecker)
 			return $this->__datasource__;
-		return parent::getPolicyManager();
+		return parent::getPolicyChecker();
 	}
 	
 /**

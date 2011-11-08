@@ -138,8 +138,8 @@ class TAreasNestedTable extends TAreasNestings {
 		<tr><td><div class="level-up" ondblclick="javascript:jQuery.areas_AjaxCall(&quot;<?php echo $this->response->Url($this,"LevelUp",array()); ?>&quot;);">...</div></td></tr>
 		<?php	
 		}
-		while ($items->Next())
-			$this->RenderArea($this->GetArea($items->Item(),"Item",$area));
+		foreach ($items as $item)
+			$this->RenderArea($this->GetArea($item,"Item",$area));
 		?>
 		</table>
 		<?php

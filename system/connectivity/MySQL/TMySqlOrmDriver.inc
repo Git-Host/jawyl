@@ -581,12 +581,10 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 					$anc = null;
 					if (!is_null($row[self::CLASS_ANCESTOR_FIELD]))
 						$anc = $this->GetClass($row[self::CLASS_ANCESTOR_FIELD]);
-					if ($anc)	
-						$c = TMySqlDBClass::Create($row[self::CLASS_PK_FIELD], $row[self::CLASS_NAME_FIELD], $this,$anc);
-					else	
-						$c = TMySqlDBClass::Create($row[self::CLASS_PK_FIELD], $row[self::CLASS_NAME_FIELD], $this);
+					$c = TMySqlDBClass::Create($row[self::CLASS_PK_FIELD], $row[self::CLASS_NAME_FIELD], $this,$anc);
 				}
-				$ca = TMySqlRowConverter::ToAttrDefinition($row, $this);
+				if ($ca = TMySqlRowConverter::ToAttrDefinition($row, $this))
+					$c->AttributeDefinitions = $ca;
 			}
 			$this->_classes_loaded_ = true;
 		}
@@ -635,9 +633,11 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 					$meta = new TDBAttributeDefinition($meta["name"], new TStringType(),false,false,false,true,null,false,$meta["class"]); 
 			} else if (key_exists("name",$meta)) $meta = new TDBClass($meta["name"]);
 		}
+		if (is_string($meta))
+			return $this->_undefine_class($this->GetClass($meta));
 		if ($meta instanceof TDBClass)
 			return $this->_undefine_class($meta);
-		else if ($meta instanceof TDBAttributeDefinition)
+		if ($meta instanceof TDBAttributeDefinition)
 			return $this->_undefine_attribute($meta);
 		return false;
 	}
@@ -682,17 +682,17 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 	private function _set_snapshot_values($tablename, TDate $date, $idfield, $id, array $values){
 		if (!empty($values)){
 			$interval = $this->Fetch("select * from ".$tablename." where (".$idfield." = :ss_id) and (`date_since` <= :d) and ((`date_till` > :d) or (`date_till` is null))",array("ss_id"=>$id,"d"=>$date->toString("Y-m-d")));
-			if ($interval->Next()){
-				$date_since = new TDate($interval->Item["date_since"]);
-				$record = $this->_prepare_snapshot_record($interval->Item, $values);
+			foreach ($interval as $int){
+				$date_since = new TDate($int["date_since"]);
+				$record = $this->_prepare_snapshot_record($int, $values);
 				$record["values"]["date_since"] = $date->ToString("Y-m-d");		
 				$this->Execute("update ".$tablename." set `date_till` = :ds where (".$idfield." = :ss_id) and (`date_since` = :ods)",array("ss_id"=>$id,"ds"=>$date->toString("Y-m-d"),"ods"=>$date_since->toString("Y-m-d")));
 				return $this->Execute("insert ".$tablename." (".join(",",$record["flds"]).") values (".join(",",$record["params"]).")",$record["values"]);
-			} else {
-				$min_date = $this->Scalar("select min(`date_since`) from ".$tablename." where (".$idfield." = :ss_id)",array("ss_id"=>$id));
-				$record = $this->_prepare_snapshot_record(array($idfield=>$id,"date_since"=>$date->toString("Y-m-d"),"date_till"=>$min_date), $values);
-				return $this->Execute("insert ".$tablename." (".join(",",array_keys($record["flds"])).") values (".join(",",$record["params"]).")",$record["values"]);
-			}
+			} 
+			
+			$min_date = $this->Scalar("select min(`date_since`) from ".$tablename." where (".$idfield." = :ss_id)",array("ss_id"=>$id));
+			$record = $this->_prepare_snapshot_record(array($idfield=>$id,"date_since"=>$date->toString("Y-m-d"),"date_till"=>$min_date), $values);
+			return $this->Execute("insert ".$tablename." (".join(",",array_keys($record["flds"])).") values (".join(",",$record["params"]).")",$record["values"]);
 		}
 		return 0;
 	}
@@ -704,8 +704,8 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 			if (count($field) == 1)
 				return $this->Scalar("select ".$field[0]." from ".$tablename." where ".$idfield." = :ss_id and (`date_since` <= :dt) and ((`date_till` > :dt) or (`date_till` is NULL))",array(":ss_id"=>$id,"dt"=>$date->toString("Y-m-d")));
 			$result =  $this->Fetch("select ".join(", ", $field)." from ".$tablename." where ".$idfield." = :ss_id and (`date_since` <= :dt) and ((`date_till` > :dt) or (`date_till` is NULL))",array(":ss_id"=>$id,"dt"=>$date->toString("Y-m-d")));
-			if ($result->Next())
-				return $result->Item();	 
+			foreach ($result as $r)
+				return $r;	 
 		}	
 		return null;
 	}
@@ -903,8 +903,10 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 			return false;
 		}  
 		if ($res = new TMySqlDBInstanceIteratorAdapter($this->Fetch($q,array("id"=>$id)),$this))
-			if ($res->Next())
-				$result = $res->Item;
+			foreach ($res as $r){
+				$result = $r->Item;
+				break;
+			}
 		return $result;
 	}
 /**
@@ -938,8 +940,7 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 		$inner .= " inner join ".$this->RealTableName(self::CLASSES_TABLE)." c on c.".self::CLASS_PK_FIELD." = e.".self::CLASS_PK_FIELD;
 		
 		$result = $this->Fetch("select ".join(",",$flds)." from ".$from.$inner.$left." wnere e_".$instance->InstanceClass()->Id().".".self::ENTITY_PK_FIELD." = :id", array("id"=>$instance->Id(),"dt"=>$date->toString("Y-m-d")));
-		if ($result->Next()){
-			$row = $result->Item();
+		foreach ($result as $row){
 			foreach ($row as $key=>$value)
 			 if (!is_numeric($key))
 			 	if ($instance->InstanceClass()->GetAttributeDefinition($key))

@@ -1,16 +1,10 @@
 <?php
-/**
- * @package Common
- * @subpackage Items
- * @category System
- * Orm item property types static class.	 
- */	
 
 /**
  * @package Common
  * @subpackage Items
  * @category System
- * Orm item property types static class.	 
+ * Orm item property types class.	 
  */	
 	final class TItemPropertyType {
 		private $_code_;

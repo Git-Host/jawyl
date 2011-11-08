@@ -47,8 +47,8 @@ class TOrmReferedList extends TOrmList implements IItemsCollection {
 					if (!is_null($c)){
 						$ai = $this->DataSource->GetItems($c);
 						$selection = array();
-						while ($ai->Next())
-							$selection[$ai->Item()->Id()] = $ai->Item()->__toString();
+						foreach ($ai as $i)
+							$selection[$i->Id()] = $i->__toString();
 						$action->AddParemeter(new TActionParameter("id","Add",TActionParameterType::TYPE_SELECT,null,$selection));
 					} 
 				}

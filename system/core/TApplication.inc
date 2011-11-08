@@ -385,7 +385,7 @@
 				else {
 					$i = $c->newInstanceArgs($arguments);
 				}
-			}
+			} else throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>$classname));
 			return $i;
 		}
 		
@@ -428,8 +428,8 @@
 				self::$_request_ = $this->_service_map_->parseUri($this->RelativePath);
 			}
 			else 
-				self::$_request_ = new THttpRequest($servicename);
-
+				self::$_request_ = new THttpRequest($servicename);	
+				
 			$servicename = self::$_request_->getService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
@@ -439,10 +439,10 @@
 					$service_config = $this->ConfigDir."/service.".$this->_current_service_->Name().".config";
 					if (file_exists($service_config)) include_once $service_config; 
 					$this->_current_service_->Handle(self::Request());	
-				}
+				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
 				foreach (self::$_services_ as $service){
-					$this->_current_service_ = self::Service($servicename);
+					$this->_current_service_ = $service;
 					$service_config = $this->ConfigDir."/service.".$this->_current_service_->Name().".config";
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($this->_current_service_->Handle(self::Request())) break;	
@@ -560,10 +560,7 @@
 */		
 		public static function Run($callerPath){
 			global $Application;
-/**
- * @todo Maybe implement dependency from error reporting
- */			
-			set_error_handler(create_function('$errno,$errstr,$errfile,$errline','throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);'));
+			set_error_handler(create_function('$errno,$errstr,$errfile,$errline','if (error_reporting() & $errno) throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);'));
 			$Application = new TApplication(realpath(dirname($callerPath)));
 			$Application->_app_run();
 		}

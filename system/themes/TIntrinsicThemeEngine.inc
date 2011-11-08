@@ -137,7 +137,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _iter_compile($matches){
 		$this->_cycle_counter_++;
-		return '<?php $cyclebase'.$this->_cycle_counter_.'=$this->getContextIterator("'.$matches[1].'"); $cyclecounter'.$this->_cycle_counter_.' = 0; while ($cyclebase'.$this->_cycle_counter_.'->Next()){ $'.$matches[2].' = $cyclebase'.$this->_cycle_counter_.'->Item(); $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; ?>';
+		return '<?php $cyclebase'.$this->_cycle_counter_.'=$this->getContextIterator("'.$matches[1].'"); $cyclecounter'.$this->_cycle_counter_.' = 0; foreach ($cyclebase'.$this->_cycle_counter_.' as $'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; ?>';
 	}
 	
 	protected function preCompile($text){

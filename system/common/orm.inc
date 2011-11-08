@@ -147,6 +147,16 @@ class TOrmException extends TException {
  * @subpackage Orm
  * @category System
  * interface for implementing orm class attribute definitions
+ * @property string $Name
+ * @property TDataType $Type
+ * @property TDBClass $Class
+ * @property boolean Static
+ * @property boolean $Unique
+ * @property boolean $Indexed
+ * @property boolean $Nullable
+ * @property mixed $Default
+ * @property boolean $Periodic
+ * @property boolean $AutoGenerate
  */	
 	interface IAttributeDefinition {
 /**
@@ -166,6 +176,8 @@ class TOrmException extends TException {
  * @see IClass
  */		
 		public function AttributeClass();
+		
+		public function SetAttributeClass(IClass $class);
 
 /**
  * @return boolean
@@ -329,6 +341,10 @@ class TOrmException extends TException {
  * @see IInstanceAttribute::GetValue()
  */		
 		public function GetValue(){
+			if ((is_null($this->value)) && ($this->definition->AutoGenerate)){
+				$this->value = $this->generateValue();
+				$this->needSave = true;
+			}
 			return $this->value;
 		}
 /**
@@ -344,7 +360,13 @@ class TOrmException extends TException {
  * @see IInstanceAttribute::NeedSave()
  */		
 		public function NeedSave(){
+			if ((is_null($this->value)) && ($this->definition->AutoGenerate))
+				$this->needSave = true;
 			return $this->needSave;
+		}
+		
+		protected function generateValue(){
+			return $this->definition->Default;
 		}
 	}
 	
@@ -364,24 +386,9 @@ class TOrmException extends TException {
 	}	
 	
 	class TInstanceGuidAttribute extends TInstanceAttribute {
-/**
- * @see IInstanceAttribute::GetValue()
- */		
-		public function GetValue(){
-			if ((is_null($this->value)) && ($this->definition->Type()->AutoGenerate)){
-				$this->value = $this->definition->Type()->Generate();
-				$this->needsave = true;
-			}
-			return $this->value;
+		protected function autoGeneration(){
+			return $this->definition->Type()->Generate();
 		}
-/**
- * @see IInstanceAttribute::NeedSave()
- */		
-		public function NeedSave(){
-			if ((is_null($this->value)) && ($this->definition->Type()->AutoGenerate))
-				$this->needsave = true;
-			return $this->needsave;
-		}		
 	}
 	
 	class TInstanceSetAttribute extends TInstanceAttribute {
@@ -616,6 +623,7 @@ class TOrmException extends TException {
 			if ($def->IsPeriodic())
 				$this->hasPeriodic = true;
 			$this->attrByName[$def->Name()] = $def;
+			$def->SetAttributeClass($this);
 		}
 		
 /**
@@ -624,7 +632,7 @@ class TOrmException extends TException {
 		public function __construct($name,$attributes = null){
 			$this->name = $name;
 			if (is_array($attributes))
-				if (count($attributes) > 0)
+				if (!empty($attributes))
 					foreach ($attributes as $ad)
 						$this->addAttributeDefinition($ad);
 		}

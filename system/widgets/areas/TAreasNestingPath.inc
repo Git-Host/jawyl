@@ -15,8 +15,8 @@
 		protected function renderPath(TWidgetArea $area){
 			$this->RenderArea($this->GetArea($this,"Root"));
 			$conts = $this->getItems();
-			while ($conts->Next())
-				$this->RenderArea($this->GetArea($conts->Item,"Item"));	
+			foreach ($conts as $c)
+				$this->RenderArea($this->GetArea($c,"Item"));	
 			$item = $this->Source->CurrentContainer();
 			if ($item)
 				$this->RenderArea($this->GetArea($item,"Item"));

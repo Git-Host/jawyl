@@ -278,9 +278,9 @@ class TReflectionDriver implements IReflectionDriver {
 			throw new TCoreException(TCoreException::ERR_NOT_CLASS,null,null,array("class"=>"TDBReflectedInstance"));
 			return null;
 		}
-			
+		$c = $this->_orm_driver_->GetClass($class->getName());	
 		if ($this->_check_reflection_){
-			if (!$this->_orm_driver_->IsClass($class->getName())){
+			if (!$c){
 				$parent = $class->getParentClass();
 				$dbpc = null;
 				if ($parent->getName() != "TDBReflectedInstance"){
@@ -288,15 +288,15 @@ class TReflectionDriver implements IReflectionDriver {
 					if ($dbpc) $dbpc = $dbpc->Name();
 				}
 					
-				$this->_orm_driver_->DefineClass($class->getName(),null,$dbpc);	
+				$this->_orm_driver_->Define(new TDBClass($class->getName(),$dbpc));
+				$c = $this->_orm_driver_->GetClass($class->getName());	
 			}
-				
-			$classattrs = $this->_orm_driver_->AttributeDefinitions($class->getName(),true);
+
+			$classattrs = $c->AttributeDefinitions();
 				
 			$eca = array();
 				
-			while ($classattrs->Next()){
-				$ca = $classattrs->Item();
+			foreach ($classattrs as $ca){
 				$prop = $class->getProperty($ca->Name());
 				$at = $this->propType($prop);
 				
@@ -307,7 +307,7 @@ class TReflectionDriver implements IReflectionDriver {
 				}
 					
 				if ($delete)
-					$this->_orm_driver_->UndefineAttribute($class->getName(),$ca->Name());
+					$this->_orm_driver_->Undefine($ca);
 				else
 					$eca[$ca->Name()] = 1;
 			}
@@ -316,10 +316,11 @@ class TReflectionDriver implements IReflectionDriver {
 			foreach ($props as $property){
 				$at = $this->propType($property);
 				if (!is_null($at) && !isset($eca[$property->getName()]))
-					$this->_orm_driver_->DefineAttribute($class->getName(),$property->getName(),$property->getName(),$at);
+					$this->_orm_driver_->Define(new TAttributeDefinition($property->getName(), $at, $c));
 			}
+			$c = $this->_orm_driver_->GetClass($class->getName());
 		}
-		return $this->_orm_driver_->getClass($class->getName());
+		return $c;
 	}
 }
 
@@ -337,6 +338,7 @@ class TReflectionDriver implements IReflectionDriver {
  * @property boolean $Nullable
  * @property mixed $Default
  * @property boolean $Periodic
+ * @property boolean $AutoGenerate
  */
 class TAttributeDefinition implements IAttributeDefinition {
 /**
@@ -376,6 +378,12 @@ class TAttributeDefinition implements IAttributeDefinition {
  * @var boolean
  */		
 	protected $periodic = false;
+	
+/**
+ * determines whether attribute value is generated automatically
+ * @var boolean
+ */	
+	protected $autogenerate = false;
 		
 /**
  * constructor
@@ -386,8 +394,9 @@ class TAttributeDefinition implements IAttributeDefinition {
  * @param boolean $nullable
  * @param mixed $default
  * @param boolean $periodic
+ * @param boolean $autogenerate
  */		
-	public function __construct($name,TDataType $type, $static = false, $unique = false, $indexed = false, $nullable = true, $default = null, $periodic = false, TDBClass $class = null){
+	public function __construct($name, TDataType $type, TDBClass $class = null, $static = false, $unique = false, $indexed = false, $nullable = true, $default = null, $periodic = false, $autogenerate = false){
 		$this->name = $name;
 		$this->static = $static;
 		$this->type = $type;
@@ -397,6 +406,7 @@ class TAttributeDefinition implements IAttributeDefinition {
 		$this->nullable = $nullable;
 		$this->default = $default;
 		$this->periodic = $periodic;
+		$this->autogenerate = $autogenerate;
 	}
 
 /**
@@ -415,7 +425,9 @@ class TAttributeDefinition implements IAttributeDefinition {
  * @see IAttributeDefinition::AttributeClass()
  */		
 	public function AttributeClass(){return $this->class;}
-		
+	
+	public function SetAttributeClass(IClass $class){$this->class = $class;}
+	
 	public function IsStatic(){return $this->static;}
 		
 	public function IsPeriodic(){return $this->periodic;}
@@ -431,6 +443,7 @@ class TAttributeDefinition implements IAttributeDefinition {
 			case "Nullable":return $this->nullable;break;
 			case "Default":return $this->default;break;
 			case "Periodic":return $this->periodic;break;
+			case "AutoGenerate":return $this->autogenerate;break;
 			default:return null;break;
 		}
 	}
@@ -438,10 +451,8 @@ class TAttributeDefinition implements IAttributeDefinition {
 	public function __set($nm,$value){
 		switch ($nm){
 			case "Class":{
-				if (!($value instanceof IClass))
-					throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-				if ($this->class !== $value){	
-					$this->class = $value;
+				if ($this->class !== $value){
+					$this->SetAttributeClass($value);	
 					$this->class->AttributeDefinitions = $this;
 				}
 			}break;
@@ -449,7 +460,7 @@ class TAttributeDefinition implements IAttributeDefinition {
 	}
 	
 	public function __toString(){
-		return $this->type.";".($this->unique?"unique;":"").($this->indexed?"indexed;":"").($this->default?("default=".$this->default):"").($this->periodic?"periodic":"");
+		return $this->type.";".($this->unique?"unique;":"").($this->indexed?"indexed;":"").($this->default?("default=".$this->default.";"):"").($this->periodic?"periodic;":"").($this->autogenerate?"autogenerated;":"");
 	}
 }
 
@@ -529,11 +540,16 @@ class TDBDefinedAttribute extends TAttributeDefinition {
 }
 
 class TDBClass extends TClass {
+/**
+ * @var IClass
+ */	
 	protected $ancestor = false;
 		
 	public function __construct($name,$ancestor = false, $attributes = null){
 		parent::__construct($name,$attributes);
-		$this->ancestor = $ancestor;
+		if (($ancestor instanceof IClass) || ($ancestor === false))
+			$this->ancestor = $ancestor;
+		else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 	}
 		
 	public function Ancestor(){return $this->ancestor;}
@@ -566,13 +582,14 @@ class TDBDefinedClass extends TDBClass {
  * constructor
  * @param mixed $id class unique id
  * @param string $name class unique name
- * @param IORMDBDriver $driver driver to use 
+ * @param IORMDBDriver $driver driver to use
+ * @param array $attributes 
  */	
-	public function __construct($id,$name,IORMDBDriver $driver, TDBDefinedClass $ancestor = null){
+	public function __construct($id,$name,IORMDBDriver $driver, TDBDefinedClass $ancestor = null, $attributes = null){
 		$this->id = $id;
 		$this->driver = $driver;
 		if ($ancestor){
-			parent::__construct($name,$ancestor);
+			parent::__construct($name,$ancestor,$attributes);
 			$ancestor->Descenders = $this;
 		}
 		else
@@ -592,12 +609,6 @@ class TDBDefinedClass extends TDBClass {
 	}
 
 	public function Ancestor(){
-		/*if (is_null($this->ancestor)){
-			$this->ancestor = false;
-			$ancs = $this->driver->ClassAncestors($this,true);
-			if ($ancs->Next())
-				$this->ancestor = $ancs->Item();	
-		}*/
 		return $this->ancestor;
 	}	
 	

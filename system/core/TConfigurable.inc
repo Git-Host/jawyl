@@ -100,7 +100,7 @@ interface IConfigurable {
   		return $this->$nm;
   	}
   	
-  	private static function _check_ioc_type($value,$type){
+  	private function _check_ioc_type($value,$type){
   		if (is_callable($type,false))
   			return call_user_func($type,$value);
   		else if (is_callable(array($this,$type)))
@@ -108,7 +108,7 @@ interface IConfigurable {
   		else if (is_array($type)){
   			$result = true;
 			foreach ($type as $t){
-				$result = self::_check_ioc_type($value, $t);
+				$result = $this->_check_ioc_type($value, $t);
 				if (!$result) break;
 			}	
 			return $result;
@@ -131,7 +131,7 @@ interface IConfigurable {
 			$member = $value;
 			$value = self::Instance($value);
 		}
-		if (self::_check_ioc_type($value, $type))
+		if ($this->_check_ioc_type($value, $type))
 			$member = $value;
 		else if ($value) 
 			throw new TCoreException(TCoreException::ERR_BAD_TYPE);
@@ -148,7 +148,7 @@ interface IConfigurable {
 	protected function getIocMember(&$member,$type){
 		if (is_string($member)){
 			$member = self::Instance($member);
-			if (($member) && (!self::_check_ioc_type($member, $type)))
+			if (($member) && (!$this->_check_ioc_type($member, $type)))
 				throw new TCoreException(TCoreException::ERR_BAD_TYPE);
 		}
 		return $member;	

@@ -80,29 +80,12 @@ class TXmlWizardProvider extends TController implements IWizardProvider {
 		TApplicationSession::Set($this->Name().'_wizparams',$stored);
 		
 		if ($needperform){
-			$performed = TApplicationSession::Get($this->Name().'_wizperformed');
-			
-			if (isset($performed[$this->_current_step_])){
-				$rollback = $xpath->query("step[position()=$this->_current_step_]/rollback/actions");
-				if ($rollback->length == 0)
-					throw new Exception('Action was already performed and can not be rollbacked!');
-
-				foreach ($rollback as $rb){
-					$a = TConfigurable::Instance($rb->getAttribute('name'));
-					if ($a instanceof IAction)
-						$a->Execute();
-				}
-			}
-			
-			$perform = $xpath->query("step[position()=$this->_current_step_]/perform/actions");
+			$perform = $xpath->query("step[position()=$this->_current_step_]");
 			foreach ($perform as $p){
-				$a = TConfigurable::Instance($p->getAttribute('name'));
+				$a = TConfigurable::Instance($p->getAttribute('action'));
 				if ($a instanceof IAction)
-					$a->Execute($stored[$p->getAttribute('name')]);
+					$a->Execute($stored[$p->getAttribute('action')]);
 			}
-			
-			$performed[$this->_current_step_] = true;
-			TApplicationSession::Set($this->Name().'_wizperformed', $performed);
 		}
 		
 		if ($this->IsLastStep())
@@ -138,7 +121,12 @@ class TXmlWizardProvider extends TController implements IWizardProvider {
  * @return boolean
  */		
 	public function BackAllowed(){
-		return $this->_current_step_ > 0;
+		$xpath = new DOMXPath($this->_dom_);
+		$step = $xpath->query("step[position()=$this->_current_step_]");
+		$deprecate_back = false;
+		foreach ($step as $s)
+			$deprecate_back = $s->getAttribute('nostepback') == "true";
+		return ($this->_current_step_ > 0) && !$deprecate_back;
 	}
 /**
  * 

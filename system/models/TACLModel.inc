@@ -76,7 +76,7 @@ class TUser extends TSecuritySubject {
  * @param string $value
  * @return string
  */	
-    public static function Hash($value){return md5($value);}
+    protected static function Hash($value){return THash::Apply($value,THash::MD5);}
 /**
  * overriden method for setting attribute values. Hashes value for password attribute of user account.
  * @see IInstance::SetAttributeValue()
@@ -158,18 +158,20 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 	public function Install(){
 		$this->begin();	
 		try {
-			$this->dbDriver->DefineClass(self::SECURITY_SUBJECT_CLASS,self::SECURITY_SUBJECT_CLASS);
-			$this->dbDriver->DefineAttribute(self::SECURITY_SUBJECT_CLASS,"guid","guid", new TGuidType(true,false,true));
+			$this->dbDriver->Define(new TDBClass(self::SECURITY_SUBJECT_CLASS,false,array(new TAttributeDefinition('guid', new TGuidType(true,false,true),$ssc))));
+			$ssc = $this->dbDriver->GetClass(self::SECURITY_SUBJECT_CLASS);
+			$this->dbDriver->Define(new TDBClass(self::SECURITY_GROUP_CLASS,$ssc,array(new TAttributeDefinition("name", new TStringType(50,true,true,false)))));
+			$sgc = $this->dbDriver->GetClass(self::SECURITY_GROUP_CLASS);
+			$this->dbDriver->Define(new TDBClass(self::SECURITY_USER_CLASS,$ssc,array(
+				new TAttributeDefinition('login', new TStringType(20),null,false,false,true),
+				new TAttributeDefinition('pwd', new TPasswordType(32),null,false,false,true),
+				new TAttributeDefinition('disabled', new TBooleanType(),null,false,false,false, false,0)
+			)));
 			
-			$this->dbDriver->DefineClass(self::SECURITY_GROUP_CLASS,self::SECURITY_GROUP_CLASS,self::SECURITY_SUBJECT_CLASS);
-			$this->dbDriver->DefineAttribute(self::SECURITY_GROUP_CLASS,"name","name", new TStringType(50,true,true,false));
-			
-			$this->dbDriver->DefineClass(self::SECURITY_USER_CLASS,self::SECURITY_USER_CLASS,self::SECURITY_SUBJECT_CLASS);
-			$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"login","login", new TStringType(20,true,true,false));
-			$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"password","pwd", new TPasswordType(32,false,true,true,""));
-			$this->dbDriver->DefineAttribute(self::SECURITY_USER_CLASS,"disabled","disabled", new TBooleanType(false,false,0));
-			
-			$this->dbDriver->DefineStructure(self::SECURITY_RELATIONS,"Group assignments",TStructureType::ASSOCIATION,"GroupAssignments");
+			$this->dbDriver->DefineTable(self::SECURITY_RELATIONS, array(
+				new TFieldDefinition('container', new TOrmReferenceType($sgc)),
+				new TFieldDefinition('content', new TOrmReferenceType($ssc,true))
+			));
 			$this->commit();
 		} catch (Exception $e){
 			$this->rollback();
@@ -182,10 +184,10 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  * @see IInstallable::IsInstalled()
  */
 	public function IsInstalled(){
-		$secsub = $this->dbDriver->getClass(self::SECURITY_SUBJECT_CLASS);
-		$group = $this->dbDriver->getClass(self::SECURITY_GROUP_CLASS);
-		$user = $this->dbDriver->getClass(self::SECURITY_USER_CLASS);
-		$ga = $this->dbDriver->IsStructureDefined(self::SECURITY_RELATIONS,TStructureType::ASSOCIATION);
+		$secsub = $this->dbDriver->GetClass(self::SECURITY_SUBJECT_CLASS);
+		$group = $this->dbDriver->GetClass(self::SECURITY_GROUP_CLASS);
+		$user = $this->dbDriver->GetClass(self::SECURITY_USER_CLASS);
+		$ga = $this->dbDriver->TableExists(self::SECURITY_RELATIONS);
 		return (!is_null($user) && !is_null($group) && !is_null($secsub) && $ga);
 	} 
 	
@@ -196,10 +198,10 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 	public function UnInstall(){
 		$this->begin();
 		try {
-			$this->dbDriver->UnDefineStructure(self::SECURITY_RELATIONS);
-			$this->dbDriver->UndefineClass(self::SECURITY_USER_CLASS);
-			$this->dbDriver->UndefineClass(self::SECURITY_GROUP_CLASS);
-			$this->dbDriver->UndefineClass(self::SECURITY_SUBJECT_CLASS);
+			$this->dbDriver->UndefineTable(self::SECURITY_RELATIONS);
+			$this->dbDriver->Undefine(self::SECURITY_USER_CLASS);
+			$this->dbDriver->Undefine(self::SECURITY_GROUP_CLASS);
+			$this->dbDriver->Undefine(self::SECURITY_SUBJECT_CLASS);
 			$this->commit();
 		} catch (Exception $e){
 			$this->rollback();
@@ -267,10 +269,9 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  * @return boolean
  */	
 	public function UserExists($login){
-		$fo = new TFetchOptions();
-		$c = $this->GetClass(self::SECURITY_USER_CLASS);
-		$fo->AddCondition(new TCondition(TCondition::C_EQUAL,array($c->GetAttributeDefinition("login"),$login)));
-		$res = $this->dbDriver->GetClassInstances(self::SECURITY_USER_CLASS,false,$fo);
+		$ds = new TOrmClassDataSource($this->GetClass(self::SECURITY_USER_CLASS));
+		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("login")),$login)); 
+		$res = $this->dbDriver->FetchInstances($ds);
 		return $res->ItemCount() > 0;
 	}
 		
@@ -326,11 +327,16 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  */		
 	protected function subjGroups(TSecuritySubject $subject, $onlydirect = false){
 		$result = array();
-		$temp = new TSecurityItemIterator($this->dbDriver->Subjects(self::SECURITY_RELATIONS,$subject),$this);
-		while ($temp->Next()){
-			$result[$temp->Item()->Guid()] = $temp->Item();
+		
+		$ds = new TTable(self::SECURITY_RELATIONS,null,array(),array(
+			new TCondition(TOperation::C_EQUAL, array(new TTableField('content'),$subject->Id()))
+		));
+		
+		$temp = new TSecurityItemIterator($this->dbDriver->FetchRecords($ds),$this);
+		foreach ($temp as $item){
+			$result[$item->Guid()] = $item;
 			if (!$onlydirect){
-				$tresult = $this->subjGroups($temp->Item(),false);
+				$tresult = $this->subjGroups($item,false);
 				$result = array_merge($result,$tresult);
 			}
 		}
@@ -359,7 +365,7 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 		if ($subject instanceof TGroup)
 			$groups[$subject->Guid()] = $subject;
 		if (!isset($groups[$group->Guid()]))
-			return $this->dbDriver->Associate(self::SECURITY_RELATIONS,$group,$subject);
+			return $this->dbDriver->InsertRecords(new TTable(self::SECURITY_RELATIONS), array(array('container'=>$group->Id(),'content'=>$subject->Id())));
 		else
 			throw new TACLException(TACLException::ERR_ACL_GROUPCYCL);
 		return false;
@@ -372,7 +378,11 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  * @return boolean
  */	
 	public function RemoveFromGroup(TSecuritySubject $subject, TGroup $group){
-		return $this->dbDriver->Deassociate(self::SECURITY_RELATIONS,$group,$subject);
+		$ds = new TTable(self::SECURITY_RELATIONS,null,array(),array(
+			new TCondition(TOperation::C_EQUAL, array(new TTableField('container'),$group->Id())),
+			new TCondition(TOperation::C_EQUAL, array(new TTableField('content'),$subject->Id()))
+		));
+		return $this->dbDriver->DeleteRecords($ds);
 	}
 	
 /**
@@ -383,22 +393,13 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  */	
 	
 	protected function doLogin($login,$pwd){			
-		/*if (strlen($pwd) == 0) 
-			$password = null;
-		else*/
-			$password = TUser::Hash($pwd);
-		$fo = new TFetchOptions();
-		
-		$c = $this->GetClass(self::SECURITY_USER_CLASS);
-		
-		$fo->AddCondition(new TCondition(TCondition::C_EQUAL,array($c->GetAttributeDefinition("login"),$login)));
-		$fo->AddCondition(new TCondition(TCondition::C_EQUAL,array($c->GetAttributeDefinition("pwd"),$password)));
-		
-		$res = $this->dbDriver->GetClassInstances(self::SECURITY_USER_CLASS,false,$fo);
-		if ($res->Next()){
-			$temp = $res->Item();
-			return $temp->Id();
-		} 
+		$password = TUser::Hash($pwd);
+		$ds = new TOrmClassDataSource($this->GetClass(self::SECURITY_USER_CLASS));
+		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("login")),$login)); 
+		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("pwd")),$password)); 
+		$res = $this->dbDriver->FetchInstances($ds);
+		foreach ($res as $item)
+			return $item->Id();
 		throw new TACLException(TACLException::ERR_ACL_USER_UNDEFINED,array("login"=>$login));
 		return false;
 	}

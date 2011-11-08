@@ -345,8 +345,8 @@ class TOrmReferencePropertyMeta extends TOrmAttributePropertyMeta implements IRe
 		if (!key_exists($ca->Type()->Class->Id(),self::$selections)){
 			self::$selections[$ca->Type()->Class->Id()] = array();
 			$ci = $ca->Type()->Class->ClassInstances();
-			while ($ci->Next()){
-				$wi = TOrmModel::GlobalWrap($ci->Item());
+			foreach ($ci as $i){
+				$wi = TOrmModel::GlobalWrap($i);
 				if (!is_null($wi)) 
 					self::$selections[$ca->Type()->Class->Id()][$wi->Instance()->Id()] = $wi->__toString();
 			}
@@ -648,6 +648,9 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
  * @see IInstallable::Install()
  */	
 	public function Install(){
+/*
+ * @todo table and nested sets definition
+ */		
 		$meta = $this->_get_meta();
 		if (is_null($meta)) return true;
 		 
@@ -660,21 +663,21 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	  					$parent = null;
 	  					if (!is_null($mi->getAttribute("parent")))
 	  						if ($mi->getAttribute("parent") != "")
-	  							$parent = $mi->getAttribute("parent");
-	  					if (!$this->dbDriver->IsClass($mi->getAttribute("name")))		
-	  						$this->dbDriver->DefineClass($mi->getAttribute("name"),$mi->getAttribute("alias"),$parent);
+	  							$parent = $this->dbDriver->GetClass($mi->getAttribute("parent"));
+	  					if (!$c = $this->dbDriver->GetClass($mi->getAttribute("name"))){		
+	  						$this->dbDriver->Define(new TDBClass($mi->getAttribute("name"),$parent));
+	  						$c = $this->dbDriver->GetClass($mi->getAttribute("name"));
+	  					}
 	  					$classname = $mi->getAttribute("name");
 	  					$attrdefs = $meta->query("attribute",$mi);
 	  					foreach ($attrdefs as $ad){
-	  						$type = TAttributeType::getType(strtoupper($ad->getAttribute("type")),$ad->getAttribute("size"),$ad->getAttribute("decimals"),$ad->getAttribute("unique"),$ad->getAttribute("index"),$ad->getAttribute("nullable"),$ad->getAttribute("default"),$ad->getAttribute("referto"),$ad->getAttribute("autogenerate"));
-							$this->dbDriver->DefineAttribute($classname,$ad->getAttribute("name"),$ad->getAttribute("alias"), $type,$ad->getAttribute("static"));	  					
+	  						if (strtoupper($ad->getAttribute("type")) != TOrmReferenceType::ORM_REFERENCE)
+	  							$type = TDataType::getType(strtoupper($ad->getAttribute("type")),$ad->getAttribute("size"),$ad->getAttribute("decimals"),TConvertions::ConvertToBoolean($ad->getAttribute("autogenerate")));
+	  						else 
+	  							$type = new TOrmReferenceType($this->dbDriver->GetClass($ad->getAttribute("refers")),TConvertions::ConvertToBoolean($ad->getAttribute("integritydelete")));	
+							$this->dbDriver->Define(new TAttributeDefinition($ad->getAttribute("name"), $type,$c,TConvertions::ConvertToBoolean($ad->getAttribute("static")),TConvertions::ConvertToBoolean($ad->getAttribute("unique")),TConvertions::ConvertToBoolean($ad->getAttribute("index")),TConvertions::ConvertToBoolean($ad->getAttribute("nullable")),$ad->getAttribute("default"),TConvertions::ConvertToBoolean($ad->getAttribute("periodic"))));	  					
 	  					}
 	  				}break;
-/*	  			case "association":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::ASSOCIATION)) $this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::ASSOCIATION,$mi->getAttribute("description"));break;
-	  			case "agregation":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::AGREGATION))$this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::AGREGATION,$mi->getAttribute("description"));break;
-	  			case "collection":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::COLLECTION))$this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::COLLECTION,$mi->getAttribute("description"));break;
-	  			case "vocabulary":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::VOCABULARY))$this->dbDriver->DefineStructure($mi->getAttribute("name"),$mi->getAttribute("alias"),TStructureType::VOCABULARY,$mi->getAttribute("description"));break;
-*/	  			
 		  		}
 		  	}
 			$this->commit();
@@ -699,18 +702,11 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	  		foreach ($metaitems as $mi){
 	  			switch ($mi->tagName){
 	  				case "class":$classes[] = $mi->getAttribute("name");break;
-/*	  				case "association":
-	  				case "agregation":
-	  				case "collection":
-	  				case "vocabulary":$structures[] = $mi->getAttribute("name");break;
-*/	  				
 	  			}
 	  		}
 	  		
-/*	  		for ($i = count($structures); $i > 0; $i--)
-	  			$this->dbDriver->UnDefineStructure($structures[$i]);*/
 	  		for ($i = count($classes); $i > 0; $i--)
-	  			$this->dbDriver->UnDefineClass($classes[$i]);
+	  			$this->dbDriver->Undefine($classes[$i]);
 	  			
 			$this->commit();
 		} catch (Exception $e){
@@ -731,23 +727,16 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	  	foreach ($metaitems as $mi){
 	  		switch ($mi->tagName){
 	  			case "class":{
-	  				$c = $this->dbDriver->getClass($mi->getAttribute("name"));
+	  				$c = $this->dbDriver->GetClass($mi->getAttribute("name"));
 	  				if (is_null($c)) return false;
 	  				$attrdefs = $meta->query("attribute",$mi);
 	  				foreach ($attrdefs as $ad){
 	  					$ca = $c->GetAttributeDefinition($ad->getAttribute("name"));
 	  					if (is_null($ca)) return false;
 	  					if ($ca->IsStatic() != $ad->getAttribute("static")) return false;
-	  					$type = TAttributeType::getType(strtoupper($ad->getAttribute("type")),$ad->getAttribute("size"),$ad->getAttribute("decimals"),$ad->getAttribute("unique"),$ad->getAttribute("index"),$ad->getAttribute("nullable"),$ad->getAttribute("default"),$ad->getAttribute("referto"),$ad->getAttribute("autogenerate"));
-	  					if ($ca->Type()->__toString() != $type->__toString()) return false;
+	  					if ($ca->Type()->__toString() != strtoupper($ad->getAttribute("type"))) return false;
 	  				}
 	  			}break;
-	  		/*	
-	  			case "association":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::ASSOCIATION)) return false;break;
-	  			case "agregation":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::AGREGATION)) return false;break;
-	  			case "collection":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::COLLECTION)) return false;break;
-	  			case "vocabulary":if (!$this->dbDriver->IsStructureDefined($mi->getAttribute("name"),TStructureType::VOCABULARY)) return false;break;
-	  		*/	
 	  		}
 	  	}
 	  return true;	

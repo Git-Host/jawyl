@@ -527,10 +527,9 @@ abstract class TAction extends TResponseElement implements IAction {
 	
 	public function DeleteParameter($name){
 		$result = array();
-		$this->_parameters_->Reset();
-		while ($this->_parameters_->Next())
-			if ($this->_parameters_->Key() != $name)
-			$result[] = $this->_parameters_->Item();
+		foreach ($this->_parameters_ as $key=>$p)
+			if ($key != $name)
+				$result[] = $p;
 		$this->_parameters_ = new TActionParameterIterator($result);
 	}
 	
@@ -545,10 +544,8 @@ abstract class TAction extends TResponseElement implements IAction {
 	public function ParametersArray(){
 		$result = array();
 		if (isset($this->_parameters_)){
-			$this->_parameters_->Reset();
-			while ($this->_parameters_->Next())
-				$result[$this->_parameters_->Item()->Name()] = $this->_parameters_->Item();
-			$this->_parameters_->Reset();
+			foreach ($this->_parameters_ as $key=>$p)
+				$result[$p->Name()] = $p;
 		} 
 		return $result;
 	}

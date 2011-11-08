@@ -822,10 +822,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			$target->Fetch(array(new TNestedSetsField(self::NS_LKEY_FIELD),new TNestedSetsField(self::NS_RKEY_FIELD),new TNestedSetsField(self::NS_LEVEL_FIELD)));
 			$p = new TMySqlDataSetProcessor($parents, $this);
 			if ($res = $this->Fetch($p->SelectQuery(),$p->Parameters))
-				if ($res->Next()){
-					$result[0] = $res->Item[self::NS_LKEY_FIELD];
-					$result[1] = $res->Item[self::NS_RKEY_FIELD];
-					$result[2] = $res->Item[self::NS_LEVEL_FIELD];
+				foreach ($res as $item){
+					$result[0] = $item[self::NS_LKEY_FIELD];
+					$result[1] = $item[self::NS_RKEY_FIELD];
+					$result[2] = $item[self::NS_LEVEL_FIELD];
+					break;
 				}
 		}
 		if (is_null($result[1])) {
@@ -943,14 +944,14 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			$roots = $this->Fetch("select b.".self::NS_LKEY_FIELD.",b.".self::NS_RKEY_FIELD.",b.".self::NS_LEVEL_FIELD." from ".$target." b left join ".$target." b1 on (b1.".self::NS_DELETED_FIELD." = 1) and (b.".self::NS_LKEY_FIELD." > b1.".self::NS_LKEY_FIELD.") and (b.".self::NS_RKEY_FIELD." < b1.".self::NS_RKEY_FIELD.")  where (b.".self::NS_DELETED_FIELD." = 1) and (b1.".self::NS_LKEY_FIELD." is null) order by b.".self::NS_RKEY_FIELD." desc");
 			$ranges = array();
 			$prev_range = -1;
-			while ($roots->Next()){
+			foreach ($roots as $root){
 				if ($prev_range > -1){
-					if ($roots->Item[self::NS_RKEY_FIELD] == $ranges[$prev_range][0] - 1){
-						$ranges[$prev_range][0] = $roots->Item[self::NS_LKEY_FIELD];
+					if ($root[self::NS_RKEY_FIELD] == $ranges[$prev_range][0] - 1){
+						$ranges[$prev_range][0] = $root[self::NS_LKEY_FIELD];
 						continue;	
 					}
 				} 
-				$ranges[] = array($roots->Item[self::NS_LKEY_FIELD],$roots->Item[self::NS_RKEY_FIELD],$roots->Item[self::NS_LEVEL_FIELD]);
+				$ranges[] = array($root[self::NS_LKEY_FIELD],$root[self::NS_RKEY_FIELD],$root[self::NS_LEVEL_FIELD]);
 				$prev_range++;
 			}
 			

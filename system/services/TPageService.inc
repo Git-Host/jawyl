@@ -315,7 +315,7 @@ abstract class TPageService extends TService {
 	protected function checkAccess(){
 		$policy = $this->Policy();
 		$acl = $this->ACL();		
-		if ($acl instanceof IACLManager && $policy instanceof IPolicyManager)
+		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker)
 			return $policy->CheckPolicy($acl->CurrentUser(),new TPagePolicy(TPagePolicy::PAGE_ACCESS,$this->page));
 		return false;
 	}

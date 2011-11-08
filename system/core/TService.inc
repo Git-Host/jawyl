@@ -29,7 +29,7 @@ interface IService {
 	 * gets service name
 	 * @return string
 	 */
-	public function Name();
+	//public function Name();
 	/**
 	 * service handle method. used for request processing.
 	 * @param THttpRequest $request request object to process.
@@ -71,7 +71,7 @@ class TServiceRole extends TPolicy {
  * @category Core
  * @see TApplication
  * @see IACLManager
- * @see IPolicyManager
+ * @see IPolicyChecker
  */
 interface ISecuredService extends IService {
 /**
@@ -81,7 +81,7 @@ interface ISecuredService extends IService {
 		public function ACL();
 /**
  * gets service policy component
- * @return IPolicyManager
+ * @return IPolicyChecker
  */
 		public function Policy();
 }
@@ -123,7 +123,7 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
  */	
 	public function Policy(){
 		$p = TApplication::Instance($this->Policy);
-		if (!($p instanceof IPolicyManager))
+		if (!($p instanceof IPolicyChecker))
 			throw new TCoreException(TCoreException::ERR_BAD_TYPE);
 		return $p;
 	}
@@ -168,7 +168,7 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
  * @return string
  * @see IService::Name()
  */	
-	public function Name(){return $this->name;}
+	//public function Name(){return $this->name;}
 
 /**
  * public constructor

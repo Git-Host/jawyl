@@ -34,16 +34,15 @@
 <?php		
 	}
 	$items = $this->Items();
-	while ($items->Next())
-		if ($items->Item){
+	foreach ($items as $item){
 ?>
-<tr id="<?php echo $items->Item->ItemId(); ?>">
-<td><?php echo $items->Item->ClassName(); ?></td>
-<td><?php echo $items->Item; ?></td>
-<td><a href="<?php echo $items->Item->OpenLink(); ?>">contents</a></td>
-<td><a href="<?php echo $this->response->ItemEditUrl($items->Item->Item()); ?>">edit</a></td>
-<td><a href="<?php echo $this->response->Url($this->Name(),"DeleteItem",array("delid"=>$items->Item->Item()->ItemId())); ?>">delete</a></td>
-<td><a href="javascript:jQuery(&quot;#<?php echo $this->Name();  ?>_move_dlg form input#moveitem&quot;).val(&quot;<?php echo $items->Item->Item()->ItemId(); ?>&quot;);jQuery(&quot;#<?php echo $this->Name();  ?>_move_dlg&quot;).window().open(true);">move</a></td>
+<tr id="<?php echo $item->ItemId(); ?>">
+<td><?php echo $item->ClassName(); ?></td>
+<td><?php echo $item; ?></td>
+<td><a href="<?php echo $item->OpenLink(); ?>">contents</a></td>
+<td><a href="<?php echo $this->response->ItemEditUrl($item->Item()); ?>">edit</a></td>
+<td><a href="<?php echo $this->response->Url($this->Name(),"DeleteItem",array("delid"=>$item->Item()->ItemId())); ?>">delete</a></td>
+<td><a href="javascript:jQuery(&quot;#<?php echo $this->Name();  ?>_move_dlg form input#moveitem&quot;).val(&quot;<?php echo $item->Item()->ItemId(); ?>&quot;);jQuery(&quot;#<?php echo $this->Name();  ?>_move_dlg&quot;).window().open(true);">move</a></td>
 </tr>
 <?php } ?>
 </table>

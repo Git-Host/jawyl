@@ -38,7 +38,7 @@ interface ISecurityChild {
 abstract class TPolicy {
 
 /**
- * @var string type of permission, should be one of TPolicyPermission constants
+ * @var string type of permission
  */	
 	protected $type;
 /**
@@ -82,6 +82,28 @@ abstract class TPolicy {
 	public abstract function Descenders();
 }
 
+interface IPolicyChecker {
+/**
+ * checks policy of security subject
+ * @param ISecuritySubject $subject subject to check
+ * @param TPolicy $policy policy to check
+ */	
+	public function CheckPolicy(ISecuritySubject $subject, TPolicy $policy);
+/**
+ * checks policy of several security subjects
+ * @param array $subjects array of ISecuritySubject
+ * @param TPolicy $policy policy to check
+ */	
+	public function CheckSubjectsPolicy(array $subjects, TPolicy $policy);
+/**
+ * checks if any of specified policies are granted to security subjects over security objects
+ * @param ISecuritySubject[] $subjects list of subjects
+ * @param ISecurityObject[] $objects list of objects, if empty global policies are checked 
+ * @param TPolicy[] $policies list of policies
+ * @return boolean 
+ */	
+	public function CheckSubjectsObjectsPolicies(array $subjects, array $objects, array $policies);
+}
 
 /**
  * @package CoreRuntimeClasses
@@ -105,26 +127,6 @@ interface IPolicyManager {
  * @return boolean return true if policy successfully denied
  */	
 	public function Deny(TPolicy $policy, ISecuritySubject $subject);
-/**
- * checks policy of security subject
- * @param ISecuritySubject $subject subject to check
- * @param TPolicy $policy policy to check
- */	
-	public function CheckPolicy(ISecuritySubject $subject, TPolicy $policy);
-/**
- * checks policy of several security subjects
- * @param array $subjects array of ISecuritySubject
- * @param TPolicy $policy policy to check
- */	
-	public function CheckSubjectsPolicy(array $subjects, TPolicy $policy);
-/**
- * checks if any of specified policies are granted to security subjects over security objects
- * @param ISecuritySubject[] $subjects list of subjects
- * @param ISecurityObject[] $objects list of objects, if empty global policies are checked 
- * @param TPolicy[] $policies list of policies
- * @return boolean 
- */	
-	public function CheckSubjectsObjectsPolicies(array $subjects, array $objects, array $policies);
 /**
  * gets array of subject explicit policies granted over object
  * @param ISecuritySubject $subject security subject

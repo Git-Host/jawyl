@@ -225,8 +225,8 @@ class TAreasList extends TAreasWidget implements IList {
 	
 	protected function renderContainer(TWidgetArea $area){
 		$items = $this->Items();
-		while ($items->Next())
-			$this->RenderArea($this->GetArea($items->Item,"Item",$area));
+		foreach ($items as $item)
+			$this->RenderArea($this->GetArea($item,"Item",$area));
 	}
 	
 /**

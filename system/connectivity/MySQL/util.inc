@@ -50,7 +50,7 @@ class TMySqlDBRawDataIterator extends TIterator {
 			if (in_array($nm,$this->fields)) $nm .= $i;
 			$this->fields[] = $nm;
 		}
-		$this->pointer = 0;
+		$this->pointer = -1;
 	}
 	
 	public function Next(){
@@ -62,16 +62,26 @@ class TMySqlDBRawDataIterator extends TIterator {
 		return false;
 	}	
 	
-	public function Seek($count){
-		if (mysql_data_seek($this->resultSet, $this->pointer + $count - 1)){
+	public function Seek($position){
+		if (mysql_data_seek($this->resultSet, $position)){
 			if ($row = mysql_fetch_array($this->resultSet,MYSQL_NUM)){
 				$this->currentRow = array_merge($row,array_combine($this->fields,$row));
-				$this->pointer = $this->pointer + $count - 1;
+				$this->pointer = $position;
 				return true;
 			}
 		}
 		return false;
 	}
+	
+	public function Rewind() {
+		if ($this->position == -1)
+			return $this->Next();
+		return $this->Seek(0); 	
+    }
+
+    public function Key() {
+        return $this->pointer;
+    }
 	
 	public function Item(){
 		return $this->currentRow;
@@ -116,6 +126,7 @@ class TMySqlNestingsIterator extends TIteratorAdapter {
  * @subpackage MySql
  * @category System
  * stored orm class
+ * @property TAttributeDefinition[] $AttributeDefinitions
  */
 class TMySqlDBClass extends  TDBDefinedClass {
 	private static $_loaded_classes_ = array();
@@ -125,29 +136,22 @@ class TMySqlDBClass extends  TDBDefinedClass {
  * @param int $id
  * @param string $name
  */	
-	public function __construct($id,$name,TMySqlOrmDriver $driver, TDBDefinedClass $ancestor = null){
+	public function __construct($id,$name,TMySqlOrmDriver $driver, TDBDefinedClass $ancestor = null,$attributes = null){
 		if (!key_exists($driver->Name(),self::$_loaded_classes_))
 			self::$_loaded_classes_[$driver->Name()] = array();
 		if (!key_exists($driver->Name(),self::$_classes_by_id_))
 			self::$_classes_by_id_[$driver->Name()] = array();
 		self::$_loaded_classes_[$driver->Name()][$name] = $this;
 		self::$_classes_by_id_[$driver->Name()][$id] = $this;
-		if ($ancestor)
-			parent::__construct($id,$name,$driver,$ancestor);
-		else
-			parent::__construct($id,$name,$driver);
+		parent::__construct($id,$name,$driver,$ancestor,$attributes);
 	}
 	
-	public static function Create($id,$name,TMySqlOrmDriver $driver,TDBDefinedClass $ancestor = null){
-		if (key_exists($driver->Name(),self::$_loaded_classes_))
-			if (key_exists($name,self::$_loaded_classes_[$driver->Name()]))
-				return self::$_loaded_classes_[$driver->Name()][$name];
-		if (key_exists($driver->Name(),self::$_classes_by_id_))		
-			if (key_exists($id,self::$_classes_by_id_[$driver->Name()]))
-				return self::$_classes_by_id_[$driver->Name()][$id];
-		if ($ancestor)		
-			return new TMySqlDBClass($id,$name,$driver,$ancestor);
-		return new TMySqlDBClass($id,$name,$driver);
+	public static function Create($id,$name,TMySqlOrmDriver $driver,TDBDefinedClass $ancestor = null, $attributes = null){
+		if ($c = self::Obtain($id, $driver))
+			return $c;
+		if ($c = self::Obtain($name, $driver))
+			return $c;
+		return new TMySqlDBClass($id,$name,$driver,$ancestor,$attributes);
 	}  
 	
 	public static function Obtain($id,TMySqlOrmDriver $driver){
@@ -161,6 +165,16 @@ class TMySqlDBClass extends  TDBDefinedClass {
 			if (key_exists($name,self::$_loaded_classes_[$driver->Name()]))
 				return self::$_loaded_classes_[$driver->Name()][$name];
 		return null;		
+	}
+	
+	public function __set($nm,$value){
+		switch ($nm){
+			case 'AttributeDefinitions':{
+				if ($value instanceof TAttributeDefinition)
+					$this->addAttributeDefinition($value);
+			}break;
+			default:parent::__set($nm, $value);break;
+		}
 	}
 }
 
@@ -342,13 +356,19 @@ class TMySqlDBSnapshotIterator extends TIteratorAdapter {
 	}
 	
 	public function Next(){
-		return parent::Next();
+/*
+ * @todo probably bug risk
+ */		
 		$this->_load_item();
+		return parent::Next();
 	}
 	
-	public function Seek($count){
-		return parent::Seek($count);
+	public function Seek($position){
+/*
+ * @todo probably bug risk
+ */		
 		$this->_load_item();
+		return parent::Seek($position);
 	}	
 }
 

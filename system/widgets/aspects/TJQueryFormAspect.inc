@@ -58,33 +58,6 @@
 
 	final class TJQueryFormAspect { 
 		private static function _get_field($base,$size = null){
-			/*if ($type instanceof IInstanceAttribute){
-				switch ($base->Type()->TypeCode) {
-					case TAttributeType::BIGINT:return new TFormField(new TFormFieldType(TFormFieldType::INT),$base->Value());break;
-					case TAttributeType::BOOLEAN:return new TFormField(new TFormFieldType(TFormFieldType::BOOL),$base->Value());break;
-					case TAttributeType::DATETIME:return new TFormField(new TFormFieldType(TFormFieldType::DATE),$base->Value());break;
-					case TAttributeType::DECIMAL:return new TFormField(new TFormFieldType(TFormFieldType::DEC),$base->Value());break;
-					case TAttributeType::FILE:return new TFormField(new TFormFieldType(TFormFieldType::FILE),$base->Value());break;
-					case TAttributeType::FILELINK:return new TFormField(new TFormFieldType(TFormFieldType::FILE),$base->Value());break;
-					case TAttributeType::FLOAT:return new TFormField(new TFormFieldType(TFormFieldType::DEC),$base->Value());break;
-					case TAttributeType::HTML:return new TFormField(new TFormFieldType(TFormFieldType::HTML),$base->Value());break;
-					case TAttributeType::IMAGE:return new TFormField(new TFormFieldType(TFormFieldType::IMAGE),$base->Value());break;
-					case TAttributeType::IMAGELINK:return new TFormField(new TFormFieldType(TFormFieldType::IMAGE),$base->Value());break;
-					case TAttributeType::INTEGER:return new TFormField(new TFormFieldType(TFormFieldType::INT),$base->Value());break;
-					case TAttributeType::PASSWORD:return new TFormField(new TFormFieldType(TFormFieldType::PASSWORD),$base->Value());break;
-					case TAttributeType::REFERENCE:{
-						$selection = array();
-						if ($base->Type() instanceof TReferenceType){
-							$instances = $base->Type()->Class->ClassInstances();
-							while ($instances->Next())
-								$selection[] = $instances->Item();
-						}
-						return new TFormField(new TFormFieldType(TFormFieldType::SELECTION),$base->Value(),$selection);
-					}break;
-					case TAttributeType::STRING:return new TFormField(new TFormFieldType(TFormFieldType::STRING),$base->Value());break;
-					case TAttributeType::TEXT:return new TFormField(new TFormFieldType(TFormFieldType::MULTILINE),$base->Value());break;
-				}
-			} else */
 			if (($base instanceof IPropertyMeta)){
 				$value = null;
 				if ($base instanceof IProperty)

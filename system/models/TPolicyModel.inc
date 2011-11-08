@@ -21,7 +21,7 @@ TApplication::import("models::TOrmModel");
  * @category System
  * policy component class
  */
-class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
+class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IPolicyChecker {
 	const POLICY_CLASS_POLICY = "Policy";
 	
 /**
@@ -40,10 +40,11 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
 	public function Install(){
 		$this->begin();
 		try {	
-			$this->dbDriver->DefineClass(self::POLICY_CLASS_POLICY,self::POLICY_CLASS_POLICY);
-			$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"subject","subject", new TStringType(32,false, true, false, null, false, false));
-			$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"object","object", new TStringType(32,false, true, true, null, false, false));
-			$this->dbDriver->DefineAttribute(self::POLICY_CLASS_POLICY,"code","code", new TStringType(15,false, true, false, null, false, false));
+			$this->dbDriver->Define(new TDBClass(self::POLICY_CLASS_POLICY,false,array(
+				new TAttributeDefinition('subject', new TStringType(32),null, false, false, true),
+				new TAttributeDefinition('object', new TStringType(32),null, false, false, true),
+				new TAttributeDefinition('code', new TStringType(15),null, false, false, true)
+			)));
 			$this->dbDriver->commit();
 		} catch (Exception $e){
 			$this->rollback();
@@ -56,8 +57,7 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
  * @see IInstallable::IsInstalled()
  */
 	public function IsInstalled(){
-		$p = $this->dbDriver->getClass(self::POLICY_CLASS_POLICY);
-		return !is_null($p);
+		return !is_null($this->dbDriver->getClass(self::POLICY_CLASS_POLICY));
 	} 
 /**
  * @see IInstallable::UnInstall()
@@ -65,7 +65,7 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
 	public function UnInstall(){
 		$this->begin();
 		try {
-			$this->dbDriver->UndefineClass(self::POLICY_CLASS_POLICY);
+			$this->dbDriver->Undefine(self::POLICY_CLASS_POLICY);
 			$this->dbDriver->commit();
 		} catch (Exception $e){
 			$this->rollback();
@@ -132,14 +132,14 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
 /**
  * checks policy
  * @return boolean
- * @see IPolicyManager::CheckPolicy()
+ * @see IPolicyChecker::CheckPolicy()
  */	
 	public function CheckPolicy(ISecuritySubject $subject, TPolicy $policy){
 		return $this->CheckSubjectsObjectsPolicies(array($subject), array(), array($policy));
 	}
 	
 /**
- * @see IPolicyManager::CheckSubjectsPolicy()
+ * @see IPolicyChecker::CheckSubjectsPolicy()
  * @return boolean
  */	
 	public function CheckSubjectsPolicy(array $subjects, TPolicy $policy){
@@ -164,7 +164,7 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
 	}
 
 /**
- * @see IPolicyManager::CheckSubjectsObjectsPolicies()
+ * @see IPolicyChecker::CheckSubjectsObjectsPolicies()
  * @return boolean
  */	
 	public function CheckSubjectsObjectsPolicies(array $subjects, array $objects, array $policies){
@@ -232,8 +232,8 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
 		$ds->Filter = new TCondition(TCondition::C_EQUAL, array($subj,$subject->Guid()));
 		 
 		$codes = $this->dbDriver->FetchRecords($ds);
-		while ($codes->Next())
-			$result[] = $codes->Item["code"];
+		foreach ($codes as $code)
+			$result[] = $code["code"];
 		return $result;
 	}
 	
@@ -262,8 +262,8 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager {
 		$ds->Filter = new TCondition(TCondition::C_IN, array($subj,$subjs));
 		
 		$codes = $this->dbDriver->FetchRecords($ds);
-		while ($codes->Next())
-			$result[] = $codes->Item["code"];
+		foreach ($codes as $code)
+			$result[] = $code["code"];
 		return $result;
 	}
 	

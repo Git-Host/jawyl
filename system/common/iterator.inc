@@ -1,15 +1,11 @@
 <?php
-/*
- * @todo integrare with Iterator and IteratorAggregate interfaces
- */
-
 /**
  * @package Common
  * @subpackage Iterator
  * @category System
  * interface for implementing iterators
  */	
-	interface IIterator {
+	interface IIterator extends Iterator {
 		const DT_RAW = 0;
 		const DT_INSTANCE = 1;
 		const DT_CLASS = 2;
@@ -17,11 +13,6 @@
 		const DT_OBJECT = 4;
 		const DT_MIXED = 5;
 
-/**
- * fetch next item, returns true on success, otherwise false
- * @return boolean
- */		
-		public function Next();
 /**
  * gets current item
  * @return mixed
@@ -38,11 +29,11 @@
  */		
 		public function DataType();
 /**
- * moves by specified items count from current position and fetches subsequent item 
- * @param int $count
+ * moves to specified position and fetches subsequent item 
+ * @param int $position
  * @return boolean
  */	
-		public function Seek($count);
+		public function Seek($position);
 	}
 	
 /**
@@ -60,6 +51,21 @@
 				default:return $this->Item()->__get($nm);break;
 			}
 		}
+		
+    	public function Current() {
+    		return $this->Item();
+    	}
+
+    	public function Valid() {
+        	return (bool)$this->Current();
+    	}
+    	
+    	public function Seek($position){
+    		$this->Rewind();
+    		$i = 0;
+    		while (($i < $position - 1) && $this->Next()) $i++;
+    		return $this->Next();	
+    	}
 	}
 	
 /**
@@ -70,40 +76,30 @@
  */	
 	class TArrayIterator extends TIterator {
 /**
- * @var array array to iterate through
+ * @var ArrayObject array to iterate through
  */		
-		protected $array;
-/**
- * @var array array of values to iterate through
- */		
-		protected $values;
-/**
- * @var array array of keys
- */		
-		protected $keys;
-/**
- * @var int current iterator position
- */		
-		protected $position;
+		protected $arrayObject;
 		
+		protected $array;
+		
+		protected $iterator;
 /**
  * constructor
  */		
-		public function __construct(array &$array){
+		public function __construct(array $array){
 			$this->array = $array;
-			$this->values = array_values($array);
-			$this->keys = array_keys($array);
-			$this->position = -1;
+			$this->interator = new TArrayIterator($this->array);
 		}
 		
 		public function Value($position){
-			if (($position >= 0) && ($position < count($this->values)))
-				return $this->values[$position];
+			$temp = array_values($this->array);
+			if (($position >= 0) && ($position < count($temp)))
+				return $temp[$position];
 			return null;
 		}
 		
 		public function ValueByKey($key){
-			if (key_exists($key,$this->array))
+			if (isset($this->array[$key]))
 				return $this->array[$key];
 			return null;
 		}
@@ -112,49 +108,39 @@
  * gets current item key
  * @return mixed
  */		
-		public function Key($position = null){
-			if (!is_null($position))
-				if (($position >= 0) && ($position < count($this->keys)))
-					return $this->keys[$position];
-			if ($this->position < count($this->keys))
-				return $this->keys[$this->position];
-			return null;
+		public function Key(){
+			return $this->iterator->key();
 		}
 /**
- * @see IIterator::Next()
+ * @see Iterator::Next()
  */		
 		public function Next(){
-			$this->position = $this->position + 1;
-			return $this->position < count($this->array);
+			return $this->iterator->next();
 		}
 		
-		public function Seek($count){
-			$this->position = $this->position + $count;
-			return $this->position < count($this->array);
+/**
+ * @param int $position
+ * @see IIterator::Seek()
+ */		
+		public function Seek($position){
+			return $this->iterator->seek($position);
 		}
 /**
  * @see IIterator::Item()
  */		
 		public function Item(){
-			if ($this->position < count($this->values)){
-				return $this->values[$this->position];
-			}
-			return null;
+			return $this->iterator->current();
 		}
 /**
  * @see IIterator::ItemCount()
  */		
 		public function ItemCount(){
-			return count($this->values);
+			return count($this->array);
 		}
 		
-/**
- * resets iterator position to the beginning of array
- */		
-		public function Reset(){
-			$this->position = -1;
-		}
-
+    	public function Rewind() {
+    		$this->iterator->rewind();
+    	}
 /**
  * gets iterator type, for TArrayIterator always returns DT_RAW
  * @return int
@@ -183,10 +169,6 @@
 			$this->iterator = $base;
 		}
 /**
- * @see IIterator::Next()
- */		
-		public function Next(){return $this->iterator->Next();}
-/**
  * @see IIterator::ItemCount()
  */		
 		public function ItemCount(){return $this->iterator->ItemCount();}
@@ -195,7 +177,36 @@
  */		
 		public function DataType(){return $this->iterator->DataType();}	
 
-		public function Seek($count){return $this->iterator->Seek();}
+/**
+ * @param int $position
+ * @see IIterator::Seek()
+ */		
+		public function Seek($position){return $this->iterator->Seek($position);}
+
+/**
+ * @see Iterator::Next()
+ */		
+		public function Next(){return $this->iterator->Next();}
+		
+/**
+ * @see Iterator::Rewind()
+ */		
+		public function Rewind() {return $this->iterator->Rewind();}
+
+/**
+ * @see Iterator::Current()
+ */		
+		public function Current() {return $this->iterator->Current();}
+
+/**
+ * @see Iterator::Key()
+ */		
+		public function Key() {return $this->iterator->Key();}
+
+/**
+ * @see Iterator::Valid()
+ */		
+		public function Valid() {return $this->iterator->Valid();}		
 	}	
 	
 	abstract class TPagedIterator extends TIteratorAdapter {

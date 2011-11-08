@@ -41,7 +41,7 @@ class TJobSecurityObject implements ISecurityObject, ISecurityChild {
 
 
 class TScheduleHandler {
-	public static function ExecuteJob(ISecurityObject $object, IACLManager $acl, IPolicyManager $policy, $jobname, array $parameters = array()){
+	public static function ExecuteJob(ISecurityObject $object, IACLManager $acl, IPolicyChecker $policy, $jobname, array $parameters = array()){
 		$rm = new ReflectionMethod(get_class($object), "schedule_".$jobname);
 		if ($rm)
 			if (!$rm->isPublic())

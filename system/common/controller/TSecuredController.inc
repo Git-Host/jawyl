@@ -29,9 +29,9 @@ TApplication::import("common::controllers::interfaces");
 abstract class TSecuredController extends TController {
 /**
  * gets controller policy manager
- * @return IPolicyManager
+ * @return IPolicyChecker
  */
-	protected function getPolicyManager(){
+	protected function getPolicyChecker(){
 		if (TApplication::CurrentService() instanceof ISecuredService)
 			return TApplication::CurrentService()->Policy();
 		return null;

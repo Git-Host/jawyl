@@ -186,8 +186,8 @@ class TAreasTreeView extends TAreasList implements ITree {
 	protected function renderSubs(TWidgetArea $area){
 		$context = $area->Context();
 		$subs = $context->SubNodes();
-		while ($subs->Next())
-			$this->RenderArea($this->GetArea($subs->Item(),"Item",$area));
+		foreach ($subs as $sub)
+			$this->RenderArea($this->GetArea($sub,"Item",$area));
 	}
 	
 	protected function renderToggle(TWidgetArea $area){
@@ -224,8 +224,8 @@ class TAreasTreeView extends TAreasList implements ITree {
 	
 	protected function renderContainer(TWidgetArea $area){
 		$items = $this->RootItems();
-		while ($items->Next()) {
-			$this->renderArea($this->GetArea($items->Item(),"Item",$area));
+		foreach ($items as $item) {
+			$this->renderArea($this->GetArea($item,"Item",$area));
 		}
 	}
 	
