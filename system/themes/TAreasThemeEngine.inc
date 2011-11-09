@@ -40,7 +40,7 @@
 		
 		protected function preCompile($text){
 			$text = preg_replace_callback('/<%area\\s+([^\\s]*|"[^"]*")(?:\\s+context\\s*=\\s*([^\\s]*|"[^"]*"))?\\s*%>/',array(&$this,"_area_compile"),$text);
-			$text = preg_replace_callback('/<%skipwrapper%>/','<?php $this->SkipWrapper(); ?>',$text);
+			$text = preg_replace('/<%skipwrapper%>/','<?php $this->SkipWrapper(); ?>',$text);
 			return $text;
 		}
 	}

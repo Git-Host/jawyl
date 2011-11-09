@@ -52,7 +52,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private $_cleaner_;
 	
-	private $_ioc_output_cache_; 
+	protected $_ioc_output_cache_; 
+	
+/**
+ * @var TResponse
+ */	
+	protected $response;
 	
 	private $_current_cache_name_ = array();
 	private $_current_cache_lifetime_ = array();
@@ -329,10 +334,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
  * @param string $templatename
  */	
 	public function RenderResponse(TResponse $response,$templatename){
-		if (!file_exists($this->TemplateDir)) mkdir($this->TemplateDir);
-		if (!file_exists($this->CompileDir)) mkdir($this->CompileDir);
+		$td = $this->TemplateDir;
+		$cd = $this->CompileDir;
+		if (!file_exists($td)) mkdir($td);
+		if (!file_exists($cd)) mkdir($cd);
 		$this->response = $response;
-		$this->ProcessTemplate($this->response,$templatename);
+		$this->ProcessTemplate($this->response,$templatename.'.'.$this->TemplateExtension());
 	}	
 }
 ?>

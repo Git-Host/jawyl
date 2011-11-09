@@ -107,25 +107,29 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
 	protected $request;
 	
 /**
+ * @var IACLManager
+ */	
+	protected $_ioc_acl_;
+	
+/**
+ * @var IPolicyChecker
+ */	
+	protected $_ioc_policy_;
+	
+/**
  * gets service ACL component, which name is determined by service ACL property
  * @see ISecuredService::ACL()
  * @return IACLManager
  */	
 	public function ACL(){
-		$a = TApplication::Instance($this->ACL);
-		if (!($a instanceof IACLManager))
-			throw new TCoreException(TCoreException::ERR_BAD_TYPE);
-		return $a;
+		return $this->Acl;
 	}
 /**
  * gets service policy component, which name is determined by service Policy property
  * @see ISecuredService::Policy()
  */	
 	public function Policy(){
-		$p = TApplication::Instance($this->Policy);
-		if (!($p instanceof IPolicyChecker))
-			throw new TCoreException(TCoreException::ERR_BAD_TYPE);
-		return $p;
+		return $this->Policy;
 	}
 	
 	public function Soid(){

@@ -204,7 +204,9 @@ class TIntrinsicPage extends TPage {
 					self::_compile_page($filename,$service);
 		}
 		if (is_file($filename."_loader.php"))
-			include $filename."_loader.php"; 
+			include $filename."_loader.php";
+		if (!($result instanceof TIntrinsicPage))
+			throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>'TIntrinsicPage'));	 
 		return $result;
 	}
 	
@@ -277,7 +279,8 @@ abstract class TIntrinsicPageService extends TPageService {
 	private $__notfound__ = null;
 	private $__accessdenied__ = null;
 	
-	private $_compile_pages_ = false; 
+	private $_compile_pages_ = false;
+	private $_validate_config_ = false; 
 	
 	public function __set($nm,$value){
 		switch ($nm){
@@ -285,6 +288,7 @@ abstract class TIntrinsicPageService extends TPageService {
 			case "NotFoundPath":$this->__notfound__ = $value;break;
 			case "AccessDeniedPath":$this->__accessdenied__ = $value;break;
 			case "CompilePages":$this->_compile_pages_ = TConvertions::ConvertToBoolean($value);break;
+			case "ValidateConfig":$this->_validate_config_ = TConvertions::ConvertToBoolean($value);break;
 			default:parent::__set($nm,$value);
 		}
 	}
@@ -292,6 +296,7 @@ abstract class TIntrinsicPageService extends TPageService {
 	public function __get($nm){
 		switch ($nm){
 			case "CompilePages":return $this->_compile_pages_;break;
+			case "ValidateConfig":return $this->_validate_config_;break;
 			default:return parent::__get($nm);break;
 		}
 	}
@@ -309,6 +314,7 @@ abstract class TIntrinsicPageService extends TPageService {
  * @return TIntrinsicPage
  */	
 	protected function getPage($id){
+		if (is_null($id)) $id = '';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$filename = $this->PageIdToFileName($id);
 		if (is_file($filename.".xml") || is_file($filename.".php")){

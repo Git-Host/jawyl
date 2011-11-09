@@ -47,11 +47,11 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 /**
  * @var IEventBroadCaster[]
  */	
-	private $_ioc_broad_casters_ = array();
+	protected $_ioc_broad_casters_ = array();
 /**
  * @var IEventHandler
  */	
-	private $_ioc_delegation_provider_ = null; 
+	protected $_ioc_delegation_provider_ = null; 
 	
 	private $_explicit_handlers_ = array();
 	
@@ -79,15 +79,15 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  * calls http method
  * @param string $method method name
  * $param array $arguments array of arguments, which can be an associative array. In this case method argument values are set according to argument name but not order.
- * @return mixed return value of method called. If methhod can not be called returns false.
+ * @return mixed return value of method called. If method can not be called returns false.
  */	
 	public function __call($method,array $arguments){
 		$c = new ReflectionClass(get_class($this));
-		$m = $c->getMethod($this->methodHttpName($method));
-		if ($m){
+		$mn = $this->methodHttpName($method);
+		if ($c->hasMethod($mn)){
+			$m = $c->getMethod($mn);
 			$args = array();
 			$margs = $m->getParameters();
-			
 			$assignedkeys = array();
 			
 			foreach ($margs as $marg){
@@ -201,17 +201,14 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  * @ignore
  */	
 	public function __get($nm){
-		switch ($nm){
-			default:{
-				if (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0){
-					if (key_exists($matches[1], $this->_explicit_handlers_))
-						return $this->_explicit_handlers_[$matches[1]];
-					else 
-						return null;
-				}	
-				return parent::__get($nm);
-			}break;
-		}
+		$result = parent::__get($nm);
+		if (is_null($result) && (preg_match('/^On([\w_]*)Event$/',$nm,$matches) != 0)){
+			if (key_exists($matches[1], $this->_explicit_handlers_))
+				return $this->_explicit_handlers_[$matches[1]];
+			else 
+				return null;
+		}	
+		return $result;
 	}
 	
 /**
@@ -602,7 +599,7 @@ abstract class TController extends TResponseElement implements IActionsList {
 /**
  * @var IEventSender
  */
-	private $_ioc_reloaders_ = array();
+	protected $_ioc_reloaders_ = array();
 	
 	protected $actions = array();
 	

@@ -43,7 +43,7 @@
 			
 			preg_match_all("/\{:([^\}]*)\}/",$this->_request_,$prms);
 			foreach ($prms[1] as $p)
-				$this->request_params[] = $p;
+				$this->_request_params_[] = $p;
 
 			preg_match_all("/\[:([^\]]*)\]/",$this->_request_,$prms);
 			foreach ($prms[1] as $p)

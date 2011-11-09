@@ -27,11 +27,11 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 /**
  * @var TOrmList
  */	
-	private $_ioc_navigation_;
+	protected $_ioc_navigation_;
 /**
  * @var TOrmNested 
  */	
-	private $_ioc_partner_;
+	protected $_ioc_partner_;
 /**
  * @var mixed
  */	

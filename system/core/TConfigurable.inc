@@ -101,11 +101,23 @@ interface IConfigurable {
   	}
   	
   	private function _check_ioc_type($value,$type){
+  		if (is_object($value) && is_string($type)){
+  			if ($value instanceof $type)
+  				return true;
+  		}
+  		  		
+  		if (($type == 'boolean') || ($type == 'integer') || ($type == 'float') || ($type == 'string') || ($type == 'array') || ($type == 'object'))
+  			if (gettype($value) == $type)
+  				return true;
+  						
   		if (is_callable($type,false))
   			return call_user_func($type,$value);
-  		else if (is_callable(array($this,$type)))
-  			return call_user_func(array($this,$type),$value);	
-  		else if (is_array($type)){
+  			
+  		if (is_string($type))	
+  			if (is_callable(array($this,$type)))
+  				return call_user_func(array($this,$type),$value);
+  				
+  		if (is_array($type)){
   			$result = true;
 			foreach ($type as $t){
 				$result = $this->_check_ioc_type($value, $t);
@@ -113,9 +125,8 @@ interface IConfigurable {
 			}	
 			return $result;
   		}
-  		if (is_object($value))  		
-  			return $value instanceof $type;
-  		return gettype($value) == $type; 
+  		
+  		return false; 
   	}
 
 /**
@@ -131,10 +142,12 @@ interface IConfigurable {
 			$member = $value;
 			$value = self::Instance($value);
 		}
-		if ($this->_check_ioc_type($value, $type))
-			$member = $value;
-		else if ($value) 
-			throw new TCoreException(TCoreException::ERR_BAD_TYPE);
+		if ($value){
+			if ($this->_check_ioc_type($value, $type))
+				$member = $value;
+			else  
+				throw new TCoreException(TCoreException::ERR_BAD_TYPE);
+		}
 	}
 	
 /**
@@ -153,13 +166,19 @@ interface IConfigurable {
 		}
 		return $member;	
 	}
+	
+	private function _check_property($nm){
+		$rc = new ReflectionClass(get_class($this));
+		if ($rc->hasProperty($nm))
+			return $rc->getProperty($nm);
+		return false;
+	}
  	
  	private function _check_ioc(&$nm,&$type,&$is_ioc_array){
  		$type = null;
  		$is_ioc_array = false;
 		$iocname = '_ioc'.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
-		$rc = new ReflectionClass(get_class($this));
- 		if ($p = $rc->getProperty($iocname)){
+ 		if ($p = $this->_check_property($iocname)){
 			$type = 'IConfigurable';
 			if ($dc = $p->getDocComment()){
 				preg_match('/@var\s+(\w*)(\[\s*\])?/',$dc,$matches);
@@ -179,41 +198,52 @@ interface IConfigurable {
  	 * @ignore
  	 */
 	public function __set($nm,$value){
-		if ($this->_check_ioc($nm, $type, $is_ioc_array)){
-			if ($is_ioc_array)
-				$this->setIocArrayMember($this->$nm, $value, $type);
-			else
-				$this->setIocMember($this->$nm, $value, $type);
-		} else
-  			$this->$nm = $value; 
+		if ($this->_check_property($nm))
+			$this->$nm = $value;
+		else {	
+			if ($this->_check_ioc($nm, $type, $is_ioc_array)){
+				if ($is_ioc_array)
+					$this->setIocArrayMember($this->$nm, $value, $type);
+				else 		
+					$this->setIocMember($this->$nm, $value, $type);
+			} 
+		}
 	}
 	
  	/**
  	 * @ignore
  	 */
 	public function __get($nm){
+		if ($this->_check_property($nm))
+			return $this->$nm;
 		if ($this->_check_ioc($nm, $type, $is_ioc_array)){
 			if ($is_ioc_array)
 				return $this->getIocArrayMember($this->$nm, $type);
 			return $this->getIocMember($this->$nm, $type);	
 		}
-		return $this->$nm;
+		return null;
 	}
 	
  	/**
  	 * @ignore
  	 */
 	public function __isset($nm){
-		$this->_check_ioc($nm, $type, $is_ioc_array);
-		return isset($this->$nm);
+		if ($this->_check_property($nm))
+			return isset($this->$nm);
+		if ($this->_check_ioc($nm, $type, $is_ioc_array))
+			return isset($this->$nm);
+		return false;
 	}
 	
  	/**
  	 * @ignore
  	 */
 	public function __unset($nm){
-		$this->_check_ioc($nm, $type, $is_ioc_array);
-		unset($this->$nm);
+		if ($this->_check_property($nm))
+			unset($this->$nm);
+		else	
+			if ($this->_check_ioc($nm, $type, $is_ioc_array))
+				unset($this->$nm);
 	}	
  }
 ?>

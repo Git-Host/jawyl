@@ -15,6 +15,7 @@
 TApplication::import("core::TService");
 TApplication::import("common::ajax");
 TApplication::import("common::service::interfaces");
+TApplication::import("common::mvc");
 
 
 class TPagePolicy extends TPolicy {
@@ -43,11 +44,11 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 /**
  * @var IThemeEngine
  */	
-	private $_ioc_theme_engine_;
+	protected $_ioc_theme_engine_;
 /**
  * @var IAjaxEngine
  */	
-	private $_ioc_ajax_engine_;	
+	protected $_ioc_ajax_engine_;	
 /**
  * @var string
  */	
@@ -211,6 +212,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			$this->exception = $e;
 			if ($this->isAjax)
 				$this->AjaxEngine->Error($this,$e->getMessage());
+			$result = false;	
 		}
 		
 		if (!$this->isAjax)
@@ -261,11 +263,11 @@ abstract class TPageService extends TService {
 /**
  * @var IThemeEngine
  */	
-	private $_ioc_theme_engine_;
+	protected $_ioc_theme_engine_;
 /**
  * @var IAjaxEngine
  */	
-	private $_ioc_ajax_engine_;
+	protected $_ioc_ajax_engine_;
 	
 /**
  * gets page by page id 

@@ -39,7 +39,7 @@ class TAreasList extends TAreasWidget implements IList {
 /**
  * @var IItemNavigation
  */	
-	private $_ioc_item_navigator_;
+	protected $_ioc_item_navigator_;
 /**
  * @ignore
  */	

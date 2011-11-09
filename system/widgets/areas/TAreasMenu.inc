@@ -40,7 +40,7 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 /**
  * @var IItemNavigation
  */	
-	private $_ioc_item_navigator_;
+	protected $_ioc_item_navigator_;
 	
 	public function __get($nm){
 		switch ($nm){
@@ -163,8 +163,7 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 				<?php
 			}
 			foreach ($subs as $sl)
-				$this->RenderArea
-				($this->GetArea($sl,"Item"));
+				$this->RenderArea($this->GetArea($sl,"Item"));
 			if (count($subs) > 0){				
 				?></div><?php
 			}

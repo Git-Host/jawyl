@@ -36,7 +36,7 @@ abstract class TItemsList extends TSecuredController implements IItemsList, IIte
  * @var IItemsList
  * holds controller master list object.
  */	
-	private $_ioc_master_list_;
+	protected $_ioc_master_list_;
 
 	protected function onRefresh(TEvent $event){
 		$this->innerSelect(null);
