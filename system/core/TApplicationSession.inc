@@ -216,20 +216,20 @@
 		
 		public function Open(){
 			if (!$this->isOpen){
-				@session_set_save_handler(array(&$this,"SessOpen"), array(&$this,"SessClose"), array(&$this,"SessRead"), array(&$this,"SessWrite"), array(&$this,"SessDestroy"), array(&$this,"GarbageCollection"));
-				@session_start();
+				session_set_save_handler(array(&$this,"SessOpen"), array(&$this,"SessClose"), array(&$this,"SessRead"), array(&$this,"SessWrite"), array(&$this,"SessDestroy"), array(&$this,"GarbageCollection"));
+				session_start();
 				$this->isOpen = true;
 			}
 		}
 		
 		public function Close(){
-			@session_commit();
+			session_commit();
 			$this->isOpen = false;	
 			return true;
 		}
 		
 		public function Destroy(){
-			@session_destroy();
+			session_destroy();
 		}
 		
 /**
