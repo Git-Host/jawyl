@@ -73,7 +73,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			return;
 		}	
 		if (method_exists($cc,$name)){
-			echo call_user_method($name,$cc);
+			echo call_user_func(array($cc,$name));
 			return;
 		}
 		if (property_exists($cc,$name)){
