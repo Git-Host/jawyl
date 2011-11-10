@@ -165,7 +165,7 @@ jQuery.areas_move_tag = "<?php echo TAreasEngine::AREA_MOVE; ?>";
 						if ($skincache > 0)
 							$callmethod = !$this->startCache($engine, $area->Skin(), $skincache);
 						if ($callmethod)	
-							call_user_method("render".$area->Skin(),$this,$area);
+							call_user_func(array($this,"render".$area->Skin()),$area);
 						if ($skincache > 0)
 							$this->stopCache($engine, $cachename, $skincache);	
 					}

@@ -9,7 +9,7 @@ abstract class TSkinnableWidget extends TSourcedWidget {
 			include $file;
 		else	
 		if (method_exists($this,"JavaScript"))
-			call_user_method("JavaScript",$this);
+			$this->JavaScript();
 		$file = $this->getAsset("js","extend.js","dir");
 		if (!is_null($file))
 			include $file;
@@ -23,7 +23,7 @@ abstract class TSkinnableWidget extends TSourcedWidget {
 			include $file;
 		else
 		if (method_exists($this,"Css"))
-			call_user_method("Css",$this);
+			$this->Css();
 		$file = $this->getAsset("css","extend.css","dir");
 		if (!is_null($file))
 			include $file;
@@ -98,7 +98,7 @@ abstract class TSkinnableWidget extends TSourcedWidget {
 			include $file;
 		else 
 			if (method_exists($this,"inlineJavaScript")) 
-				call_user_method("inlineJavaScript",$this);
+				$this->inlineJavaScript();
 		$file = $this->getAsset("js","inline.extend.js","dir");
 		if (!is_null($file))
 			include $file;
