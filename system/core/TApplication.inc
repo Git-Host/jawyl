@@ -26,6 +26,10 @@
 	require_once "TI18n.inc";
 	require_once "TApplicationSession.inc";
 	
+/*
+ * @todo : various environments (Production, Testing, Development) and exception handling according to environment
+ */	
+	
 /**
  * Jawyl application is an instance of TApplication class.
  * This class provides an application skeleton which is used through all the runtime. 
