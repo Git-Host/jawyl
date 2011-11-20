@@ -20,15 +20,12 @@
 	require_once "security/acl.inc";
 	require_once "security/policy.inc";
 	require_once "TConfigurable.inc";
+	require_once "TBuiltinExceptionHandler.inc";
 	require_once "TServiceMap.inc";
 	require_once "THttpRequest.inc";
 	require_once "TService.inc";
 	require_once "TI18n.inc";
 	require_once "TApplicationSession.inc";
-	
-/*
- * @todo : various environments (Production, Testing, Development) and exception handling according to environment
- */	
 	
 /**
  * Jawyl application is an instance of TApplication class.
@@ -74,10 +71,15 @@
  * 
 */	
 	final class TApplication extends TConfigurable {
+		const ENV_PRODUCTION = 0;
+		const ENV_TESTING = 1;
+		const ENV_DEVELOPING = 2;
+		
+		
 		private $_request_path_;
 /**
  * @var string stores local path where Jawyl framework is placed
-*/
+ */
 		public static $SystemPath;
 		private $_app_path_;
 		private $_private_dir_ = "private";
@@ -88,12 +90,18 @@
 		private $_ajax_engine_;
 		private $_default_service_name_;
 		private $_sef_;
+/**
+ * @var IExceptionHandler
+ */		
+		private $_ioc_exception_handler_;
 		
 		public static $CompileAppConfig = false;
 		
+		public static $Environment = self::ENV_PRODUCTION;
+		
 /**
  * @var TApplication is a reference to TApplication skeleton
-*/
+ */
 		public static $Application;
 		
 		private $_service_map_;
@@ -122,6 +130,7 @@
 				case "ConfigDir":return $this->_request_path_."/".$this->_private_dir_;break;
 				case "ConfigFile":return $this->_request_path_."/".$this->_private_dir_."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
+				case "Environment":return self::$Environment;break;
 			}
 			return parent::__get($nm);
 		}
@@ -135,7 +144,7 @@
 		public final function __construct($requestPath){
 			self::$Application = $this;
 			self::$SystemPath = realpath(dirname(__FILE__)."/../");
-			
+			$this->_ioc_exception_handler_ = new TBuiltinExceptionHandler();
 			$this->_request_path_ = str_ireplace("\\","/",$requestPath);
 			$this->_app_path_ = $this->_request_path_;
 			$docroot = str_ireplace("\\","/",realpath($_SERVER["DOCUMENT_ROOT"]));
@@ -541,6 +550,14 @@
    				mkdir($path);
    			return $path;
 		}
+		
+		private static function _adjust_error_level(){
+			switch (self::$Environment){
+				case self::ENV_PRODUCTION:error_reporting(E_ERROR);break;
+				case self::ENV_TESTING:error_reporting(E_ERROR | E_WARNING | E_USER_ERROR | E_USER_WARNING);break;
+				case self::ENV_DEVELOPING:error_reporting(E_ALL | E_STRINCT);break; 
+			}
+		}
 /**
 * @ignore
 * */		
@@ -555,6 +572,20 @@
 				case "PrivateDir":$this->_private_dir_ = $value;break;
 				case "ImportPath":self::AddImportPath($value);break;
 				case "Sef":$this->_sef_ = TConvertions::ConvertToBoolean($value);break;
+				case "Environment":{
+					if (!is_numeric($value)){
+						$temp = strtolower($value);
+						$value = self::ENV_PRODUCTION;
+						if (preg_match('/^test.*$/', $temp))
+							$value = self::ENV_TESTING;
+						if (preg_match('/^develop.*$/', $temp))
+							$value = self::ENV_DEVELOPING;
+					}
+					if (in_array($value,array(self::ENV_PRODUCTION,self::ENV_TESTING,self::ENV_DEVELOPING))) {
+						self::$Environment = $value;
+						self::_adjust_error_level();
+					}
+				}break;
 				default:parent::__set($nm,$value);
 			}
 		}
@@ -564,9 +595,17 @@
 */		
 		public static function Run($callerPath){
 			global $Application;
-			set_error_handler(create_function('$errno,$errstr,$errfile,$errline','if (error_reporting() & $errno) throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);'));
+			self::_adjust_error_level();
+			set_error_handler(create_function('$errno,$errstr,$errfile,$errline','if (error_reporting() & $errno) throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);return true;'));
+			set_exception_handler(array('TApplication','AppExceptionHandler'));
 			$Application = new TApplication(realpath(dirname($callerPath)));
 			$Application->_app_run();
+		}
+		
+		public static function AppExceptionHandler(Exception $e){
+			if (self::$Application->_ioc_exception_handler_ instanceof IExceptionHandler)
+				return self::$Application->_ioc_exception_handler_->HandleException($e);
+			return false;	
 		}
 	}
 ?>

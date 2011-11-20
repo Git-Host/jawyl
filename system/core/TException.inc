@@ -100,4 +100,13 @@
 		}
 	}
 	
+	interface IExceptionHandler {
+/**
+ * Exception handling method
+ * @param Exception $e
+ * @return boolean
+ */		
+		public function HandleException(Exception $e);
+	}
+	
 ?>
