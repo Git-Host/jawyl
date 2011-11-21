@@ -143,9 +143,9 @@
 		
 		public final function __construct($requestPath){
 			self::$Application = $this;
-			self::$SystemPath = realpath(dirname(__FILE__)."/../");
+			self::$SystemPath = str_replace("\\","/",realpath(dirname(__FILE__)."/../"));
 			$this->_ioc_exception_handler_ = new TBuiltinExceptionHandler();
-			$this->_request_path_ = str_ireplace("\\","/",$requestPath);
+			$this->_request_path_ = str_replace("\\","/",$requestPath);
 			$this->_app_path_ = $this->_request_path_;
 			$docroot = str_ireplace("\\","/",realpath($_SERVER["DOCUMENT_ROOT"]));
 			$this->_root_ = str_ireplace($docroot,"",$this->_app_path_);

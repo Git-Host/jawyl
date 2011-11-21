@@ -5,37 +5,49 @@
 		private function _exception_header(Exception $e){
 					?>
 					<style>
-						table.trace {
+						.error {
+							font-family:Verdana;
+						}
+						.error table.trace {
 							border-collapse:collapse;
 							border-style:solid;
 							border-color:black;
-							border-width:1px;
+							border-width:2px;
 							margin:10px;
 						}
 						
-						table.trace th {
+						.error table.trace th {
 							font-weight:bold;
-							background-color:red;
+							background-color:orange;
 							font-size:11pt;
 							border-style:solid;
 							border-color:black;
 							border-width:2px;
 							padding:4px;
+							font-size:10pt;
 						}
 						
-						table.trace td {
+						.error table.trace td {
 							font-size:11pt;
 							border-style:dashed;
 							border-color:black;
 							border-width:1px;
 							padding:3px;
+							font-size:10pt;
 						}
 						
-						h3 {
+						.error h3 {
 							color:red;
+							font-size:12pt;
 						}
 						
-						div.message {
+						.error div.part-title {
+							font-weight:bold;
+							font-size:10pt;
+							margin:3px;
+						}
+						
+						.error div.message {
 							color:black;
 							font-size:12pt;
 							border-style:dotted;
@@ -43,22 +55,50 @@
 							border-color:red;
 							margin:5px;
 							padding:5px;
+							font-size:11pt;
+							background-color:#ffeedd;
 						}
 						
-						div.code {
+						.error table.code {
 							color:gray;
 							border-style:double;
 							border-color:black;
 							border-width:3px;
-							padding:5px;
-							font-family:Verdana;
+							font-size:12pt;
+							border-collapse:collapse;
+							width:100%;
+							overlow:hidden;
+							table-layout: fixed;
 						}
 						
-						div.code div.error-line {
+						.error table.code td {
+							border-style:none;
+							padding:2px;
+							font-size:10pt;
+						}
+						
+						.error table.code td.line {
+							overflow:hidden;
+							white-space: nowrap;
+						}
+						
+						.error table.code td.line div.tab {
+							width:30px;
+							display:inline;
+						}
+						
+						
+						.error table.code tr.error-line {
 							font-weight:bold;
 							color:red;
 						}
+						
+						.error span.syspath {
+							font-weight:lighter;
+							color:silver;
+						}
 					</style>
+					<div class="error">
 					<h3>
 					<?php
 					$error = $e instanceof ErrorException;
@@ -74,22 +114,38 @@
 					<?php
 					$trace = $e->getTrace();
 					?>
-					<h4>Stack trace:</h4>
+					<div class="part-title">Stack trace:</div>
 					<table class="trace">
-					<tr><th>n</th><th>file</th><th>line</th><th>call</th></tr>
+					<tr><th>n</th><th>call</th><th>line</th><th>file</th></tr>
 					<?php
 					$n = count($trace);
-					foreach ($trace as $call_level){
+					foreach ($trace as $call){
 						?>
 					<tr>
 						<td><?php echo $n; ?></td>
-						<td><?php echo $call_level['file']; ?></td>
-						<td style="text-align: right;"><?php echo $call_level['line']; ?></td>
-						<td><?php echo $call_level['class'].$call_level['type'].$call_level['function']; ?>(<?php
+						<td><?php
+						if (isset($call['class'])) 
+							echo $call['class'];
+						if (isset($call['type']))	
+							echo $call['type'];
+						if (isset($call['function']))
+							echo $call['function']; 
+						?>(<?php
 						$args = array(); 
-						foreach ($call_level['args'] as $arg) $args[] = is_object($arg)?(get_class($arg)):(is_numeric($arg)?$arg:(is_null($arg)?'null':("'".$arg."'")));
+						if (isset($call['args']))
+							foreach ($call['args'] as $arg) $args[] = is_object($arg)?(get_class($arg)):(is_numeric($arg)?$arg:(is_null($arg)?'null':("'".$arg."'")));
 						echo join(',', $args); 
 						?>)</td>
+						<td style="text-align: right;"><?php if (isset($call['line'])) echo $call['line']; ?></td>
+						<td><?php if (isset($call['file'])) {
+								$file = str_replace('\\', '/', $call['file']);
+								if (stristr($file,TApplication::$SystemPath))
+									echo str_ireplace(TApplication::$SystemPath, '<span class="syspath">SYS_PATH</span>', $file);
+								else if (stristr($file,TApplication::$Application->AppPath))
+									echo str_ireplace(TApplication::$Application->AppPath, '<span class="syspath">APP_PATH</span>', $file);
+								else 
+									echo $file;	
+						} ?></td>
 					</tr>
 						<?php	
 						$n--;
@@ -116,29 +172,41 @@
 				}break;
 				case TApplication::ENV_TESTING:{
 					$this->_exception_header($e);
+					?>
+					</div>
+					<?php
 				}break;
 				case TApplication::ENV_DEVELOPING:{
 					$this->_exception_header($e);
-					$lines = file($e->getFile());
+/*
+ * @todo make file encoding flexible
+ */					
+					$lines = explode("\n",str_replace("\t", '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',htmlentities(file_get_contents($e->getFile()),ENT_QUOTES,'UTF-8')));
+					
 					if (!empty($lines)){
 						?>
-						<div class="code">
+						<div class="part-title">Code:</div>
+						<table class="code">
+						<col width="40px">
 						<?php
+						
 							$i = ($e->getLine() > 10)?($e->getLine() - 10):0;
 							$n = count($lines);
 							$n = ($e->getLine() + 10 < $n)?$e->getLine() + 10:$n;
-/*
- * @todo : preserve code tab formatting
- */							 
-							while ($i <= $n) {
-        						echo '<div'.(($i+1) == $e->getLine()?' class="error-line"':'').'>'.htmlentities($lines[$i],ENT_QUOTES,'UTF-8').'</div>';
+						 
+							while ($i < $n) {
+								?>
+							<tr<?php echo (($i+1) == $e->getLine()?' class="error-line"':''); ?>><td><?php echo $i+1; ?></td><td class="line"><?php echo $lines[$i];  ?></td></tr>
+								<?php
         						$i++;
     						}
 						?>
-						</div>
+						</table>
 						<?php
-						fclose($handle); 
 					}
+					?>
+					</div>
+					<?php
 				}break;
 			}
 			return true;
