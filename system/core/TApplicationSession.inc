@@ -47,17 +47,17 @@
  */		
 		public function ResetId();
 /**
- * gets session variable. is a php magic __get.
+ * gets session variable.
  * @param string $nm name of variable
  * @return mixed  
  */		
-		public function __get($nm);
+		public function Get($nm);
 /**
- * sets session variable. is a php magic __set.
+ * sets session variable.
  * @param string $nm name of variable
  * @param mixed $value value of variable  
  */		
-		public function __set($nm,$value);
+		public function Set($nm,$value);
 /**
  * Adds handler to session open event.
  * If callback returns false all subsequent handling aborts. To add a handler you need to close session and reopen it.
@@ -237,7 +237,8 @@
  */		
 		
 		public function SessOpen($sess_path, $sess_name){
-			$this->savePath = realpath($sess_path);
+			if (!$this->savePath)
+				$this->savePath = realpath($sess_path);
 			if (!$this->callHandlers("open",array("sess_path"=>$sess_path,"sess_name"=>$sess_name))) return false;
 			return true;
 		}
@@ -300,24 +301,25 @@
 		protected function schedule_GarbageCollection($maxlifetime){
 			$this->gc($maxlifetime);
 		}
-		
-/**
- * @ignore
- */		
-		public function __get($nm){
+	
+		public function Get($nm){
 			if (isset($_SESSION))
 				if (key_exists($nm,$_SESSION))
 					return $_SESSION[$nm];
 			return null;
 		}
-		
-/**
- * @ignore
- */		
-		public function __set($nm,$value){
+	
+		public function Set($nm,$value){
 			if (isset($_SESSION))
 				$_SESSION[$nm] = $value;
-		}		
+		}	
+
+		public function __set($nm,$value){
+			switch ($nm){
+				case 'SavePath':$this->savePath;break;
+				default:parent::__set($nm, $value);break;
+			}
+		}
 	}
 	
 /**

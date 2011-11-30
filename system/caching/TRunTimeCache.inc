@@ -19,26 +19,17 @@ TApplication::import("common::cache");
  * @see TCache
  */
 class TRunTimeCache extends TCache {
-	public $UnitClass;
 /**
  * @var array
  */	
 	protected static $cache;
-/**
- * @return TArrayCacheUnit
- * @see ICache::GetCacheUnit()
- */	
-	public function GetCacheUnit($cacheid){
-		if (!isset(self::$cache))  self::$cache = array();
-		if (!isset(self::$cache[$cacheid])){
-			if (isset($this->UnitClass)){
-				$c = new ReflectionClass($this->UnitClass);
-				self::$cache[$cacheid] = $c->newInstance($cacheid);
-			}
-			else
-			self::$cache[$cacheid] = new TArrayCacheUnit($cacheid);
-		}
-		return self::$cache[$cacheid];
+
+	protected function &loadStorage(){
+		return self::$cache;
+	}
+	protected function saveStorage(array &$storage){
+		if ($storage !== self::$cache)
+			self::$cache = $storage;
 	}	
 }
 ?>

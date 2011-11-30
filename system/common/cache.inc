@@ -191,12 +191,36 @@ class TArrayCacheUnit extends TCacheUnit {
  * @see TConfigurable
  */
 abstract class TCache extends TConfigurable implements ICache {
+	public $UnitClass;
 /**
  * constructor
  * @param string $name
  */	
 	public function __construct($name){
 		parent::__construct($name);
+	}
+	
+/** 
+ * loads cached data into an array
+ * @return array
+ */	
+	protected abstract function &loadStorage();
+/**
+ * saves cached data from an array
+ * @param array $storage
+ * @return boolean
+ */	
+	protected abstract function saveStorage(array &$storage);
+
+	public function GetCacheUnit($cacheid){
+		$c = $this->loadStorage();
+		if (!is_array($c)) $c = array();
+		if (!key_exists($cacheid,$c)){
+			$uc = $this->UnitClass?$this->UnitClass:'TArrayCacheUnit';
+			$c[$cacheid] = new $uc($cacheid);
+			$this->saveStorage($c);
+		}
+		return $c[$cacheid];
 	}	
 }
 

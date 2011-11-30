@@ -18,25 +18,14 @@ TApplication::import("common::cache");
  * @see TCache
  * @see TApplicationSession
  */
-class TSessionCache extends TCache {	
-/**
- * @return TArrayCacheUnit
- * @see ICache::GetCacheUnit()
- */		
-	public function GetCacheUnit($cacheid){
-		$c = TApplicationSession::Get($this->name);
-		
-		if (is_null($c)) $c = array();
-		if (!key_exists($cacheid,$c)){
-			if (isset($this->UnitClass)){
-				$cl = new ReflectionClass($this->UnitClass);
-				$c[$cacheid] = $cl->newInstance($cacheid);
-			}
-			else
-			$c[$cacheid] = new TArrayCacheUnit($cacheid);
-		}
-		TApplicationSession::Set($this->name,$c);
-		return $c[$cacheid];
+class TSessionCache extends TCache {
+	
+	protected function &loadStorage(){
+		return TApplicationSession::Get($this->name);
+	}
+	
+	protected function saveStorage(array &$storage){
+		TApplicationSession::Set($this->name,$storage);
 	}	
 }
 ?>
