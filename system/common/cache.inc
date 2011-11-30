@@ -191,7 +191,19 @@ class TArrayCacheUnit extends TCacheUnit {
  * @see TConfigurable
  */
 abstract class TCache extends TConfigurable implements ICache {
-	public $UnitClass;
+	private $_unit_class_;
+	
+	public function __set($nm,$value){
+		switch ($nm){
+			case 'UnitClass':{
+				if (is_subclass_of($value, 'ICacheUnit'))
+					$this->_unit_class_ = $value;
+				else
+					throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
+			}break;
+			default:parent::__set($nm,$value);break;
+		}
+	}
 /**
  * constructor
  * @param string $name
