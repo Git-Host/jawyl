@@ -22,7 +22,7 @@ class TOrmClassPermission extends TPolicy {
 		return ($this->sobj instanceof TClass) && (in_array($type, array(self::ORM_INSTANCIATE,self::ORM_INSTLIST)));
 	}
 	
-	public function Descenders(){
+	public function Descendants(){
 		switch ($this->type){
 			case self::ORM_INSTANCIATE:
 			case self::ORM_INSTLIST:return array(new TServiceRole(TServiceRole::USER));break;
@@ -38,7 +38,7 @@ class TOrmItemRole extends TPolicy {
 		return ($this->sobj instanceof TOrmItem) && ($type == self::ORM_OWNER);
 	}
 	
-	public function Descenders(){
+	public function Descendants(){
 		switch ($this->type){
 			case self::ORM_OWNER:return array(new TServiceRole(TServiceRole::ADMIN));break;
 		}
@@ -66,7 +66,7 @@ class TOrmItemPermission extends TPolicy {
 		return ($this->sobj instanceof TOrmItem) && (in_array($type, array(self::ORM_ACL,self::ORM_DELETE,self::ORM_LIST,self::ORM_MODIFY,self::ORM_RELATE,self::ORM_VIEW)));
 	}
 	
-	public function Descenders(){
+	public function Descendants(){
 		switch ($this->type){
 			case self::ORM_ACL:
 			case self::ORM_DELETE:
@@ -87,7 +87,7 @@ class TOrmPropertyPermission extends TPolicy {
 		return ($this->sobj instanceof TOrmProperty) && (in_array($type, array(self::ORM_READ,self::ORM_WRITE)));
 	}
 	
-	public function Descenders(){
+	public function Descendants(){
 		$result = array(new TServiceRole(TServiceRole::USER));
 		$item = $this->sobj->Item();
 		switch ($this->type){
@@ -795,13 +795,13 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	}
 	
 /**
- * gets orm class descenders by class name
+ * gets orm class descendants by class name
  * @param string $className
  * @return IIterator iterator of IClass
- * @uses IORMDBDriver::ClassDescenders()
+ * @uses IORMDBDriver::ClassDescendants()
  */	
-	public function ClassDescenders($className){
-		return $this->dbDriver->ClassDescenders($className);
+	public function ClassDescendants($className){
+		return $this->dbDriver->ClassDescendants($className);
 	}
 
 /**

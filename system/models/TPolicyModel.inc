@@ -158,7 +158,7 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
 		if ($p->SecurityObject())
 			$this->_check_s_o($p->SecurityObject(),$objs);
 		$pcodes[] = $p->Type();
-		$syn = $p->Descenders();
+		$syn = $p->Descendants();
 		foreach ($syn as $p1)
 			$this->_check_p_o($p1, $objs, $pcodes);	
 	}

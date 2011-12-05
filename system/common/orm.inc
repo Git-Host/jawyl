@@ -98,7 +98,7 @@ class TOrmException extends TException {
  * 
  * @return IIterator<IClass>
  */		
-		public function Descenders();
+		public function Descendants();
 /**
  * gets class attribute definition
  * @param string $name - attribute name or attribute storage field name
@@ -113,7 +113,7 @@ class TOrmException extends TException {
  */		
 		public function AttributeDefinitions();
 /**
- * gets whether class is a descender of another class, or is this class
+ * gets whether class is a descendant of another class, or is this class
  * @param string $name - name of class to test against
  * @return boolean 
  */		

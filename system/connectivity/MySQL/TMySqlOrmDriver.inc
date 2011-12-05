@@ -45,7 +45,7 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 	}
 	
 	private function _dsc_srcs(TDataSource $ds, IClass $class, array &$result){
-		$dsc = $class->Descenders();
+		$dsc = $class->Descendants();
 		foreach ($dsc as $d){
 			$result[] = $this->_subclass_alias($ds,$d).".*";
 			$this->_dsc_srcs($ds, $d, $result);
@@ -74,7 +74,7 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 	}
 	
 	private function _left_joins(TDataSource $ds, IClass $class, array $classfilter){
-		$descs = $class->Descenders();
+		$descs = $class->Descendants();
 		if (!empty($descs)){
 			$result = "";
 			foreach ($descs as $d)

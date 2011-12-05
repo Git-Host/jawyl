@@ -25,7 +25,7 @@ class TPagePolicy extends TPolicy {
 		return $type == self::PAGE_ACCESS;
 	}
 	
-	public function Descenders(){
+	public function Descendants(){
 		return array(new TServiceRole(TServiceRole::ANONYMOUS));
 	}
 } 

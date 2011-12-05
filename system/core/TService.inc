@@ -53,7 +53,7 @@ class TServiceRole extends TPolicy {
 			$this->sobj = TApplication::CurrentService();
 	}
 	
-	public function Descenders(){
+	public function Descendants(){
 		$result = array();
 		switch ($this->type){
 			case self::USER:$result[] = new TServiceRole(self::ADMIN);break;

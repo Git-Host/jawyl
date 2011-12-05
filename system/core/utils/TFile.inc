@@ -14,6 +14,8 @@
  * @subpackage Utilities
  * @category Core
  * File wrapper.
+ * 
+ * @todo implement links for aliased web-directories
  */
    class TFile {
 /**

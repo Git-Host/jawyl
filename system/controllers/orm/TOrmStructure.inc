@@ -139,7 +139,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 	}	
 	
 /**
- * performs orm item movement within a structure, can be overrden in descenders
+ * performs orm item movement within a structure, can be overrden in descendants
  * @return boolean
  */	
 	protected function itemMovement(IIdentity $item, IIdentity $parent = null){

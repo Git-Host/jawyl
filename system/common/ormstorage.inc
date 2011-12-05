@@ -88,14 +88,14 @@ interface IORMDriver {
  *  */		
 //	public function ClassAncestors(IClass $class, $onlydirect = false);
 /**
- * gets class descenders
+ * gets class descendants
  * @param string $classname class name
- * @param boolean $onlydirect optional, defaults to false, when set to true only direct descenders are fetched
+ * @param boolean $onlydirect optional, defaults to false, when set to true only direct descendants are fetched
  * @return IIterator iterator of IClass
  * @see IIterator
  * @see IClass 
  */		
-//	public function ClassDescenders(IClass $class, $onlydirect = false);
+//	public function ClassDescendants(IClass $class, $onlydirect = false);
 /**
  * saves instance to storage
  * @return boolean
@@ -133,7 +133,7 @@ interface IORMDriver {
 /**
  * gets instances of class
  * @param string $classname class name
- * @param boolean $exact optional,defaults to false, when set to true instances of class descenders are not fetched
+ * @param boolean $exact optional,defaults to false, when set to true instances of class descendants are not fetched
  * @param TOrmFetchOptions $options optional fetch options
  * @return IIterator iterator of IInstance
  * @see IIterator
@@ -554,7 +554,7 @@ class TDBClass extends TClass {
 		
 	public function Ancestor(){return $this->ancestor;}
 	public function Instances(){return new TArrayIterator(array());}
-	public function Descenders(){return new TArrayIterator(array());}
+	public function Descendants(){return new TArrayIterator(array());}
 	protected function loadStatic(IAttributeDefinition $def, TDate $date = null){return null;}
 	protected function saveStatic(IAttributeDefinition $def, $value, TDate $date = null){return false;}
 }
@@ -564,7 +564,7 @@ class TDBClass extends TClass {
  * @subpackage Storage
  * @category System
  * Base class for orm classes using orm database drivers  
- * @property TDBDefinedClass[] $Descenders 
+ * @property TDBDefinedClass[] $Descendants 
  */
 class TDBDefinedClass extends TDBClass {
 /**
@@ -576,7 +576,7 @@ class TDBDefinedClass extends TDBClass {
  */		
 	protected $id;
 
-	protected $descenders = array();
+	protected $descendants = array();
 	
 /**
  * constructor
@@ -590,7 +590,7 @@ class TDBDefinedClass extends TDBClass {
 		$this->driver = $driver;
 		if ($ancestor){
 			parent::__construct($name,$ancestor,$attributes);
-			$ancestor->Descenders = $this;
+			$ancestor->Descendants = $this;
 		}
 		else
 			parent::__construct($name);
@@ -604,16 +604,16 @@ class TDBDefinedClass extends TDBClass {
 		parent::addAttributeDefinition($def);
 	}
 	
-	protected function addDescender(TDBDefinedClass $c){
-		$this->descenders[] = $c;
+	protected function addDescendant(TDBDefinedClass $c){
+		$this->descendants[] = $c;
 	}
 
 	public function Ancestor(){
 		return $this->ancestor;
 	}	
 	
-	public function Descenders(){
-		return $this->descenders;
+	public function Descendants(){
+		return $this->descendants;
 	}
 	
 /**
@@ -640,14 +640,14 @@ class TDBDefinedClass extends TDBClass {
 	
 	public function __get($nm){
 		switch ($nm){
-			case "Descenders":return $this->Descenders();break;
+			case "Descendants":return $this->Descendants();break;
 			default:return parent::__get($nm);break;
 		}
 	}
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case "Descenders":$this->addDescender($value);break;
+			case "Descendants":$this->addDescendant($value);break;
 			default:parent::__set($nm, $value);break;
 		}
 	}

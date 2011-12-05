@@ -79,7 +79,7 @@ abstract class TPolicy {
  * gets policies that inherit permissions
  * @return TPolicy[]
  */	
-	public abstract function Descenders();
+	public abstract function Descendants();
 }
 
 interface IPolicyChecker {

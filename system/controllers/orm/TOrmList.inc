@@ -93,7 +93,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 						$action->ClearParameters();
 						$c = $this->DataSource->GetClass($this->BaseClass);
 						$classes = array();
-						$descs = $this->DataSource->ClassDescenders($this->BaseClass);
+						$descs = $this->DataSource->ClassDescendants($this->BaseClass);
 						$abstractbc = TConvertions::ConvertToBoolean($this->AbstractBaseClass);
 						foreach ($descs as $desc)
 							if ((!$abstractbc) || ($desc->Id() != $c->Id()))
@@ -558,7 +558,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 /**
  * gets list items on specified page. 
  * if page or page size not specified returns all items, matching current filter
- * Can be overriden in descenders.
+ * Can be overriden in descendants.
  * @param int $page
  * @param int $pagesize
  * @return IIterator iterator of TOrmItem 

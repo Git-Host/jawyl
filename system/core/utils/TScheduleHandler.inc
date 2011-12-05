@@ -14,7 +14,7 @@ class TJobPolicy extends TPolicy {
 		return $type == self::JOB_EXECUTE;
 	}
 
-	public function Descenders(){
+	public function Descendants(){
 		if ($this->type == self::JOB_EXECUTE)
 			return array(new TServiceRole(TServiceRole::ADMIN));
 		return array();
