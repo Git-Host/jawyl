@@ -48,6 +48,7 @@
  * @property-read string $Root gets application path relative to host root
  * @property-read string $RelativePath gets a request path relative to TApplication::$Root
  * @property-read string $Host gets a request host name
+ * @property-read string $ConfCompileDir gets directory where application compiled configuration files are stored 
  * 
  * @property-write string $Language sets current i18n and l10n language name;
  * @see TI18n::SetLanguage()
@@ -96,6 +97,7 @@
 		private $_ioc_exception_handler_;
 		
 		public static $CompileAppConfig = false;
+		public static $ConfigCompileDirectory = 'config';
 		
 		public static $Environment = self::ENV_PRODUCTION;
 		
@@ -127,8 +129,9 @@
 				case "RelativePath":return $this->_relative_path_;break;
 				case "Path":return join(';',self::$_import_paths_);break;
 				case "Host":return $_SERVER["HTTP_HOST"];break;
-				case "ConfigDir":return $this->_request_path_."/".$this->_private_dir_;break;
-				case "ConfigFile":return $this->_request_path_."/".$this->_private_dir_."/application.xml";break;
+				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_;break;
+				case "ConfCompileDir":return $this->_app_path_."/".self::$ConfigCompileDirectory;break;
+				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
 			}
@@ -183,9 +186,12 @@
 			//$this->_uri_ = strtolower($this->_uri_);	
 				
 			$this->_relative_path_ = preg_replace('/\?.*$/','',str_ireplace($this->_root_,"",$this->_uri_));
-					
-			$config_file = $this->ConfigDir."/application.config";	
+
 			if (self::$CompileAppConfig){
+				if (!is_dir($this->ConfCompileDir))
+					mkdir($this->ConfCompileDir);
+				$config_file = $this->ConfCompileDir."/application.config";	
+					
 				$config = file_exists($config_file);
 				$src = file_exists($this->ConfigFile);
 			
@@ -248,14 +254,14 @@
 					$service_config = '<?php'."\n";
 					self::_parse_contents($xpath,$servicenode,'self::$_services_["'.$servicenode->getAttribute("name").'"]',$service_config,$objid);
 					$service_config .= '?>';
-					file_put_contents($this->ConfigDir."/service.".$servicenode->getAttribute("name").".config",$service_config);
+					file_put_contents($this->ConfCompileDir."/service.".$servicenode->getAttribute("name").".config",$service_config);
 				}
 				
 				if ($default_service)
 					$app_config .= '$this->_default_service_name_ = "'.$default_service.'";'."\n";
 				$app_config .= '?>';	
 					 
-				file_put_contents($this->ConfigDir."/application.config",$app_config);
+				file_put_contents($this->ConfCompileDir."/application.config",$app_config);
 				
 				$routs_config = '<?php $this->_service_map_ = new TServiceMap();'."\n";
 				$routs = $xpath->query("/application/requestmap/route");
@@ -285,7 +291,7 @@
 					$routs_config .= '));'."\n";
 				}
 				$routs_config .= '?>';
-				file_put_contents($this->ConfigDir."/url.config",$routs_config);
+				file_put_contents($this->ConfCompileDir."/url.config",$routs_config);
 			}
 		}
 		

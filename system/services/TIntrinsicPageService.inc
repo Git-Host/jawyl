@@ -139,9 +139,9 @@ class TIntrinsicPage extends TPage {
 		if (!$classname) $classname = "TIntrinsicPage";		
 		
 		if ($dom->firstChild->getAttribute("parent")){
-			$pfilename = $service->PageIdToFileName($dom->firstChild->getAttribute("parent"));
-			if (is_file($pfilename.".xml"))
-				self::_compile_page_contents($pfilename,$service,$counter,$classes,$text);
+			$pfilenames = $service->PageConfigFiles($dom->firstChild->getAttribute("parent"));
+			if (is_file($pfilenames[0]))
+				self::_compile_page_contents($pfilename[0],$service,$counter,$classes,$text);
 		}
 		
 		if ($dom->firstChild->getAttribute("cache"))
@@ -155,39 +155,39 @@ class TIntrinsicPage extends TPage {
 		return $classname;
 	}
 	
-	private static function _compile_page($filename,TIntrinsicPageService $service){
+	private static function _compile_page(array $filenames,TIntrinsicPageService $service){
 		$text = "<?php\n";
 		$counter = 1;	
 		$classes = array();
-		$classname = self::_compile_page_contents($filename,$service,$counter, $classes, $text);		
+		$classname = self::_compile_page_contents($filenames[0],$service,$counter, $classes, $text);		
 		$text .= "?>";
-		file_put_contents($filename.".php", $text);
+		file_put_contents($filenames[1].".php", $text);
 		
 		$text = "<?php\n";
 		if ($classname == "TIntrinsicPage")
-			$text .= '$result = new TIntrinsicPage($path,"'.$filename.'.php",$service);'."\n";
+			$text .= '$result = new TIntrinsicPage($path,"'.$filenames[1].'.php",$service);'."\n";
 		else 
-			$text .= 'TApplication::import("'.$classname.'");if (is_subclass_of("'.$classname.'","TIntrinsicPage")) $result = TApplication::Instantiate("'.$classname.'",array("path"=>$path,"filename"=>"'.$filename.'.php","service"=>$service)); else throw new TCoreException(TCoreException::ERR_BAD_TYPE);'."\n";
+			$text .= 'TApplication::import("'.$classname.'");if (is_subclass_of("'.$classname.'","TIntrinsicPage")) $result = TApplication::Instantiate("'.$classname.'",array("path"=>$path,"filename"=>"'.$filename[1].'.php","service"=>$service)); else throw new TCoreException(TCoreException::ERR_BAD_TYPE);'."\n";
 		$text .= "?>";	
-		file_put_contents($filename."_loader.php", $text);
+		file_put_contents($filenames[1]."_loader.php", $text);
 	} 
 	
-	private static function _check_need_compile($filename,$checkname, TIntrinsicPageService $service){
-		if (!is_file($checkname.".php")) return true;
-		if (filemtime($filename.".xml") > filemtime($checkname.".php")) return true;
+	private static function _check_need_compile($config,$compiled, TIntrinsicPageService $service){
+		if (!is_file($compiled.".php")) return true;
+		if (filemtime($config) > filemtime($compiled.".php")) return true;
 		
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = false;
-		$dom->Load($filename.".xml");
+		$dom->Load($filename);
 		
 		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
 			if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 				
 		if ($dom->firstChild->getAttribute("parent")){
-			$filename1 = $service->PageIdToFileName($dom->firstChild->getAttribute("parent"));
-			if (is_file($filename1.".xml"))
-				return self::_check_need_compile($filename1, $checkname, $service); 
+			$pfilenames = $service->PageConfigFiles($dom->firstChild->getAttribute("parent"));
+			if (is_file($pfilenames[0]))
+				return self::_check_need_compile($pfilenames[0], $compiled, $service); 
 		}	
 		return false;
 	}
@@ -196,15 +196,16 @@ class TIntrinsicPage extends TPage {
  * instanciates an xml based page
  * @return TIntrinsicPage
  */	
-	public static function Instanciate($path,$filename, TIntrinsicPageService $service){
+	public static function Instanciate($path,TIntrinsicPageService $service){
 		$result = null;
+		$conffiles =  $service->PageConfigFiles($path); 
 		if ($service->CompilePages){
-			if (is_file($filename.".xml"))
-				if (self::_check_need_compile($filename, $filename, $service))
-					self::_compile_page($filename,$service);
+			if (is_file($conffiles[0]))
+				if (self::_check_need_compile($conffiles[0],$conffiles[1], $service))
+					self::_compile_page($conffiles,$service);
 		}
-		if (is_file($filename."_loader.php"))
-			include $filename."_loader.php";
+		if (is_file($conffiles[1]."_loader.php"))
+			include $conffiles[1]."_loader.php";
 		if (!($result instanceof TIntrinsicPage))
 			throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>'TIntrinsicPage'));	 
 		return $result;
@@ -302,10 +303,9 @@ abstract class TIntrinsicPageService extends TPageService {
 	}
 	
 	public function PageIdToFileName($id){
-		$filename = TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id;
-		if (is_dir($filename))
-			$filename = $filename."/default";	
-		return $filename;
+		if (is_dir(TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id))
+			$filename = $id."/default";
+		return $id;
 	}
 	
 /**
@@ -316,12 +316,17 @@ abstract class TIntrinsicPageService extends TPageService {
 	protected function getPage($id){
 		if (is_null($id)) $id = '';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
-		$filename = $this->PageIdToFileName($id);
-		if (is_file($filename.".xml") || is_file($filename.".php")){
-			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id,$filename,$this);
+		$conffiles =  $this->PageConfigFiles($id);
+		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php')){
+			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id,$this);
 			return $this->PAGES[$id];
 		}
 		return null;
+	}
+	
+	public function PageConfigFiles($id){
+		$filename = $this->PageIdToFileName($id);
+		return array(TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name()."/".$filename.".xml",TApplication::$Application->ConfCompileDir."/".$this->Name()."/".$filename);
 	}
 	
 /**
