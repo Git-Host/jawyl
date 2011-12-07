@@ -439,6 +439,7 @@
 		
 		private function _app_run(){
 			include_once $this->ConfCompileDir."/application.config";
+						
 			$servicename = "";
 			if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"]; 
 			
@@ -447,16 +448,17 @@
 				self::$_request_ = $this->_service_map_->parseUri($this->RelativePath);
 			}
 			else 
-				self::$_request_ = new THttpRequest($servicename);	
+				self::$_request_ = new THttpRequest($servicename);		
 				
 			$servicename = self::$_request_->getService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
+				
 			if ($servicename){
 				$this->_current_service_ = self::Service($servicename);
 				if ($this->_current_service_){
 					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".config";
-					if (file_exists($service_config)) include_once $service_config; 
+					if (file_exists($service_config)) include_once $service_config;
 					$this->_current_service_->Handle(self::Request());	
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
@@ -570,10 +572,16 @@
 		public function __set($nm,$value){
 			switch ($nm){
 				case "Shared":$this->_shared_ = preg_replace('/\A[\\\\\/]?(.*)[\\\\\/]?\z/','/$1',$value);break;
-				case "Language":{TI18n::SetLanguage($value);parent::__set($nm,$value);}break;
-				case "Locale":{TI18n::SetLocale($value);parent::__set($nm,$value);}break;
-				case "Translator":{TI18n::SetTranslator($value);parent::__set($nm,$value);}break;
-				case "SessionHandler":{TApplicationSession::SetHandler(TConfigurable::Instance($value));parent::__set($nm,$value);}break;
+				case "Language":TI18n::SetLanguage($value);break;
+				case "Locale":TI18n::SetLocale($value);break;
+				case "Translator":TI18n::SetTranslator($value);break;
+				case "SessionHandler":{
+					if (is_string($value))
+						TApplicationSession::SetHandler(TConfigurable::Instance($value));
+					else if ($value instanceof ISessionHandler)
+						TApplicationSession::SetHandler($value);
+					else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
+				}break;
 				case "Path":self::$_import_paths_ = explode(";",$value);break;
 				case "PrivateDir":$this->_private_dir_ = $value;break;
 				case "ImportPath":self::AddImportPath($value);break;

@@ -316,7 +316,7 @@
 
 		public function __set($nm,$value){
 			switch ($nm){
-				case 'SavePath':$this->savePath;break;
+				case 'SavePath':$this->savePath = $value;break;
 				default:parent::__set($nm, $value);break;
 			}
 		}

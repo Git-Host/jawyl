@@ -130,7 +130,7 @@ class TIntrinsicPage extends TPage {
 	private static function _compile_page_contents($filename,TIntrinsicPageService $service, &$counter, &$classes, &$text){
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = false;
-		$dom->Load($filename.".xml");
+		$dom->Load($filename);
 		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
 			if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
@@ -161,6 +161,12 @@ class TIntrinsicPage extends TPage {
 		$classes = array();
 		$classname = self::_compile_page_contents($filenames[0],$service,$counter, $classes, $text);		
 		$text .= "?>";
+		
+		$dir = dirname($filenames[1].".php");
+		while (!file_exists($dir)){
+			mkdir($dir);
+			$dir = dirname($dir);
+		}
 		file_put_contents($filenames[1].".php", $text);
 		
 		$text = "<?php\n";
@@ -178,7 +184,7 @@ class TIntrinsicPage extends TPage {
 		
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = false;
-		$dom->Load($filename);
+		$dom->Load($config);
 		
 		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
 			if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
@@ -200,9 +206,10 @@ class TIntrinsicPage extends TPage {
 		$result = null;
 		$conffiles =  $service->PageConfigFiles($path); 
 		if ($service->CompilePages){
-			if (is_file($conffiles[0]))
+			if (is_file($conffiles[0])){
 				if (self::_check_need_compile($conffiles[0],$conffiles[1], $service))
 					self::_compile_page($conffiles,$service);
+			}
 		}
 		if (is_file($conffiles[1]."_loader.php"))
 			include $conffiles[1]."_loader.php";
@@ -304,8 +311,8 @@ abstract class TIntrinsicPageService extends TPageService {
 	
 	public function PageIdToFileName($id){
 		if (is_dir(TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id))
-			$filename = $id."/default";
-		return $id;
+			$filename = $id.($id?"/":"")."default";
+		return $filename;
 	}
 	
 /**

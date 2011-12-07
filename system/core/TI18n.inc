@@ -368,19 +368,27 @@
 
 /**
  * sets current application locale object by its name
- * @param string $localename locale object name
+ * @param string|ILocale $locale locale object or name
  */		
-		public static function  SetLocale($localename){
-			self::$_locale_ = TConfigurable::Instance($localename);
+		public static function  SetLocale($locale){
+			if (is_string($locale))
+				self::$_locale_ = TConfigurable::Instance($locale);
+			else if ($locale instanceof ILocale)	
+				self::$_locale_ = TConfigurable::Instance($localename);
+			else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 			self::locale_obj()->SetLanguage(self::$_language_);
 		}
 		
 /**
  * sets current application translator object by its name
- * @param string $name translator object name
+ * @param string|ITranslator $translator translator object or name
  */		
-		public static function SetTranslator($name){
-			self::$_translator_ = TConfigurable::Instance($name);
+		public static function SetTranslator($translator){
+			if (is_string($translator))
+				self::$_translator_ = TConfigurable::Instance($translator);
+			else if ($translator instanceof ITranslator)
+				self::$_translator_ = $translator;
+			else throw new TCoreException(TCoreException::ERR_BAD_VALUE);				
 			self::translator()->SetLanguage(self::$_language_);
 		}
 
