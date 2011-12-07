@@ -437,8 +437,8 @@
 			die;
 		} 
 		
-		private function _app_run(){ 
-			include_once $this->ConfigDir."/application.config";
+		private function _app_run(){
+			include_once $this->ConfCompileDir."/application.config";
 			$servicename = "";
 			if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"]; 
 			
@@ -455,14 +455,14 @@
 			if ($servicename){
 				$this->_current_service_ = self::Service($servicename);
 				if ($this->_current_service_){
-					$service_config = $this->ConfigDir."/service.".$this->_current_service_->Name().".config";
+					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".config";
 					if (file_exists($service_config)) include_once $service_config; 
 					$this->_current_service_->Handle(self::Request());	
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
 				foreach (self::$_services_ as $service){
 					$this->_current_service_ = $service;
-					$service_config = $this->ConfigDir."/service.".$this->_current_service_->Name().".config";
+					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".config";
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($this->_current_service_->Handle(self::Request())) break;	
 				}
