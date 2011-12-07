@@ -241,7 +241,7 @@
 		}
 		
 /**
- * gets timestamp value of date part of datetime
+ * gets timestamp value of date part of datetime (not including time portion)
  * @return int 
  */		
 		public function DateTimeStamp(){
