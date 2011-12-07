@@ -130,7 +130,12 @@
 				case "Path":return join(';',self::$_import_paths_);break;
 				case "Host":return $_SERVER["HTTP_HOST"];break;
 				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_;break;
-				case "ConfCompileDir":return $this->_app_path_."/".self::$ConfigCompileDirectory;break;
+				case "ConfCompileDir":{
+					$trimmed = trim(self::$ConfigCompileDirectory);
+					if (($trimmed{0} == '/') || ($trimmed{0} == '\\'))
+						return $trimmed;
+					return $this->_app_path_."/".$trimmed;
+				}break;
 				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
