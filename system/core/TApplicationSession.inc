@@ -377,7 +377,7 @@
 				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 				return null;
 			}*/	
-			return self::Handler()->__get($nm);
+			return self::Handler()->Get($nm);
 		}
 		
 /**
@@ -389,7 +389,7 @@
 			if (!self::SessionId()) self::Open();
 			/*if (!self::Handler())
 				throw new TCoreException(TCoreException::ERR_BAD_VALUE);*/
-			self::Handler()->__set($nm,$value);
+			self::Handler()->Set($nm,$value);
 		}
 		
 /**
