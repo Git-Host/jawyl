@@ -6,8 +6,8 @@ TApplication::import("core::TService");
 class TJobPolicy extends TPolicy {
 	const JOB_EXECUTE = "job.exec"; 
 	
-	public function __construct($type,ISecurityObject $so){
-		parent::__construct($type,$so); 
+	public function __construct(ISecurityObject $so){
+		parent::__construct(self::JOB_EXECUTE,$so); 
 	}
 	
 	protected function checkType($type){
@@ -25,7 +25,7 @@ class TJobSecurityObject implements ISecurityObject, ISecurityChild {
 	private $_handler_;
 	private $_job_;
 	
-	public function __construct($jobname, ISecurityOBject $handler){
+	public function __construct($jobname, ISecurityObject $handler){
 		$this->_job_ = $jobname;
 		$this->_handler_ = $handler;
 	}
@@ -45,7 +45,7 @@ class TScheduleHandler {
 		$rm = new ReflectionMethod(get_class($object), "schedule_".$jobname);
 		if ($rm)
 			if (!$rm->isPublic())
-				if ($policy->CheckPolicy($acl->CurrentUser(),new TJobPolicy(TJobPolicy::JOB_EXECUTE,new TJobSecurityObject($jobname, $object)))) {
+				if ($policy->CheckPolicy($acl->CurrentUser(),new TJobPolicy(new TJobSecurityObject($jobname, $object)))) {
 					$rm->invokeArgs($object, $parameters);
 					return true;
 				}

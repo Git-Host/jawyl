@@ -45,8 +45,7 @@
 	  	}
 	  	
 	  	public static function CheckInteger($v){
-			if (is_numeric($v)) $v = $v + 0; 
-			return is_int($v);
+			return (integer)$v == $v;
 	  	}
 
 	  	private static function _str_array_parse(array $arr,$separator, array $separators){
