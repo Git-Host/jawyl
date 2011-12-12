@@ -57,7 +57,7 @@
  * @param array $notapplied optional output array of parameters not processed by method
  * @return string|null 
 */
-		public function makeUri($service,array $parameters = array(), array &$notapplied  = array()){
+		public function MakeUri($service,array $parameters = array(), array &$notapplied  = array()){
 			if (!in_array("service",$this->_request_params_)) 
 				if ($service != $this->_service_) return null;
 			
@@ -84,7 +84,7 @@
  * @return THttpRequest
  * @see THttpRequest
 */			
-		public function getRequest($uri){
+		public function GetRequest($uri){
 			preg_match($this->_regexp_,$uri,$params);
 			if (count($params) > 0){
 				$service = $this->_service_;
@@ -138,10 +138,10 @@
  * @return THttpRequest
  * @see THttpRequest
 */			
-		public function parseUri($uri){
+		public function ParseUri($uri){
 			$request = null;
 			foreach ($this->_routs_ as $route){
-				$request = $route->getRequest($uri);
+				$request = $route->GetRequest($uri);
 				if (!is_null($request)) break; 
 			}
 			return $request;	
@@ -154,9 +154,9 @@
  * @param array $notapplied optional output array of parameters not processed by method
  * @return string|null 
 */		
-		public function makeUri($service,array $parameters = array(), array &$notapplied = array()){
+		public function MakeUri($service,array $parameters = array(), array &$notapplied = array()){
 			foreach ($this->_routs_ as $route){
-				$uri = $route->makeUri($service,$parameters,$notapplied);
+				$uri = $route->MakeUri($service,$parameters,$notapplied);
 				if (!is_null($uri)) return $uri;
 			}
 			return null;

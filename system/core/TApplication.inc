@@ -315,7 +315,7 @@
 /**
  * Adds a path to application import paths
  * @param string $path a path to be added
- * @see TApplication::import()
+ * @see TApplication::Import()
 */					
 		public static function AddImportPath($path){
 			self::$_import_paths_[] = $path;
@@ -327,7 +327,7 @@
  * @param string $root optional additional path relative to which class or library should be searched  
  * @see TApplication::AddImportPath()
 */					
-		public static function import($classname,$root = null){
+		public static function Import($classname,$root = null){
 			$path = str_replace("::","/",$classname);
 			$located = false;
 			if (!is_null($root)){
@@ -450,7 +450,7 @@
 			
 			if ($this->Sef){
 				include_once $this->ConfigDir."/url.config";
-				self::$_request_ = $this->_service_map_->parseUri($this->RelativePath);
+				self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
 			}
 			else 
 				self::$_request_ = new THttpRequest($servicename);		
@@ -519,7 +519,7 @@
 			$url = "";
 			if ($this->Sef){
 				$notapplied = array();
-				$url = $this->serviceMap->makeUri($service,$parameters,$notapplied);
+				$url = $this->serviceMap->MakeUri($service,$parameters,$notapplied);
 				if (!is_null($url)){
 					if (count($notapplied) > 0){
 						$url .= "?";
