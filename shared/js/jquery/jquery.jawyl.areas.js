@@ -23,7 +23,7 @@
 					case "xml":{
 						error = data.getElementsByTagName("error");
 						if (error.length > 0){
-							alert(error.item(0).nodeValue);
+							alert(error.item(0).firstChild.nodeValue);
 							return;
 						}
 						areas = data.getElementsByTagName("response").item(0).childNodes;
