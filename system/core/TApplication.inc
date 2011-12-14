@@ -132,7 +132,7 @@
 				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_;break;
 				case "ConfCompileDir":{
 					$trimmed = trim(self::$ConfigCompileDirectory);
-					if (($trimmed{0} == '/') || ($trimmed{0} == '\\'))
+					if (preg_match('/^(https?:\/\/|\/|\w:\\\)[\w\d].*$/',$trimmed))
 						return $trimmed;
 					return $this->_app_path_."/".$trimmed;
 				}break;
