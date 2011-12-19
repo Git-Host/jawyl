@@ -130,12 +130,7 @@
 				case "Path":return join(';',self::$_import_paths_);break;
 				case "Host":return $_SERVER["HTTP_HOST"];break;
 				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_;break;
-				case "ConfCompileDir":{
-					$trimmed = trim(self::$ConfigCompileDirectory);
-					if (preg_match('/^(https?:\/\/|\/|\w:\\\)[\w\d].*$/',$trimmed))
-						return $trimmed;
-					return $this->_app_path_."/".$trimmed;
-				}break;
+				case "ConfCompileDir":return $this->AdjustPath(self::$ConfigCompileDirectory);break;
 				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
@@ -319,6 +314,13 @@
 */					
 		public static function AddImportPath($path){
 			self::$_import_paths_[] = $path;
+		}
+		
+		public function AdjustPath($path){
+			$trimmed = trim($path);
+			if (preg_match('/^(https?:\/\/|\/|\w:\\\)[\w\d].*$/',$trimmed))
+				return $trimmed;
+			return $this->_app_path_."/".$trimmed;
 		}
 		
 /**
