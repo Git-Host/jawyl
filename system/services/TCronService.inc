@@ -14,7 +14,7 @@
  */
 TApplication::import("core::TService");
 TApplication::import("common::service::interfaces");
-TApplication::impoert("core::utils::TScheduleHandler");
+TApplication::import("core::utils::TScheduleHandler");
 
 
 class TCronService extends TService {

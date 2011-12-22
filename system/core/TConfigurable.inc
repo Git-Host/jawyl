@@ -40,7 +40,7 @@ interface IConfigurable {
  * so they can be instantiated by application object at runtime. 
  * @param string $name name of object being created
  */ 	
-	function __construct($name, IConfigurable $container = null){
+	public function __construct($name, IConfigurable $container = null){
  		$this->name = $name;
  		$this->container = $container;
  		self::$_instances_[$name] = $this;
