@@ -232,13 +232,11 @@ final class TSoapOptions {
  * 
  * Basic class for all soap servers
  * @author dakrasilnikov
- * @property string|int $SoapVersion
- * @property string $Encoding
- * @property string|int $CacheWSDL
- * @property string|int $Features
+ * @property string $Wsdl
  */
 
 class TSoapServer extends TConfigurable implements ISoapServer {
+	protected $wsdl = false;
 /**
  * @var TSoapOptions
  */	
@@ -250,10 +248,16 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	}
 	
 	public function __set($nm,$value){
-		if ($this->options->IsOption($nm))
-			$this->options->$nm = $value;
-		else
-			parent::__set($nm,$value);
+		switch ($nm){
+			case 'Wsdl':$this->wsdl = $value;break;
+			default:{
+					if ($this->options->IsOption($nm))
+						$this->options->$nm = $value;
+					else 
+						parent::__set($nm,$value);
+			}break;
+		}
+		
 	}
 	
 	protected function getHandler(){
@@ -271,14 +275,18 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 		return true;
 	}
 		
-	protected function wsdlPath(){
+	protected function compiledWsdlPath(){
 /*
  * @todo Implement WSDL compilation
  **/		
+		
 	}
 	
 	public function WSDL(){
-		echo file_get_contents($this->wsdlPath());
+		$path = $this->wsdl;
+		if (!$path)
+			$path = $this->compiledWsdlPath();
+		echo file_get_contents($path);
 	} 
 }
 
@@ -367,7 +375,9 @@ final class TSoapGateway extends TSoapServer {
 						$value = $com;
 					} 	
 				}
-				
+/*
+ * @todo check WSDL compatibility 
+ */				
 				if ($value instanceof TSoapClient)
 					$this->endpoint[] = $value;
 				else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
@@ -376,7 +386,7 @@ final class TSoapGateway extends TSoapServer {
 		}
 	}
 	
-	protected function wsdlPath(){
+	protected function compiledWsdlPath(){
 /*
  * @todo Implement WSDL substitution
  **/		

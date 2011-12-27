@@ -570,7 +570,7 @@
 			switch (self::$Environment){
 				case self::ENV_PRODUCTION:error_reporting(E_ERROR);break;
 				case self::ENV_TESTING:error_reporting(E_ERROR | E_WARNING | E_USER_ERROR | E_USER_WARNING);break;
-				case self::ENV_DEVELOPING:error_reporting(E_ALL | E_STRINCT);break; 
+				case self::ENV_DEVELOPING:error_reporting(E_ALL | E_STRICT);break; 
 			}
 		}
 /**
