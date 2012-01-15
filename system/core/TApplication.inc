@@ -602,10 +602,8 @@
 						if (preg_match('/^develop.*$/', $temp))
 							$value = self::ENV_DEVELOPING;
 					}
-					if (in_array($value,array(self::ENV_PRODUCTION,self::ENV_TESTING,self::ENV_DEVELOPING))) {
-						self::$Environment = $value;
-						self::_adjust_error_level();
-					}
+					self::$Environment = $value;
+					self::_adjust_error_level();
 				}break;
 				default:parent::__set($nm,$value);
 			}
