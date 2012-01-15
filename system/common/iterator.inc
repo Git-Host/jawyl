@@ -194,9 +194,9 @@
 		public function Rewind() {return $this->iterator->Rewind();}
 
 /**
- * @see Iterator::Current()
+ * @see Iterator::Item()
  */		
-		public function Current() {return $this->iterator->Current();}
+		public function Item() {return $this->iterator->Item();}
 
 /**
  * @see Iterator::Key()
