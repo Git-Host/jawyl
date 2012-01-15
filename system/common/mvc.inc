@@ -871,7 +871,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 				if (is_array($value))
 					$this->headers = $value;
 				else {	
-					preg_match_all('/([^:]*):([^:\r\n]*);/',$value,$h);
+					preg_match_all('/([^:]*):([^:\r\n]*)/',$value,$h);
 					$this->headers = array_combine($h[1],$h[2]);
 				}
 			}break;
