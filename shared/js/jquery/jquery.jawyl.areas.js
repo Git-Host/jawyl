@@ -6,6 +6,7 @@
 			areas_delete_tag:"delete",
 			areas_move_tag:"move",
 			areas_refresh_tag:"refresh",
+			areas_OnDatePicker:false,
 			areas_AjaxCall:function(url,data,sync){
 				if (url)
 					$.ajax({async:!sync, data: data,type: "POST", dataType: $.areas_response_type, url: url,success:$.areas_StdCallBack});
@@ -98,9 +99,13 @@
 			 el = $("select",this).add("input:checkbox",this).add("input:text",this).add("input:password",this).add("textarea");
 			 
 			var datepickers = $("input.date",this);
-			if (datepickers.length > 0)
+			if (datepickers.length > 0){
 				if (options.ondatepicker)
 					options.ondatepicker(datepickers);
+				else
+					if ($.areas_OnDatePicker)
+						$.areas_OnDatePicker(datepickers);
+			}
 			
 			$("div.file",this).fileupload().construct({
 					ResponseDataType:$.areas_response_type,

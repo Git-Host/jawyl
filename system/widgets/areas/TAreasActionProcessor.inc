@@ -86,32 +86,7 @@ class TAreasActionProcessor extends TAreasWidget {
 		self::LoadForms();
 		self::LoadFileUpload();
 	}
-	
-	protected function hasJS(){
-		return parent::hasJS() && (!self::$_actionprocessor_script_loaded_);
-	}	
-	
-	protected function javaScript(){
-?>
-		function datepicker_setup(inputs){
-			inputs.datepicker({
-				changeMonth:true,
-				changeYear:true,
-				constrainInput:true,
-				dateFormat:$.areas_date_format,
-				dayNames:<?php echo json_encode(TI18n::Locale()->WeekDayNames()); ?>,
-				dayNamesMin:<?php echo json_encode(TI18n::Locale()->WeekDayNames(ILocale::NT_MIN)); ?>,
-				dayNamesShort:<?php echo json_encode(TI18n::Locale()->WeekDayNames(ILocale::NT_SHORT)); ?>,
-				firstDay:<?php echo TI18n::Locale()->FirstWeekDay(); ?>,
-				monthNames:<?php echo json_encode(TI18n::Locale()->MonthNames(ILocale::NT_SHORT)); ?>,
-				monthNamesShort:<?php echo json_encode(TI18n::Locale()->MonthNames(ILocale::NT_SHORT)); ?>,
-				yearRange:"1930:2050"			
-			});
-		}
-<?php		
-		self::$_actionprocessor_script_loaded_ = true;
-	}
-	
+		
 	protected function areaCssClass(TWidgetArea $area){
 		if ($area->Context() instanceof TAreasActionProcessor)
 			if ($area->Skin() == "Form") 
@@ -190,7 +165,7 @@ class TAreasActionProcessor extends TAreasWidget {
 	if ($this->_ajax_submit_){ ?>
 		$("#<?php echo $this->Name(); ?>_dlg").areas_ajax_forms();
 	<?php } ?>
-		$("#<?php echo $this->Name(); ?>_dlg form").areas_editor({ondatepicker:datepicker_setup});
+		$("#<?php echo $this->Name(); ?>_dlg form").areas_editor({});
 	<?php 
 	if (!$this->_popup_){
 		?>

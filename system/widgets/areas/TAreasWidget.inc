@@ -79,6 +79,21 @@ jQuery.areas_add_tag = "<?php echo TAreasEngine::AREA_ADD; ?>";
 jQuery.areas_refresh_tag = "<?php echo TAreasEngine::AREA_REFERSH; ?>";
 jQuery.areas_delete_tag = "<?php echo TAreasEngine::AREA_DELETE; ?>";
 jQuery.areas_move_tag = "<?php echo TAreasEngine::AREA_MOVE; ?>";
+jQuery.areas_OnDatePicker = function (inputs){
+	inputs.datepicker({
+		changeMonth:true,
+		changeYear:true,
+		constrainInput:true,
+		dateFormat:$.areas_date_format,
+		dayNames:<?php echo json_encode(TI18n::Locale()->WeekDayNames()); ?>,
+		dayNamesMin:<?php echo json_encode(TI18n::Locale()->WeekDayNames(ILocale::NT_MIN)); ?>,
+		dayNamesShort:<?php echo json_encode(TI18n::Locale()->WeekDayNames(ILocale::NT_SHORT)); ?>,
+		firstDay:<?php echo TI18n::Locale()->FirstWeekDay(); ?>,
+		monthNames:<?php echo json_encode(TI18n::Locale()->MonthNames(ILocale::NT_SHORT)); ?>,
+		monthNamesShort:<?php echo json_encode(TI18n::Locale()->MonthNames(ILocale::NT_SHORT)); ?>,
+		yearRange:"1930:2050"			
+	});
+}
 </script>
 		<?php
 				self::$JQueryAreasLoaded = true;
