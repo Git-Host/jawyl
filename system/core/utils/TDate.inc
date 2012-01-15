@@ -99,6 +99,9 @@
 				case self::DP_HOUR:return $diff/3600;break;
 				case self::DP_DAY:return $diff/86400;break;
 				case self::DP_WEEK:return $diff/604800;break;
+/*
+ * @todo: make months calculation more accurate
+ */				
 				case self::DP_MONTH:return $diff/2592000;break;
 				case self::DP_YEAR:return $diff/31536000 ;break;
 			}

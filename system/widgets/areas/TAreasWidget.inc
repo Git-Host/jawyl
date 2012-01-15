@@ -86,23 +86,27 @@ jQuery.areas_move_tag = "<?php echo TAreasEngine::AREA_MOVE; ?>";
 		}
 		
 		protected function refreshArea(TWidgetArea $area){
-			if ($this->response->AjaxEngine instanceof TAreasEngine)
-				$this->response->AjaxEngine->RefreshArea($area);
+			if ($this->response->Request()->IsAjax)
+				if ($this->response->AjaxEngine instanceof TAreasEngine)
+					$this->response->AjaxEngine->RefreshArea($area);
 		}
 		
 		protected function addArea(TWidgetArea $area){
-			if ($this->response->AjaxEngine instanceof TAreasEngine)
-				$this->response->AjaxEngine->AddArea($area);
+			if ($this->response->Request()->IsAjax)
+				if ($this->response->AjaxEngine instanceof TAreasEngine)
+					$this->response->AjaxEngine->AddArea($area);
 		}
 		
 		protected function deleteArea($id){
-			if ($this->response->AjaxEngine instanceof TAreasEngine)
-				$this->response->AjaxEngine->DeleteArea($id);
+			if ($this->response->Request()->IsAjax)
+				if ($this->response->AjaxEngine instanceof TAreasEngine)
+					$this->response->AjaxEngine->DeleteArea($id);
 		}
 		
 		protected function moveArea(TWidgetArea $area){
-			if ($this->response->AjaxEngine instanceof TAreasEngine)
-				$this->response->AjaxEngine->MoveArea($area);
+			if ($this->response->Request()->IsAjax)
+				if ($this->response->AjaxEngine instanceof TAreasEngine)
+					$this->response->AjaxEngine->MoveArea($area);
 		}
 		
 		public function AreaId(TWidgetArea $area){

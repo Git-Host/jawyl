@@ -214,12 +214,11 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 				$this->AjaxEngine->Error($this,$e->getMessage());
 			$result = false;	
 		}
-		
-		if (!$this->isAjax)
-			return $this->respond($request);
-			
+					
 		$content = TOutputBuffer::StopRecording();
 		$this->SendHeaders();
+		if (!$this->isAjax)
+			return $this->respond($request);
 		$this->AjaxEngine->StartResponse($this,$this->request);
 		echo $content;
 		$this->AjaxEngine->CommitResponse($this);

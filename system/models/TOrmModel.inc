@@ -185,7 +185,6 @@ class TOrmPropertyMeta implements IPropertyMeta {
  * @see IPropertyMeta::SetSelection()
  */		
 	public function SetSelection(array $selection){
-		if (is_array($selection))
 			$this->selection = $selection;
 	}
 /**
@@ -193,9 +192,9 @@ class TOrmPropertyMeta implements IPropertyMeta {
  * @return array
  */	
 	public function Selection(){
-		if (is_array($this->selection))
-			return $this->selection;
-		return array();
+		if (!is_array($this->selection))
+			$this->selection = array();
+		return $this->selection;
 	}
 /**
  * sets property caption

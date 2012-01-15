@@ -950,6 +950,10 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  */	
 	public function Service(){return $this->service;}
 	
+/**
+ * 
+ * @return THttpRequest
+ */	
 	public function Request(){return $this->request;}
 
 /**
@@ -982,7 +986,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  * The request object itself is also passes to method as the last argument.
  * After method is called CleanCall method is called.
  * @see THttpRequest
- * @see TResponse::CleanClass()
+ * @see TResponse::CleanCall()
  */	
 	public function Handle(THttpRequest $request){
 		$this->request = $request;
