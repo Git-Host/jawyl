@@ -615,10 +615,18 @@
 		public static function Run($callerPath){
 			global $Application;
 			self::_adjust_error_level();
-			set_error_handler(create_function('$errno,$errstr,$errfile,$errline','if (error_reporting() & $errno) TApplication::AppExceptionHandler(new ErrorException($errstr, $errno, $errno, $errfile,$errline));return true;'));
+			set_error_handler(array('TApplication','AppErrorHandler'));
 			set_exception_handler(array('TApplication','AppExceptionHandler'));
 			$Application = new TApplication(realpath(dirname($callerPath)));
 			$Application->_app_run();
+		}
+		
+		public static function AppErrorHandler($errno,$errstr,$errfile,$errline){
+			if (error_reporting() & $errno) {
+				TApplication::AppExceptionHandler(new ErrorException($errstr, $errno, $errno, $errfile,$errline));
+				return true;
+			} 
+			return false;
 		}
 		
 		public static function AppExceptionHandler(Exception $e){

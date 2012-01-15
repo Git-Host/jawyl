@@ -1,5 +1,6 @@
 <?php
 TApplication::Import('common::storage');
+TApplication::Import('connectivity::ORACLE::util');
 
 class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 	private $_user_;
