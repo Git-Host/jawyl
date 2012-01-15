@@ -62,7 +62,7 @@ interface IConfigurable {
  		return null;
  	}
  	
-  	private static function _eval_ioc_array_members(array &$member, $type, $callback){
+  	private function _eval_ioc_array_members(array &$member, $type, $callback){
   		foreach ($member as &$m){
   			$obj = $this->GetIocMember($m, $type);
   			if (($obj) && is_callable($callback)) call_user_func($callback, $obj);
@@ -77,7 +77,7 @@ interface IConfigurable {
  * @param callback $callback handler which is called for evaluated dependency
  */  	
   	protected function setIocArrayMember(&$member,$value,$type,$callback = null){
-  		self::_eval_ioc_array_members($member, $type, $callback);
+  		$this->_eval_ioc_array_members($member, $type, $callback);
   		$m = null;
   		$this->setIocMember($m, $value, $type);
   		$member[] = $m;
@@ -92,7 +92,7 @@ interface IConfigurable {
  * @param boolean $last
  */  	
   	protected function getIocArrayMember(array &$member,$type,$callback = null,$last = false){
-  		self::_eval_ioc_array_members($member, $type, $callback);
+  		$this->_eval_ioc_array_members($member, $type, $callback);
   		if ($last)
   			if (!empty($member))
   				return $member[count($member) - 1];
