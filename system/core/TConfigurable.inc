@@ -64,7 +64,7 @@ interface IConfigurable {
  	
   	private static function _eval_ioc_array_members(array &$member, $type, $callback){
   		foreach ($member as &$m){
-  			$obj = self::GetIocMember($m, $type);
+  			$obj = $this->GetIocMember($m, $type);
   			if (($obj) && is_callable($callback)) call_user_func($callback, $obj);
   		}	
   	}
