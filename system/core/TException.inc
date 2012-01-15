@@ -32,7 +32,7 @@
  * @param int $msgcode
  * @param string $context
  */		
-		public final function __construct($msgcode,array $parameters = array()){
+		public function __construct($msgcode,array $parameters = array()){
 			$msg = _i($this->getMessageText($msgcode));
 			foreach ($parameters as $key=>$value)
 				$msg = str_ireplace("%".$key,$value,$msg);

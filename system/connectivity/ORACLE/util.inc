@@ -54,7 +54,6 @@ class TOracleRawDataIterator extends TIterator {
 	private $_exec_flag_;
 	
 	protected $currentRow;
-	protected $fields = array();
 	protected $pointer;
 	
 	
@@ -66,12 +65,6 @@ class TOracleRawDataIterator extends TIterator {
 	public function __construct($recordset,$flag){
 		$this->_recordset_ = $recordset;
 		$this->_exec_flag_ = $flag;
-		$fn = oci_num_fields($this->_recordset_);
-		for ($i = 0; $i < $fn; $i++){
-			$nm = oci_field_name($this->_recordset_,$i);
-			if (in_array($nm,$this->fields)) $nm .= $i;
-			$this->fields[] = $nm;
-		}
 		$this->pointer = -1;
 	}
 	
@@ -92,8 +85,7 @@ class TOracleRawDataIterator extends TIterator {
     }
     	
 	public function Next(){
-		if ($row = oci_fetch_array($this->_recordset_,OCI_NUM)){
-			$this->currentRow = array_merge($row,array_combine($this->fields,$row));
+		if ($this->currentRow = oci_fetch_array($this->_recordset_,OCI_ASSOC)){
 			$this->pointer++;
 			return true;
 		}

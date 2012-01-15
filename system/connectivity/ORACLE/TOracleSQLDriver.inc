@@ -29,6 +29,7 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 	}
 	
 	private function _prepare($sql,&$parameters){
+		$this->Connect();
 		$stmt = oci_parse($this->_connection_, $sql);
 		if (!$stmt)
 			throw new TOracleException(null,oci_error($this->_connection_));
@@ -69,7 +70,7 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
  */	
 	protected function fetchRecords($sql,array &$parameters = array()){
 		$start = microtime(true);
-		$result = new TOracleRecordIterator($this->__prepare($sql, $parameters),$this->_trancounter_ > 0?OCI_DEFAULT :OCI_COMMIT_ON_SUCCESS);
+		$result = new TOracleRawDataIterator($this->_prepare($sql, $parameters),$this->_trancounter_ > 0?OCI_DEFAULT :OCI_COMMIT_ON_SUCCESS);
 		$this->logSuccess($sql,$parameters,$start);
 		return $result;
 	}	
@@ -81,7 +82,7 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
  * @return int
  */	
 	public function Execute($q,array $parameters = array()){
-		$stmt = $this->__prepare($q, $parameters);			
+		$stmt = $this->_prepare($q, $parameters);			
 		if (!oci_execute($stmt,$this->_trancounter_ > 0?OCI_DEFAULT :OCI_COMMIT_ON_SUCCESS)){
 			throw new TOracleException(null,oci_error($stmt));
 		}
@@ -94,7 +95,7 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
  * @return IIterator<array>
  */	
 	public function Fetch($q, array $parameters = array()){
-		return new TOracleRecordIterator($this->__prepare($q, $parameters),$this->_trancounter_ > 0?OCI_DEFAULT :OCI_COMMIT_ON_SUCCESS);
+		return new TOracleRawDataIterator($this->_prepare($q, $parameters),$this->_trancounter_ > 0?OCI_DEFAULT :OCI_COMMIT_ON_SUCCESS);
 	}
 	
 /**
@@ -103,7 +104,7 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
  * @return mixed
  */		
 	public function Scalar($q, array $parameters = array()){
-		$stmt = $this->__prepare($q, $parameters);			
+		$stmt = $this->_prepare($q, $parameters);			
 		if (!oci_execute($stmt,$this->_trancounter_ > 0?OCI_DEFAULT :OCI_COMMIT_ON_SUCCESS)){
 			throw new TOracleException(null,oci_error($stmt));
 		}
