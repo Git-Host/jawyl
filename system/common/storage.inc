@@ -344,7 +344,7 @@ class TTable extends TDataSource {
 		return $this->name;
 	}
 	
-	public function AttachField(TDataSourceField $fld){
+	public function AttachField(IDataSourceField $fld){
 		if (!(($fld instanceof TTableField) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		parent::AttachField($fld);
@@ -383,7 +383,7 @@ class TNestedSets extends TTable {
 			$this->direction = $dir;	
 	}
 	
-	public function AttachField(TDataSourceField $fld){
+	public function AttachField(IDataSourceField $fld){
 		if (!(($fld instanceof TNestedSetsField) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		if ($fld instanceof TNestedSetsField)	
