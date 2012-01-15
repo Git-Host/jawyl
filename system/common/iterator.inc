@@ -88,7 +88,7 @@
  */		
 		public function __construct(array $array){
 			$this->array = $array;
-			$this->interator = new TArrayIterator($this->array);
+			$this->interator = new ArrayIterator($this->array);
 		}
 		
 		public function Value($position){

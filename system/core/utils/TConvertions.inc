@@ -48,18 +48,34 @@
 			return (integer)$v == $v;
 	  	}
 
-	  	private static function _str_array_parse(array $arr,$separator, array $separators){
-	  		if ($separator < count($separators))
-	  			foreach ($arr as &$a)
-	  				$a = self::_str_array_parse(explode($separators[$separator],$a),$separator+1,$separators);
-	  		return $arr; 
+	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
+	  		$temp = explode($separators[$separator],$v);
+	  		$arr = $temp;
+	  		if ($keyval[$separator]){
+	  			$arr = array();
+	  			$n = count($temp); 
+	  			for ($i = 0; $i < ($n - 1); $i = $i+2)
+	  				$arr[$temp[$i]] = $temp[$i + 1];
+	  		}
+	  		$result = array();  
+	  		if ($separator < count($separators) - 1){ 
+	  			foreach ($arr as $a)
+	  				if (@$keyval[$separator + 1])
+	  					$result = $result + self::_str_array_parse($a,$separator+1,$separators,$keyval);
+	  				else
+	  					$result[] = self::_str_array_parse($a,$separator+1,$separators,$keyval);
+	  		} else $result = $arr;
+	  		return $result; 
 	  	}
 	  	
-	  	public static function ConvertToArray($v, $separator = ";"){
+	  	public static function ConvertToArray($v, $separator = ";",$iskeyvalue = false){
 	  		if (is_array($v)) return $v;
 	  		if (is_string($v)){
 	  			if (!is_array($separator)) $separator = array($separator);
-	  			return self::_str_array_parse(explode($separator[0],$v),1,$separator);
+	  			if (!is_array($iskeyvalue)) $iskeyvalue = array($iskeyvalue);
+	  			if (count($separator) != count($iskeyvalue))
+	  				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+	  			return self::_str_array_parse($v,0,$separator,$iskeyvalue);
 	  		}
 	  		if (is_object($v)) return array_values((array)$v);
 	  		return (array)$v;
