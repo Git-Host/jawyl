@@ -48,13 +48,13 @@
 			
 			foreach ($_GET as $key=>$value)
 			  if ($key != "service"){
-				$this->_get_parameters_[$key] = $this->_strip_slashes(urldecode($value));
+				$this->_get_parameters_[$key] = $this->_accept_value($value,true);
 				$orig[$key] = $value;
 			  }
 				
 			foreach ($_POST as $key=>$value)
 			  if ($key != "service"){
-				$this->_post_parameters_[$key] = $this->_strip_slashes($value);
+				$this->_post_parameters_[$key] = $this->_accept_value($value);
 				$orig[$key] = $value;
 			  }
 				
@@ -64,7 +64,7 @@
 			}
 			
 			foreach ($_COOKIE as $key=>$value)
-				$orig[$key] = $this->_strip_slashes($value);
+				$orig[$key] = $this->_accept_value($value);
 
 			ksort($orig,SORT_STRING);	
 			
@@ -83,9 +83,13 @@
  */
 		public function getService(){return $this->_service_;}
 		
-		private function _strip_slashes($value){
-			if (is_string($value) && get_magic_quotes_gpc()) 
-        		$value = stripslashes($value);
+		private function _accept_value($value,$urldecode = false){
+			if (get_magic_quotes_gpc()){
+				if (is_array($value))
+					array_walk($value, create_function('&$item,$key,$urldecode', '$item = stripslashes($urldecode?urldecode($item):$item);'), $urldecode);
+				else 
+        			$value = stripslashes($urldecode?urldecode($value):$value);
+			}		
 			return $value;
 		}
 		
@@ -157,7 +161,7 @@
 		
 		public function Cookie($nm){
 			if (isset($_COOKIE[$nm]))
-				return $this->_strip_slashes($_COOKIE[$nm]);
+				return $this->_accept_value($_COOKIE[$nm]);
 			return null;
 		}
 /**
@@ -173,7 +177,7 @@
 			if (isset($this->_file_parameters_[$nm]))
 				return $this->_file_parameters_[$nm];
 			if (isset($_COOKIE[$nm]))
-				return $this->_strip_slashes($_COOKIE[$nm]);	
+				return $this->_accept_value($_COOKIE[$nm]);	
 			return null;
 		}	
 

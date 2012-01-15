@@ -55,6 +55,8 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 	
 	private $_explicit_handlers_ = array();
 	
+	public $DefaultMethod;	
+	
 	public function __toString(){
 		return $this->Name();
 	}
@@ -128,7 +130,7 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
  * @see IEventSender::Invoke()
  */	
 	public function Invoke(TEvent $event){
-		foreach ($this->_broad_casters_ as $bc)
+		foreach ($this->_ioc_broad_casters_ as $bc)
 			$bc->BroadCastEvent($event);
 	}
 
@@ -780,6 +782,8 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 
 	public $CacheLifeTime = 0;
 	
+	public $DefaultController;
+	
 /**
  * @var string
  * stores value of SaveState property
@@ -915,6 +919,13 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 	public function SetCookie($name,$value,$expire = null){
 		if (is_null($expire)) $expire = time()+60*60*24;
 		if (is_null($value)) $expire = -1000;
+		if (is_array($value)){
+			$i = 0;
+			foreach ($value as $v){
+				setcookie($name."[$i]",$v,$expire,$this->Url());
+				$i++;
+			}
+		} else
 		setcookie($name,$value,$expire,$this->Url());
 	}
 	
@@ -1000,7 +1011,6 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 			$controllers[] = $this->Item($this->DefaultController);	
 		$controllers[] = $this;
 		$controllers = array_filter($controllers);
-		
 		$controller = null;
 		$method = null;
 		foreach ($controllers as $c){
@@ -1009,7 +1019,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 				$methods[] = $c->DefaultMethod;
 			if ($c instanceof TAction)
 				$methods[] = "Perform";
-			$methods = array_filter($methods);		
+			$methods = array_filter($methods);
 			foreach ($methods as $m)
 				if ($c->IsHttpCallable($m)){
 					$controller = $c;
@@ -1018,7 +1028,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 				}
 			if ($method) break;
 		}
-		if (!$method) return false;	
+		if (!$method) return false;
 		$controller->HttpMethodCall($method,$request);
 		$result = $this->PostHandle($request,array($controller,$method));
 		if ($result)

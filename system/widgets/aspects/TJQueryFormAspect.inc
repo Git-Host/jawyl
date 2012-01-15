@@ -65,7 +65,7 @@
 				$selection = $base->Selection();
 				if (count($selection) > 0) {
 					if ($base->Nullable())
-						$selection = array_merge(array(""=>_i("")),$selection);
+						$selection = array(""=>"") + $selection;
 					switch ($base->Type()){
 						case TItemPropertyType::PT_SET:return new TFormField(new TFormFieldType(TFormFieldType::SET),$value,$selection,$size);break; 
 						default:return new TFormField(new TFormFieldType(TFormFieldType::SELECTION),$value,$selection);break;
@@ -126,8 +126,8 @@
 			$fld = self::_get_field($base,$size);
 			switch ($fld->Type){
 				case TFormFieldType::SELECTION:{
-					?><select id="<?php echo $id; ?>" class="<?php echo TFormFieldType::SELECTION; ?>" name="<?php echo $name; ?>"><?php
-					$sel = $fld->List; 
+					$sel = $fld->List;
+					?><select id="<?php echo $id; ?>" class="<?php echo TFormFieldType::SELECTION; ?>" name="<?php echo $name; ?>"><?php 
 					foreach ($sel as $key=>$value){
 						?><option value="<?php echo $key; ?>"<?php echo (((string)$fld->Value == (string)$key)?' selected':''); ?>><?php __i($value); ?></option><?php
 					}

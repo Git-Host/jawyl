@@ -51,7 +51,7 @@
 	  	private static function _str_array_parse(array $arr,$separator, array $separators){
 	  		if ($separator < count($separators))
 	  			foreach ($arr as &$a)
-	  				$a = str_array_parse(explode($separators[$separator],$a),$separator+1,$separators);
+	  				$a = self::_str_array_parse(explode($separators[$separator],$a),$separator+1,$separators);
 	  		return $arr; 
 	  	}
 	  	

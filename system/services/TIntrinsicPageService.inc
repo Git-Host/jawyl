@@ -25,9 +25,6 @@ TApplication::import("core::utils::TConvertions");
  * class of page configured with xml file
  */
 class TIntrinsicPage extends TPage {
-	public $DefaultController;
-	public $DefaultMethod;
-
 	protected $caching;	
 	protected $itemData = array();
 	
