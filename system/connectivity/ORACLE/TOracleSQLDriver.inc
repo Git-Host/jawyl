@@ -1,4 +1,6 @@
 <?php
+TApplication::Import('common::storage');
+
 class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 	private $_user_;
 	private $_password_;
