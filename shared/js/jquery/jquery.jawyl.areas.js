@@ -7,6 +7,7 @@
 			areas_move_tag:"move",
 			areas_refresh_tag:"refresh",
 			areas_OnDatePicker:false,
+			areas_OnHtmlEditor:false,
 			areas_AjaxCall:function(url,data,sync){
 				if (url)
 					$.ajax({async:!sync, data: data,type: "POST", dataType: $.areas_response_type, url: url,success:$.areas_StdCallBack});
@@ -106,27 +107,30 @@
 					if ($.areas_OnDatePicker)
 						$.areas_OnDatePicker(datepickers);
 			}
-			
-			$("div.file",this).fileupload().construct({
+			if ($.fn.fileupload !== undefined){
+				$("div.file",this).fileupload().construct({
 					ResponseDataType:$.areas_response_type,
 					OnUpload:function(e){eval("var data="+e.response);$.areas_StdCallBack(data);},
 					OnDeleted:$.areas_StdCallBack
-			});
-			
-			$("div.image",this).imageupload().construct({
+				});
+			}
+			if ($.fn.imageupload !== undefined){
+				$("div.image",this).imageupload().construct({
 					ResponseDataType:$.areas_response_type,
 					OnUpload:function(e){eval("var data="+e.response);$.areas_StdCallBack(data);},
 					OnDeleted:$.areas_StdCallBack
-			});
-			
+				});
+			}
 			var wo = options.wyswyg;
 			if (!wo) wo = {};
 			
 			var htmleditors = $("textarea.html",this);
-			if (htmleditors.length > 0)
+			if (htmleditors.length > 0){
 				if (options.onhtmleditor)
 					options.onhtmleditor(htmleditors);
-			
+				else if ($.areas_OnHtmlEditor)
+					$.areas_OnHtmlEditor(htmleditors);
+			}
 			var po = options.poston;			 
 			if (!po)
 				po = [];
