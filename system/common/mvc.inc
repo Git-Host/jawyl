@@ -870,8 +870,10 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 			case "Headers":{
 				if (is_array($value))
 					$this->headers = $value;
-				preg_match_all('/([^:]*):([^:\r\n]*)/',$value,$h);
-				$this->headers = array_combine($h[1],$h[2]);
+				else {	
+					preg_match_all('/([^:]*):([^:\r\n]*);/',$value,$h);
+					$this->headers = array_combine($h[1],$h[2]);
+				}
 			}break;
 			case "DenyCallClean":$this->denyCallClean = TConvertions::ConvertToBoolean($value);
 			case "SaveState":$this->stateSave = $value;break;
