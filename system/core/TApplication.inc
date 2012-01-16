@@ -435,7 +435,7 @@
 		}
 
 /**
- * Makes a 301 redirect to a specified URL
+ * Makes a 302 redirect to a specified URL
  * @param string $url url where to redirect 
  */						
 		public static function Redirect($url){

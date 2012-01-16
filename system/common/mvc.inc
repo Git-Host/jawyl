@@ -142,25 +142,29 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 		if ($event->StopHandling) return;
 		if (!$this->checkEvent($event)) return;
 		$rc = new ReflectionClass(get_class($this));
-		if ($m = $rc->getMethod("onEvent")){
-			if ($m->getNumberOfRequiredParameters() == 1){
+		if ($rc->hasMethod("onEvent")){
+			$m = $rc->getMethod("onEvent");
+			if ($m->getNumberOfRequiredParameters() >= 1){
+				$params = $m->getParameters();
 				if ($pc = $params[0]->getClass()){
 					$pc = $pc->getName();
 					if ($pc == "TEvent")
 						if ($event instanceof TEvent)
-							$m->invoke($this,$event);
+							$this->onEvent($event);
 				}
 			}
 		}
 		
-		if ($m = $rc->getMethod("on".$event->Name."Event")){
-			if ($m->getNumberOfRequiredParameters() == 1){
+		$mn = "on".$event->Name."Event";
+		if ($rc->hasMethod($mn)){
+			$m = $rc->getMethod($mn);
+			if ($m->getNumberOfRequiredParameters() >= 1){
 				$params = $m->getParameters();
 				if ($pc = $params[0]->getClass()){
 					$pc = $pc->getName();
 					if (($pc == "TEvent") || (is_subclass_of($pc,"TEvent")))
 					if ($event instanceof $pc){
-						$m->invoke($this,$event);
+						$this->$mn($event);
 						if ($event->StopHandling) return;
 					}
 				}
@@ -428,8 +432,12 @@ abstract class TResponseElement extends TMVCObject implements IResponseElement {
 			case self::SS_SESSION:{
 				$ss = TApplicationSession::Get(self::SESS_STATE_SAVER);
 				if (is_null($ss)) $ss = array();
-				if (!key_exists($this->UniqueId(),$ss)) $ss[$this->UniqueId()] = array(); 
-				$ss[$this->UniqueId()][$name] = $value;
+				if (!key_exists($this->UniqueId(),$ss)) $ss[$this->UniqueId()] = array();
+				
+				if (!is_null($value))
+					$ss[$this->UniqueId()][$name] = $value;
+				else if (isset($ss[$this->UniqueId()][$name]))
+					unset($ss[$this->UniqueId()][$name]);	
 				TApplicationSession::Set(self::SESS_STATE_SAVER,$ss);
 			}break;
 			case self::SS_COOKIE:$this->response->SetCookie(urlencode($this->UniqueId().$name), $value);break;
@@ -613,7 +621,7 @@ abstract class TController extends TResponseElement implements IActionsList {
 	}
 	
 	protected function onEvent(TEvent $event){
-		if (in_array($event->Sender,$this->_reloaders_))
+		if (in_array($event->Sender,$this->_ioc_reloaders_))
 			if ($event instanceof TDataReloadEvent)
 				$event->ReSend($this);
 			else
@@ -918,15 +926,25 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  */	
 	public function SetCookie($name,$value,$expire = null){
 		if (is_null($expire)) $expire = time()+60*60*24;
-		if (is_null($value)) $expire = -1000;
-		if (is_array($value)){
-			$i = 0;
-			foreach ($value as $v){
-				setcookie($name."[$i]",$v,$expire,$this->Url());
-				$i++;
+		if (is_null($value)) {
+			$expire = -1000;
+			$test_array = array();
+			$oldval = $this->request->Cookie($name);
+			if (is_array($oldval)){
+				array_walk($oldval,create_function('&$item', '$item = null;'));
+				$value = $oldval;
 			}
+		}
+		if (is_array($value)){
+			$oldval = $this->request->Cookie($name);
+			$unset = array_diff(array_keys($oldval), array_keys($value));
+			foreach ($value as $key=>$v)
+				if (in_array($key, $unset))
+					$this->SetCookie($name."[$key]", null);
+				else
+					$this->SetCookie($name."[$key]", $v, $expire);
 		} else
-		setcookie($name,$value,$expire,$this->Url());
+			setcookie($name,$value,$expire,$this->Url());
 	}
 	
 /**
@@ -1029,10 +1047,13 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 			if ($method) break;
 		}
 		if (!$method) return false;
+		
 		$controller->HttpMethodCall($method,$request);
 		$result = $this->PostHandle($request,array($controller,$method));
+		
 		if ($result)
-			$this->CleanCall();
+			if (!(($controller->Name() == $this->DefaultController) && ($method == $controller->DefaultMethod)))
+				$this->CleanCall();
 		return $result;
 	}
 

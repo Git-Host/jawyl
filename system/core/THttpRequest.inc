@@ -36,6 +36,17 @@
  */		
 		public $IsAjax = false;
 		
+		private function _accept_query_params($params,$urldecode,&$member,&$orig){
+			foreach ($params as $key=>$value)
+			  if ($key != "service"){
+			  	$v = $this->_accept_value($value);
+			  	if ($v){
+			  		if (is_array($member))
+						$member[$key] = $this->_accept_value($value,$urldecode);
+					$orig[$key] = $value;
+			  	}
+			  }
+		}
 /**
  * @ignore
  */		
@@ -46,25 +57,16 @@
 			
 			$orig = array();
 			
-			foreach ($_GET as $key=>$value)
-			  if ($key != "service"){
-				$this->_get_parameters_[$key] = $this->_accept_value($value,true);
-				$orig[$key] = $value;
-			  }
-				
-			foreach ($_POST as $key=>$value)
-			  if ($key != "service"){
-				$this->_post_parameters_[$key] = $this->_accept_value($value);
-				$orig[$key] = $value;
-			  }
+			$this->_accept_query_params($_GET, true, $this->_get_parameters_, $orig);
+			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
 				
 			foreach ($_FILES as $key=>$file){
 				$this->$this->_file_parameters_[$key] = new TUploadedFile($file);
 				$orig[$key] = $file["name"];
 			}
-			
-			foreach ($_COOKIE as $key=>$value)
-				$orig[$key] = $this->_accept_value($value);
+
+			$t = null;
+			$this->_accept_query_params($_COOKIE, false, $t, $orig);
 
 			ksort($orig,SORT_STRING);	
 			
@@ -160,8 +162,10 @@
 		}
 		
 		public function Cookie($nm){
-			if (isset($_COOKIE[$nm]))
-				return $this->_accept_value($_COOKIE[$nm]);
+			if (isset($_COOKIE[$nm])){
+				$v = $this->_accept_value($_COOKIE[$nm]);
+				if ($v) return $v;
+			}
 			return null;
 		}
 /**

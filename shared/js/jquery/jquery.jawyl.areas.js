@@ -86,7 +86,7 @@
 	$.fn.extend({
 		areas_ajax_forms:function(){
 			$("form",this).ajaxForm({target:null,dataType:$.areas_response_type,success:$.areas_StdCallBack});
-			$("form",this).submit(function(e){$(this).ajaxSubmit({dataType:$.areas_response_type, success:$.areas_StdCallBack});return false;});
+			//$("form",this).submit(function(e){$(this).ajaxSubmit({dataType:$.areas_response_type, success:$.areas_StdCallBack});return false;});
 		},
 		areas_editor:function(options){
 			var el;
