@@ -309,6 +309,8 @@ abstract class TIntrinsicPageService extends TPageService {
 	public function PageIdToFileName($id){
 		if (is_dir(TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id))
 			$filename = $id.($id?"/":"")."default";
+		else 	
+			$filename = $id;
 		return $filename;
 	}
 	

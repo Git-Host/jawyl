@@ -3,7 +3,7 @@
 TApplication::import("common::widget::TSourcedWidget");
 
 abstract class TSkinnableWidget extends TSourcedWidget {
-	protected function http_Scripts(){
+	public function http_Scripts(){
 		$file = $this->getAsset("js","override.js","dir");
 		if (!is_null($file))
 			include $file;
@@ -16,7 +16,7 @@ abstract class TSkinnableWidget extends TSourcedWidget {
 		die;
 	}
 	
-	protected function http_Styles(){
+	public function http_Styles(){
 		header("Content-Type:text/".TResponse::TYPE_CSS);
 		$file = $this->getAsset("css","override.css","dir");
 		if (!is_null($file))

@@ -62,7 +62,7 @@ class TAreasTreeView extends TAreasList implements ITree {
  * @param string $id item id
  * @param string $parent new parent id
  */	
-	protected function http_MoveItem($id,$parent){
+	public function http_MoveItem($id,$parent){
 		$this->Source->MoveItem($this->extractWrappedId($id),$this->extractWrappedId($parent));
 	}
 	
@@ -155,7 +155,7 @@ class TAreasTreeView extends TAreasList implements ITree {
 		}	
 	}
 	
-	protected function http_Toggle($id){
+	public function http_Toggle($id){
 		if (isset($this->_expanded_[$id]))
 			unset($this->_expanded_[$id]);	
 		else
@@ -167,7 +167,7 @@ class TAreasTreeView extends TAreasList implements ITree {
 		return isset($this->_expanded_[$id]);
 	} 
 	
-	protected function http_Expand($id){
+	public function http_Expand($id){
 		$this->http_Toggle($id);
 		$item = $this->WrapItem($this->Source->Item($id));
 		$this->RefreshArea($this->GetArea($item,"Toggle"));

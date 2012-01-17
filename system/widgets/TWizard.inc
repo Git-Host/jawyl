@@ -22,11 +22,11 @@ TApplication::import('common/interfaces');
 			return ($src instanceof IWizardProvider) && parent::checkSource($src);
 		}
 
-		protected function http_Back(){
+		public function http_Back(){
 			$this->Source->StepBack();
 		}
 		
-		protected function http_Perform(){
+		public function http_Perform(){
 			$parameters = array();
 			$params = $this->Source->StepParameters();
 			$args = func_get_args();

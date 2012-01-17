@@ -199,8 +199,11 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 		
 	public function IsHttpCallable($method){
 		$m = $this->methodHttpName($method);
-		$rm = new ReflectionMethod($this,$m);
-		return $rm->isPublic() && (!$rm->isStatic());
+		if (method_exists($this, $m)){
+			$rm = new ReflectionMethod($this,$m);
+			return $rm->isPublic() && (!$rm->isStatic());
+		}
+		return false;
 	}
 
 /**
@@ -937,7 +940,10 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 		}
 		if (is_array($value)){
 			$oldval = $this->request->Cookie($name);
-			$unset = array_diff(array_keys($oldval), array_keys($value));
+			if (empty($oldval))
+				$unset = array();
+			else
+				$unset = array_diff(array_keys($oldval), array_keys($value));
 			foreach ($value as $key=>$v)
 				if (in_array($key, $unset))
 					$this->SetCookie($name."[$key]", null);
@@ -1031,6 +1037,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 		$controllers = array_filter($controllers);
 		$controller = null;
 		$method = null;
+				
 		foreach ($controllers as $c){
 			$methods = array($request->method);
 			if ($c->DefaultMethod)
@@ -1038,14 +1045,16 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 			if ($c instanceof TAction)
 				$methods[] = "Perform";
 			$methods = array_filter($methods);
-			foreach ($methods as $m)
+			foreach ($methods as $m){
 				if ($c->IsHttpCallable($m)){
 					$controller = $c;
 					$method = $m;
 					break;
 				}
+			}	
 			if ($method) break;
 		}
+		
 		if (!$method) return false;
 		
 		$controller->HttpMethodCall($method,$request);

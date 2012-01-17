@@ -56,7 +56,7 @@ class TAreasPageNavigation extends TAreasWidget {
  * opens a page
  * @param int $pagenum
  */	
-	protected function http_OpenPage($pagenum){
+	public function http_OpenPage($pagenum){
 		if (!($this->Source instanceof IPagedItems))
 			throw new TCoreException(TCoreException::ERR_NO_INTERFACE);
 		$this->Source->OpenPage($pagenum - 1);

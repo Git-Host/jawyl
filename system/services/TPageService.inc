@@ -209,9 +209,13 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			$result = parent::Handle($request);
 			$this->exception = null;
 		} catch (Exception $e){
+/* 
+ * @todo default error handling
+ */			
 			$this->exception = $e;
 			if ($this->isAjax)
 				$this->AjaxEngine->Error($this,$e->getMessage());
+			else throw $e;		
 			$result = false;	
 		}
 					

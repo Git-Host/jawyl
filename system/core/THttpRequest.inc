@@ -39,12 +39,11 @@
 		private function _accept_query_params($params,$urldecode,&$member,&$orig){
 			foreach ($params as $key=>$value)
 			  if ($key != "service"){
-			  	$v = $this->_accept_value($value);
-			  	if ($v){
+			  		$v = $this->_accept_value($value,$urldecode);
 			  		if (is_array($member))
-						$member[$key] = $this->_accept_value($value,$urldecode);
-					$orig[$key] = $value;
-			  	}
+						$member[$key] = $v;
+					if (!is_null($v))	
+						$orig[$key] = $value;
 			  }
 		}
 /**
@@ -88,11 +87,13 @@
 		private function _accept_value($value,$urldecode = false){
 			if (get_magic_quotes_gpc()){
 				if (is_array($value))
-					array_walk($value, create_function('&$item,$key,$urldecode', '$item = stripslashes($urldecode?urldecode($item):$item);'), $urldecode);
+					array_walk_recursive($value, create_function('&$item,$key,$urldecode', '$item = stripslashes($urldecode?urldecode($item):$item);'), $urldecode);
 				else 
         			$value = stripslashes($urldecode?urldecode($value):$value);
-			}		
-			return $value;
+			}
+			if (!empty($value))		
+				return $value;
+			return null;	
 		}
 		
 /**
@@ -162,7 +163,7 @@
 		}
 		
 		public function Cookie($nm){
-			if (isset($_COOKIE[$nm])){
+			if (key_exists($nm,$_COOKIE)){
 				$v = $this->_accept_value($_COOKIE[$nm]);
 				if ($v) return $v;
 			}
@@ -174,13 +175,13 @@
 		
 		public function __get($nm){
 			if ($nm == "service") return $this->_service_;
-			if (isset($this->_get_parameters_[$nm]))
+			if (key_exists($nm, $this->_get_parameters_))
 				return $this->_get_parameters_[$nm];
-			if (isset($this->_post_parameters_[$nm]))
+			if (key_exists($nm, $this->_post_parameters_))
 				return $this->_post_parameters_[$nm];
-			if (isset($this->_file_parameters_[$nm]))
+			if (key_exists($nm, $this->_file_parameters_))
 				return $this->_file_parameters_[$nm];
-			if (isset($_COOKIE[$nm]))
+			if (key_exists($nm, $_COOKIE))
 				return $this->_accept_value($_COOKIE[$nm]);	
 			return null;
 		}	
@@ -189,9 +190,10 @@
  * @ignore
  */		
 		public function __isset($nm){
-			if ($nm == "service") return !is_null($this->_service_);
-			else return (isset($this->_get_parameters_[$nm]) || isset($this->_post_parameters_[$nm]) || isset($this->_file_parameters_[$nm]) || isset($_COOKIE[$nm]));
-			return false;
+			if ($nm == "service") 
+				return !is_null($this->_service_);
+			else 
+				return key_exists($nm, $this->_get_parameters_) || key_exists($nm, $this->_post_parameters_) || key_exists($nm, $this->_file_parameters_) || key_exists($nm, $_COOKIE);
 		}
 /**
  * @ignore
