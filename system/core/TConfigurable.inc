@@ -102,8 +102,7 @@ interface IConfigurable {
   	
   	private function _check_ioc_type($value,$type){
   		if (is_object($value) && is_string($type)){
-  			if ($value instanceof $type)
-  				return true;
+  			return $value instanceof $type;
   		}
   		  		
   		if (($type == 'boolean') || ($type == 'integer') || ($type == 'float') || ($type == 'string') || ($type == 'array') || ($type == 'object'))

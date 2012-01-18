@@ -76,6 +76,9 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 	protected $widgets = array();	
 	
 	protected $exception;
+	
+	private $_builtin_error_handling_ = true; 
+	
 /**
  * constructor
  * @param string $name 
@@ -95,7 +98,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  */	
 	public function __set($nm,$value){
 		switch ($nm){
-			case "AjaxContentType":{
+			case 'BuiltinErrorHandling':$this->_builtin_error_handling_ = TConvertions::ConvertToBoolean($value);break;
+			case 'AjaxContentType':{
 				if (!in_array($value,TResponse::ContentTypes()))
 					throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 				$this->ajaxContentType = $value;
@@ -108,6 +112,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  */	
 	public function __get($nm){
 		switch ($nm){
+			case 'BuiltinErrorHandling':return $this->_builtin_error_handling_;break;
 			case "AjaxContentType":return $this->ajaxContentType;break;
 			case "ContentType":return $this->isAjax?$this->ajaxContentType:parent::__get($nm);break;
 			case "AjaxEngine":{
@@ -209,13 +214,11 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			$result = parent::Handle($request);
 			$this->exception = null;
 		} catch (Exception $e){
-/* 
- * @todo default error handling
- */			
 			$this->exception = $e;
+			if ($this->BuiltinErrorHandling)
+				throw $e;
 			if ($this->isAjax)
 				$this->AjaxEngine->Error($this,$e->getMessage());
-			else throw $e;		
 			$result = false;	
 		}
 					
@@ -342,7 +345,7 @@ abstract class TPageService extends TService {
 		else if (!$this->checkAccess())
 			$this->page = $this->getAccessDeniedPage();
 		if (!($this->page instanceof TPage))
-			return false;
+			return false;	
 		$result = $this->page->Handle($this->Request);
 		return $result;
 	}

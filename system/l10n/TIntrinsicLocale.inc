@@ -196,7 +196,6 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function FormatNumber($number){
-		//var_dump($number);
 		return $this->format_number($number,$this->formats["number"]);
 	}
 

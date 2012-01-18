@@ -133,7 +133,13 @@ class TIntrinsicPage extends TPage {
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 
 		$classname = trim($dom->firstChild->getAttribute("classname"));
-		if (!$classname) $classname = "TIntrinsicPage";		
+		if (!$classname){ 
+			$classname = "TIntrinsicPage";
+			$real_classname = $classname;
+		} else {
+			$c = TApplication::GetClass($classname);
+			$real_classname = $c->getName();
+		}	
 		
 		if ($dom->firstChild->getAttribute("parent")){
 			$pfilenames = $service->PageConfigFiles($dom->firstChild->getAttribute("parent"));
@@ -148,7 +154,7 @@ class TIntrinsicPage extends TPage {
 		if ($dom->firstChild->getAttribute("template"))
 			$text .= '$this->templateName = "'.$dom->firstChild->getAttribute("template").'";'."\n";
 			
-		self::_compile_elements($dom->firstChild, $classname, '$this', new DOMXPath($dom), $text, $counter,$classes);
+		self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes);
 		return $classname;
 	}
 	
@@ -170,7 +176,7 @@ class TIntrinsicPage extends TPage {
 		if ($classname == "TIntrinsicPage")
 			$text .= '$result = new TIntrinsicPage($path,"'.$filenames[1].'.php",$service);'."\n";
 		else 
-			$text .= 'TApplication::import("'.$classname.'");if (is_subclass_of("'.$classname.'","TIntrinsicPage")) $result = TApplication::Instantiate("'.$classname.'",array("path"=>$path,"filename"=>"'.$filename[1].'.php","service"=>$service)); else throw new TCoreException(TCoreException::ERR_BAD_TYPE);'."\n";
+			$text .= 'if (is_subclass_of(TApplication::GetClass("'.$classname.'")->getName(),"TIntrinsicPage")) $result = TApplication::Instantiate("'.$classname.'",array("path"=>$path,"filename"=>"'.$filenames[1].'.php","service"=>$service)); else throw new TCoreException(TCoreException::ERR_BAD_TYPE);'."\n";
 		$text .= "?>";	
 		file_put_contents($filenames[1]."_loader.php", $text);
 	} 
@@ -209,9 +215,9 @@ class TIntrinsicPage extends TPage {
 			}
 		}
 		if (is_file($conffiles[1]."_loader.php"))
-			include $conffiles[1]."_loader.php";
+			include $conffiles[1]."_loader.php";	
 		if (!($result instanceof TIntrinsicPage))
-			throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>'TIntrinsicPage'));	 
+			throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>'TIntrinsicPage'));		 
 		return $result;
 	}
 	
@@ -348,7 +354,7 @@ abstract class TIntrinsicPageService extends TPageService {
  * @return TIntrinsicPage
  */	
 	protected function getNotFoundPage(){
-	return $this->getPage($this->__notfound__);
+		return $this->getPage($this->__notfound__);
 	}
 
 /**

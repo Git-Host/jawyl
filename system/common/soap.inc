@@ -55,7 +55,7 @@ final class TSoapOptions {
 	private $_authentication_ = SOAP_AUTHENTICATION_BASIC;
 	private $_compression_ = false;
 	private $_trace_ = false;
-	private $_exceptions_ = false;
+	private $_exceptions_ = true;
 	private $_connection_timeout_ = false; 
 	private $_user_agent_ = false;
 	private $_stream_context_ = false;
@@ -313,7 +313,7 @@ class TSoapServerWrapper extends TSoapServer {
  * @property string $WSDL
  */
 
-final class TSoapClient extends TConfigurable {
+class TSoapClient extends TConfigurable {
 /**
  * @var TSoapOptions
  */	
@@ -321,8 +321,13 @@ final class TSoapClient extends TConfigurable {
 	
 	private $_wsdl_;
 	
+	public function __construct($name, IConfigurable $container = null){
+		parent::__construct($name,$container);
+		$this->options = new TSoapOptions();
+	}
+	
 	public function __set($nm,$value){
-		switch ($name){
+		switch ($nm){
 			case 'WSDL':$this->_wsdl_ = TApplication::$Application->AdjustPath($value);break;
 			default:{
 				if ($this->options->IsOption($nm))
@@ -333,9 +338,13 @@ final class TSoapClient extends TConfigurable {
 		}
 	}
 	
+	public function __call($name, array $arguments){
+		return $this->Call($name, $arguments);
+	}
+	
 	public function Call($name,array $arguments){
 		$c = new SoapClient($this->_wsdl_,$this->options->ForConstructor(TSoapOptions::TYPE_CLIENT));
-		return call_user_func_array(array($c,$name), $arguments);
+		return $c->__soapCall($name,$arguments);
 	}
 }
 
