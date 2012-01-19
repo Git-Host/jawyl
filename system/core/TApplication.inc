@@ -91,6 +91,7 @@
 		private $_ajax_engine_;
 		private $_default_service_name_;
 		private $_sef_;
+		private $_string_encoding_ = 'UTF-8';
 /**
  * @var IExceptionHandler
  */		
@@ -134,6 +135,7 @@
 				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
+				case "StringEncoding":return $this->_string_encoding_;break;
 			}
 			return parent::__get($nm);
 		}
@@ -145,6 +147,7 @@
 * */		
 		
 		public final function __construct($requestPath){
+			mb_internal_encoding($this->_string_encoding_);
 			self::$Application = $this;
 			self::$SystemPath = str_replace("\\","/",realpath(dirname(__FILE__)."/../"));
 			$this->_ioc_exception_handler_ = new TBuiltinExceptionHandler();
@@ -357,6 +360,7 @@
 			
 			if (!$located) return;
 			
+			ob_start();
 			if (is_file($filename)){
 				require_once $filename;
 				$parts = explode("::",$classname);
@@ -374,6 +378,7 @@
 					}
 				}
 			}
+			ob_end_clean();
 		}
 /**
  * Gets a specified class Reflection object, if class does not exist tries to import it
@@ -604,6 +609,10 @@
 					}
 					self::$Environment = $value;
 					self::_adjust_error_level();
+				}break;
+				case "StringEncoding":{
+					if (mb_internal_encoding($value))
+						$this->_string_encoding_ = $value;
 				}break;
 				default:parent::__set($nm,$value);
 			}

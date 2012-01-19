@@ -10,18 +10,21 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 	
 	private $_trancounter_ = 0;
 	
+	private $_encoding_ = 'UTF8';
+	
 	public function __set($nm,$value){
 		switch ($nm){
 			case 'User':$this->_user_ = $value;break;
 			case 'Password':$this->_password_ = $value;break;
 			case 'Database':$this->_database_ = $value;break;
+			case 'Encoding':$this->_encoding_ = $value;break;
 			default:parent::__set($nm, $value);break;
 		}
 	}
 	
 	public function Connect(){
 		if (!$this->_connection_){
-			$this->_connection_ = @oci_pconnect($this->_user_, $this->_password_, $this->_database_,'UTF8');
+			$this->_connection_ = @oci_pconnect($this->_user_, $this->_password_, $this->_database_,$this->_encoding_);
 			if (!$this->_connection_){
 				throw new TOracleException(null,oci_error());
 			}
