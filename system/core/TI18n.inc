@@ -32,20 +32,20 @@
 /**
  * format date according to current application locale
  *
- * @param int $timestamp
+ * @param int|TDate $date
  * @return string
  */
-	function _d($timestamp){
-		return TI18n::Locale()->FormatDate($timestamp);
+	function _d($date){
+		return TI18n::Locale()->FormatDate($date);
 	}
 	
 /**
  * format date according to current application locale and send it ot output
  *
- * @param int $timestamp
+ * @param int|TDate $date
  * @uses _d
  */
-	function __d($timestamp){echo _d($timestamp);}
+	function __d($date){echo _d($date);}
 	
 /**
  * format time according to current application locale
@@ -174,10 +174,10 @@
 		public function FormatNumber($number);
 /**
  * formats date according to locale date format
- * @param int $timestamp datetime value
+ * @param int|TDate $date datetime value
  * @return string 
  */		
-		public function FormatDate($timestamp);
+		public function FormatDate($date);
 /**
  * formats time according to locale time format
  * @param int $timestamp datetime value

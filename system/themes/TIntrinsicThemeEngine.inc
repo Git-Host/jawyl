@@ -76,13 +76,26 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			echo call_user_func(array($cc,$name));
 			return;
 		}
-		if (property_exists($cc,$name)){
+		if (isset($cc->$name)){
 			echo $cc->$name;
 			return;
 		}
+		if (method_exists($cc,"__get")){	
+			echo $cc->__get($name);
+			return;	
+		}
+		
 		echo $name;	
 		return;
-	}	
+	}
+
+	protected function pushContext($context){
+		array_push($this->_context_stack_,$context);
+	}
+	
+	protected function popContext(){
+		array_pop($this->_context_stack_);
+	}
 	
 	protected function evalContextTag($name){
 		$cc = $this->currentContext();
@@ -90,7 +103,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			return $cc;
 		if (method_exists($cc,$name))
 			return call_user_func(array($cc,$name));
-		if (property_exists($cc,$name))
+		if (isset($cc->$name))
 			return $cc->$name;
 		if (method_exists($cc,"__get"))	
 			return $cc->__get($name);	
@@ -142,7 +155,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _iter_compile($matches){
 		$this->_cycle_counter_++;
-		return '<?php $cyclebase'.$this->_cycle_counter_.'=$this->getContextIterator("'.$matches[1].'"); $cyclecounter'.$this->_cycle_counter_.' = 0; foreach ($cyclebase'.$this->_cycle_counter_.' as $'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; ?>';
+		return '<?php $cyclebase'.$this->_cycle_counter_.'=$this->getContextIterator("'.$matches[1].'"); $cyclecounter'.$this->_cycle_counter_.' = 0; foreach ($cyclebase'.$this->_cycle_counter_.' as $'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[2].'); ?>';
 	}
 	
 	protected function preCompile($text){
@@ -163,13 +176,14 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace_callback('/<%widget\\s+([^\\s]*|"[^"]*")(?:\\s+skin\\s*=\\s*([^\\s]*|"[^"]*"))?\\s*%>/',array(&$this,"_widg_compile"),$text);
 		$text = preg_replace('/<\\?(?!php)/','<?php ',$text);	
 		$text = preg_replace_callback('/<%iterate\\s+([_\\w]+)\\s+as\\s+([_\\w]+)\\s*%>/',array(&$this,"_iter_compile"),$text);
-		$text = preg_replace('/<%iterate%>/','<?php } ?>',$text);
+		$text = preg_replace('/<%iterate%>/','<?php $this->popContext();} ?>',$text);
 		$text = preg_replace('/<%if\\s+([_\\w]+)\\s*%>/','<?php if ($this->evalContextTag("$1")) { ?>',$text);
 		$text = preg_replace('/<%if\\s+([_\\w]+)\\s+([_\\w]+|"[^"]*")\\s*%>/','<?php if ($this->evalContextTag("$1") == $2) { ?>',$text);
 		$text = preg_replace('/<%odd%>/','<?php if ($this->_cycleodd_) { ?>',$text);
 		$text = preg_replace('/<%else%>/','<?php } else { ?>',$text);
 		$text = preg_replace('/<%endif%>/','<?php } ?>',$text);
 		$text = preg_replace('/<%endodd%>/','<?php } ?>',$text);
+		$text = preg_replace('/<%assign\\s+([_\\w]+)\\s+([_\\w]+|"[^"]*")\\s*%>/','<?php \\$$1 = $this->evalContextTag("$2"); ?>',$text);
 		$text = preg_replace('/<%\\s*([_\\w]*?)\\s*%>/','<?php $this->processTag("$1"); ?>',$text);
 		$text = preg_replace('/<%\\s*(.*?)\\s*%>/','<?php echo $1; ?>',$text);
 		return $text;

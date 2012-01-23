@@ -201,10 +201,15 @@ class TIntrinsicLocale extends TLocale {
 
 	/**
 	 * @see ILocale::FormatDate()
-	 * @param int $timestamp
+	 * @param int|TDate $date
 	 * @return string
 	 */
-	public function FormatDate($timestamp){
+	public function FormatDate($date){
+		if ($date instanceof TDate)
+			$timestamp = $date->TimeStamp();
+		else if (is_int($date)) 
+			$timestamp = $date;
+			
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
 		return date("C",$timestamp);
 			
