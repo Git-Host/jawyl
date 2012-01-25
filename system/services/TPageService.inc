@@ -86,10 +86,9 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  * @param string $template optional
  */	
 	public function __construct(TPageService $service,$name,$title = null,$template = null){
-		$this->name = $name;
+		parent::__construct($service,$name);
 		$this->title = $title;
 		$this->templateName = $template;
-		parent::__construct($service);
 		$this->contentType = TResponse::TYPE_HTML;
 	}
 	

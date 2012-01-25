@@ -997,7 +997,10 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  * constructor
  * @param TService $service service response belongs to 
  */	
-	public function __construct(TService $service){
+	public function __construct(TService $service, $name = null){
+		if (!$name)
+			$name = $service->Name().'.response';
+		parent::__construct($name,$service);
 		$this->service = $service;
 		$this->DelegationProvider = $this;
 		$this->BroadCasters = $this;
