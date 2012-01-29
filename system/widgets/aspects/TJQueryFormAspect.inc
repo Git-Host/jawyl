@@ -121,20 +121,20 @@
 			return new TFormField(new TFormFieldType(TFormFieldType::STRING),$base);
 		}
 
-		public static function RenderField($id,$base,$name = null, $ajax_upload = false, IFilePropertyPublisher $filepublisher = null, $size = null){
+		public static function RenderField($id,$base,$name = null, $ajax_upload = false, IFilePropertyPublisher $filepublisher = null, $size = null, $tabindex = null){
 			if (is_null($name)) $name = $id;
 			$fld = self::_get_field($base,$size);
 			switch ($fld->Type){
 				case TFormFieldType::SELECTION:{
 					$sel = $fld->List;
-					?><select id="<?php echo $id; ?>" class="<?php echo TFormFieldType::SELECTION; ?>" name="<?php echo $name; ?>"><?php 
+					?><select id="<?php echo $id; ?>" class="<?php echo TFormFieldType::SELECTION; ?>" name="<?php echo $name; ?>"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?>><?php 
 					foreach ($sel as $key=>$value){
 						?><option value="<?php echo $key; ?>"<?php echo (((string)$fld->Value == (string)$key)?' selected':''); ?>><?php __i($value); ?></option><?php
 					}
 					?></select><?php
 				}break;
 				case TFormFieldType::SET:{
-					?><select id="<?php echo $id; ?>" class="<?php echo TFormFieldType::SET; ?>" name="<?php echo $name; ?>[]" multiple="multiple"<?php  echo $fld->Size?' size="'.$fld->Size.'"':''; ?>><?php
+					?><select id="<?php echo $id; ?>" class="<?php echo TFormFieldType::SET; ?>" name="<?php echo $name; ?>[]" multiple="multiple"<?php  echo $fld->Size?' size="'.$fld->Size.'"':''; ?><?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?>><?php
 					$sel = $fld->List; 
 					foreach ($sel as $key=>$value){
 						?><option value="<?php echo $key; ?>"<?php echo (((string)$fld->Value == (string)$key)?' selected':''); ?>><?php __i($value); ?></option><?php
@@ -142,13 +142,13 @@
 					?></select><?php
 				}break;
 				case TFormFieldType::BOOL:{
-					?><input id="<?php echo $id; ?>" type="checkbox" class="<?php echo TFormFieldType::BOOL; ?>" name="<?php echo $name; ?>" <?php echo ($fld->Value?'checked':''); ?>/><?php
+					?><input id="<?php echo $id; ?>" type="checkbox" class="<?php echo TFormFieldType::BOOL; ?>" name="<?php echo $name; ?>" <?php echo ($fld->Value?'checked':''); ?><?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?>/><?php
 				}break;
 				case TFormFieldType::DATE:{
-					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::DATE; ?>" name="<?php echo $name; ?>" value="<?php echo htmlentities($fld->Value); ?>" /><?php
+					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::DATE; ?>" name="<?php echo $name; ?>" value="<?php echo htmlentities($fld->Value); ?>"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 				}break;
 				case TFormFieldType::DEC:{
-					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::DEC; ?>" name="<?php echo $name; ?>" value="<?php echo $fld->Value; ?>" /><?php
+					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::DEC; ?>" name="<?php echo $name; ?>" value="<?php echo $fld->Value; ?>"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 				}break;
 				case TFormFieldType::IMAGE:{
 					if ($ajax_upload){
@@ -159,7 +159,7 @@
 			 			}
 						?></div><input type="hidden" name="ajaxcall" value="on" /><?php
 					} else {
-						?><input type="file" id="<?php echo $id; ?>" name="<?php echo $name; ?>" class="image" /><?php
+						?><input type="file" id="<?php echo $id; ?>" name="<?php echo $name; ?>" class="image"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 					}
 				}break;
 				case TFormFieldType::FILE:{
@@ -171,23 +171,23 @@
 			 			}
 			 			?></div><input type="hidden" name="ajaxcall" value="on" /><?php
 					} else {
-						?><input type="file" id="<?php echo $id; ?>" name="<?php echo $name; ?>" value="" class="file" /><?php
+						?><input type="file" id="<?php echo $id; ?>" name="<?php echo $name; ?>" value="" class="file"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 					}
 				}break;
 				case TFormFieldType::HTML:{
-					?><textarea id="<?php echo $id; ?>" class="<?php echo TFormFieldType::HTML; ?>" name="<?php echo $name; ?>"<?php  echo $fld->Size?' rows="'.$fld->Size.'"':''; ?>><?php echo htmlentities($fld->Value,ENT_QUOTES,"UTF-8"); ?></textarea><?php
+					?><textarea id="<?php echo $id; ?>" class="<?php echo TFormFieldType::HTML; ?>" name="<?php echo $name; ?>"<?php  echo $fld->Size?' rows="'.$fld->Size.'"':''; ?><?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?>><?php echo htmlentities($fld->Value,ENT_QUOTES,"UTF-8"); ?></textarea><?php
 				}break;
 				case TFormFieldType::INT:{
-					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::STRING; ?>" name="<?php echo $name; ?>" value="<?php echo $fld->Value; ?>" /><?php
+					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::STRING; ?>" name="<?php echo $name; ?>" value="<?php echo $fld->Value; ?>"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 				}break;
 				case TFormFieldType::MULTILINE:{
-					?><textarea id="<?php echo $id; ?>" class="<?php echo TFormFieldType::MULTILINE; ?>" name="<?php echo $name; ?>"<?php  echo $fld->Size?' rows="'.$fld->Size.'"':''; ?>><?php echo htmlentities($fld->Value,ENT_QUOTES,"UTF-8"); ?></textarea><?php
+					?><textarea id="<?php echo $id; ?>" class="<?php echo TFormFieldType::MULTILINE; ?>" name="<?php echo $name; ?>"<?php  echo $fld->Size?' rows="'.$fld->Size.'"':''; ?><?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?>><?php echo htmlentities($fld->Value,ENT_QUOTES,"UTF-8"); ?></textarea><?php
 				}break;
 				case TFormFieldType::PASSWORD:{
-					?><input id="<?php echo $id; ?>" type="password" class="<?php echo TFormFieldType::PASSWORD; ?>" name="<?php echo $name; ?>" value="" /><?php
+					?><input id="<?php echo $id; ?>" type="password" class="<?php echo TFormFieldType::PASSWORD; ?>" name="<?php echo $name; ?>" value=""<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 				}break;
 				case TFormFieldType::STRING:{
-					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::STRING; ?>" name="<?php echo $name; ?>" value="<?php echo htmlentities("".$fld->Value,ENT_QUOTES,"UTF-8"); ?>" /><?php
+					?><input id="<?php echo $id; ?>" type="text" class="<?php echo TFormFieldType::STRING; ?>" name="<?php echo $name; ?>" value="<?php echo htmlentities("".$fld->Value,ENT_QUOTES,"UTF-8"); ?>"<?php echo !is_null($tabindex)?(' tabindex="'.$tabindex.'"'):''; ?> /><?php
 				}break;
 			}
 		}
