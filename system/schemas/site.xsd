@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+<xsd:complexType name="t_setting">
+	<xsd:simpleContent>
+		<xsd:extension base="xsd:string">
+			<xsd:attribute name="name" type="xsd:string" use="required" />
+		</xsd:extension>
+	</xsd:simpleContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_pageitem">
+	<xsd:sequence>
+		<xsd:group ref="g_pageitem" minOccurs="0" maxOccurs="unbounded" />
+		<xsd:element name="data" minOccurs="0" maxOccurs="1">
+			<xsd:complexType>
+				<xsd:sequence>
+					<xsd:any processContents="skip" namespace="##local" minOccurs="0" maxOccurs="unbounded" />
+				</xsd:sequence>
+			</xsd:complexType>
+		</xsd:element>
+	</xsd:sequence>
+	<xsd:attribute name="name" type="xsd:ID" use="required" />
+	<xsd:attribute name="classname" type="xsd:string" use="required" />
+	<xsd:attribute name="parent" type="xsd:IDREF" use="optional" />
+	<xsd:attribute name="membername" type="xsd:string" use="optional" />
+</xsd:complexType>
+
+<xsd:group name="g_pageitem">
+	<xsd:choice>
+		<xsd:element name="setting" type="t_setting" />
+		<xsd:element name="component" type="t_pageitem" />
+	</xsd:choice>
+</xsd:group>
+
+
+<xsd:complexType name="t_response">
+	<xsd:attribute name="cache" type="xsd:integer" use="optional" />		
+</xsd:complexType>
+
+<xsd:complexType name="t_page">
+	<xsd:complexContent>
+		<xsd:extension base="t_response">
+			<xsd:sequence>
+				<xsd:group ref="g_pageitem" minOccurs="0" maxOccurs="unbounded" />
+			</xsd:sequence>
+			<xsd:attribute name="title" type="xsd:string" use="optional" default="" />
+			<xsd:attribute name="template" type="xsd:string" use="optional" />
+			<xsd:attribute name="classname" type="xsd:string" use="optional" />
+			<xsd:attribute name="abstract" type="xsd:boolean" use="optional" default="false" />
+			<xsd:attribute name="parent" type="xsd:string" use="optional" />
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+</xsd:schema>

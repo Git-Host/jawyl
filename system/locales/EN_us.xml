@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<locale xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../schemas/locale.xsd">
+	<description>US locale</description>
+	<syslocale>eng_usa</syslocale>
+	<symbols>
+		<decseparator>.</decseparator>
+		<digseparator>,</digseparator>
+		<negativesign>-</negativesign>
+		<intercurrency>USD</intercurrency>
+		<localcurrency>$</localcurrency>
+		<timeseparator>:</timeseparator>
+		<dateseparator>/</dateseparator>
+	</symbols>
+	<formats>
+		<number>#{dig}##0{dec}####</number>
+		<currency>#{dig}##0{dec}00{lc}</currency>
+		<date>m{ds}d{ds}Y</date>
+		<time>h{ts}i{ts}s</time>
+		<datetime>m{ds}d{ds}Y h{ts}i{ts}s A</datetime>
+	</formats>
+	<months>
+		<month order="1" shortname="Jan">January</month>
+		<month order="2" shortname="Feb">February</month>
+		<month order="3" shortname="Mar">March</month>
+		<month order="4" shortname="Apr">April</month>
+		<month order="5" shortname="May">May</month>
+		<month order="6" shortname="Jun">June</month>
+		<month order="7" shortname="Jul">July</month>
+		<month order="8" shortname="Aug">August</month>
+		<month order="9" shortname="Sep">September</month>
+		<month order="10" shortname="Oct">October</month>
+		<month order="11" shortname="Nov">November</month>
+		<month order="12" shortname="Dec">December</month>
+	</months>
+	<weekdays firstday="0">
+		<weekday order="1" shortname="Sun" minname="Su">Sunday</weekday>
+		<weekday order="2" shortname="Mon" minname="Mo">Monday</weekday>
+		<weekday order="3" shortname="Thu" minname="Tu">Thuesday</weekday>
+		<weekday order="4" shortname="Wed" minname="We">Wednesday</weekday>
+		<weekday order="5" shortname="Thu" minname="Th">Thursday</weekday>
+		<weekday order="6" shortname="Fri" minname="Fr">Friday</weekday>
+		<weekday order="7" shortname="Sat" minname="Sa">Saturday</weekday>
+	</weekdays>	
+</locale>
