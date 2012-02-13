@@ -38,7 +38,9 @@ class TPagePolicy extends TPolicy {
  * abstract response page class
  * @property string $AjaxContentType ContentType that is used for response to ajax requests
  * @property string $ContentType the same as of TResponse, but when request is ajax returns value of $AjaxContentType property
- * @property IAjaxEngine $AjaxEngine component used foe ajax interactions  
+ * @property IAjaxEngine $AjaxEngine component used foe ajax interactions
+ * @property boolean $IsExceptionThrown
+ * @property Exception $Exception  
  */
 abstract class TPage extends TResponse implements ISecurityObject, ISecurityChild {
 /**
@@ -125,6 +127,12 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 				if (!($result instanceof IThemeEngine))
 					$result = $this->service->ThemeEngine;
 				return $result;	
+			}break;
+			case 'IsExceptionThrown':{
+				return $this->exception instanceof Exception;
+			}break;
+			case 'Exception':{
+				return $this->exception;
 			}break;
 		}	
 		return parent::__get($nm);
