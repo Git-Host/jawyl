@@ -144,12 +144,31 @@ final class TSoapOptions {
 	}
 	
 	private function _check_constant($value, array $values){
-		return in_array(is_string($value)?constant($value):$value,$values);
+		$value = is_string($value)?constant($value):$value;
+		if (in_array($value,$values))
+			return $value;
+		return false;
 	}
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'SoapVersion':$this->_soap_version_ = $this->_check_constant($value, array(SOAP_1_1,SOAP_1_2));break;
+			case 'SoapVersion':{
+				switch ($value){
+					case '1.1':$value = SOAP_1_1;break;
+					case '1.2':$value = SOAP_1_2;break;
+					default:{
+						if (is_string($value)){
+							if  (is_numeric($value))
+								$value = ($value >= 2)?SOAP_1_2:SOAP_1_1;
+							else 
+								$value = constant($value);	
+						}
+						$value = $this->_check_constant($value, array(SOAP_1_1,SOAP_1_2)); 
+					}break;
+				}	
+				if ($value !== false)	
+					$this->_soap_version_ = $value;				
+			}break;
 			case 'Encoding':$this->_encoding_ = $value;break;
 			case 'CacheWsdl':$this->_cache_wsdl_ = $this->_check_constant($value, array(WSDL_CACHE_NONE,WSDL_CACHE_BOTH,WSDL_CACHE_DISK,WSDL_CACHE_MEMORY));break;
 			case 'Feature':{
