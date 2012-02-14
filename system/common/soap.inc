@@ -319,7 +319,7 @@ class TSoapClient extends TConfigurable {
  */	
 	protected $options;
 	
-	private $_wsdl_;
+	protected $wsdl;
 	
 	public function __construct($name, IConfigurable $container = null){
 		parent::__construct($name,$container);
@@ -328,7 +328,7 @@ class TSoapClient extends TConfigurable {
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'WSDL':$this->_wsdl_ = TApplication::$Application->AdjustPath($value);break;
+			case 'WSDL':$this->wsdl = TApplication::$Application->AdjustPath($value);break;
 			default:{
 				if ($this->options->IsOption($nm))
 					$this->options->$nm = $value;
@@ -342,8 +342,12 @@ class TSoapClient extends TConfigurable {
 		return $this->Call($name, $arguments);
 	}
 	
+	protected function getSoapHandler(){
+		return new SoapClient($this->wsdl,$this->options->ForConstructor(TSoapOptions::TYPE_CLIENT)); 
+	}
+	
 	public function Call($name,array $arguments){
-		$c = new SoapClient($this->_wsdl_,$this->options->ForConstructor(TSoapOptions::TYPE_CLIENT));
+		$c = $this->getSoapHandler();
 		return $c->__soapCall($name,$arguments);
 	}
 }
