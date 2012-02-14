@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<xsd:include schemaLocation="xmldbquery.xsd" />
+
+<xsd:complexType name="t_update">
+	<xsd:sequence>
+		<xsd:element name="attribute" minOccurs="1" maxOccurs="unbounded">
+			<xsd:complexType>
+				<xsd:complexContent>
+					<xsd:extension base="t_attribute">
+						<xsd:group ref="g_arguments" />
+					</xsd:extension>
+				</xsd:complexContent>
+			</xsd:complexType>
+		</xsd:element>
+   		<xsd:element name="sources" type="t_sources" minOccurs="1" maxOccurs="1" />
+   		<xsd:element name="conditions" type="t_logic" minOccurs="0" maxOccurs="1" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:element name="update" type="t_update" />
+</xsd:schema>
