@@ -50,21 +50,16 @@
 
 	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
 	  		$temp = explode($separators[$separator],$v);
-	  		$arr = $temp;
-	  		if ($keyval[$separator]){
-	  			$arr = array();
-	  			$n = count($temp); 
-	  			for ($i = 0; $i < ($n - 1); $i = $i+2)
-	  				$arr[$temp[$i]] = $temp[$i + 1];
-	  		}
-	  		$result = array();  
-	  		if ($separator < count($separators) - 1){ 
-	  			foreach ($arr as $a)
+	  		$result = array();
+	  		if ($separator < count($separators) - 1)
+	  			foreach ($temp as $t){
+	  				$t1 = self::_str_array_parse($t, $separator + 1, $separators, $keyval);
 	  				if (@$keyval[$separator + 1])
-	  					$result = $result + self::_str_array_parse($a,$separator+1,$separators,$keyval);
+	  					$result[$t1[0][0]] = $t1[1];
 	  				else
-	  					$result[] = self::_str_array_parse($a,$separator+1,$separators,$keyval);
-	  		} else $result = $arr;
+	  					$result[] = $t1;	 
+	  			}
+	  		else $result = $temp;	
 	  		return $result; 
 	  	}
 	  	
