@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-	TApplication::import("widgets::TXmlWidgetContainer");
+	TApplication::import("widgets::TWidgetContainer");
 
 /**
  * @package View
@@ -20,9 +20,9 @@
  * @category System
  * widget displaying widgets in tabs
  */	
-	class TWidgetTabContainer extends TXmlWidgetContainer {
-	
-		protected function TWidgetTabContainerInlineJavaScript(){
+	class TWidgetTabContainer extends TWidgetContainer  {
+			
+		protected function inlineJavaScript(){
 			?>
 		jQuery(document).one("ready",function(e){jQuery("#<?php echo $this->Name(); ?>").tabcontrol().construct();});
 			<?php
