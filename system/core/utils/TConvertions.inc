@@ -55,7 +55,10 @@
 	  			foreach ($temp as $t){
 	  				$t1 = self::_str_array_parse($t, $separator + 1, $separators, $keyval);
 	  				if (@$keyval[$separator + 1])
-	  					$result[$t1[0][0]] = $t1[1];
+	  					if (is_array($t1[0]))
+	  						$result[$t1[0][0]] = $t1[1];
+	  					else 	
+	  						$result[$t1[0]] = $t1[1];
 	  				else
 	  					$result[] = $t1;	 
 	  			}
@@ -70,6 +73,7 @@
 	  			if (!is_array($iskeyvalue)) $iskeyvalue = array($iskeyvalue);
 	  			if (count($separator) != count($iskeyvalue))
 	  				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+	  				
 	  			return self::_str_array_parse($v,0,$separator,$iskeyvalue);
 	  		}
 	  		if (is_object($v)) return array_values((array)$v);
