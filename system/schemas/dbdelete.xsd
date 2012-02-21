@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xsd:include schemaLocation="xmldbquery.xsd" />
+
+<xsd:complexType name="t_delete">
+	<xsd:sequence>
+		<xsd:element name="source" type="xsd:string" minOccurs="1" maxOccurs="unbounded" />
+		<xsd:element name="sources" type="t_sources" minOccurs="1" maxOccurs="1" />
+    	<xsd:element name="conditions" type="t_logic" minOccurs="0" maxOccurs="1" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:element name="delete" type="t_delete" />
+</xsd:schema>
