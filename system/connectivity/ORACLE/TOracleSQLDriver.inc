@@ -19,7 +19,7 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 			case 'Password':$this->_password_ = $value;break;
 			case 'Database':$this->_database_ = $value;break;
 			case 'Encoding':$this->_encoding_ = $value;break;
-			case 'Persistent':$this->_perisistent_ = TConvertions::ConvertToBoolean($value);break;
+			case 'Persistent':$this->_persistent_ = TConvertions::ConvertToBoolean($value);break;
 			default:parent::__set($nm, $value);break;
 		}
 	}
