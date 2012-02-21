@@ -49,9 +49,9 @@
 	  	}
 
 	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
-	  		$temp = array_filter(explode($separators[$separator],$v),create_function('$var','return $var != \'\';'));
+	  		$temp = explode($separators[$separator],$v);
 	  		$result = array();
-	  		if ($separator < count($separators) - 1)
+	  		if ($separator < count($separators) - 1){
 	  			foreach ($temp as $t){
 	  				$t1 = self::_str_array_parse($t, $separator + 1, $separators, $keyval);
 	  				if (!empty($t1)){
@@ -64,6 +64,7 @@
 	  						$result[] = $t1;
 	  				}	 
 	  			}
+	  		}
 	  		else $result = $temp;	
 	  		return $result; 
 	  	}
