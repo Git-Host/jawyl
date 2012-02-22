@@ -456,7 +456,7 @@
 			include_once $this->ConfCompileDir."/application.config";
 			$servicename = "";
 			if (isset($argc) && !empty($argc))
-				self::$_request_ = TConsoleCall();
+				self::$_request_ = new TConsoleCall();
 			else {
 				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
 				if ($this->Sef){
