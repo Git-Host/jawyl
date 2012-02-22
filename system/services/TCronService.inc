@@ -27,7 +27,7 @@ class TCronService extends TService {
 		
 		if (!$this->ACL()->Login($request->user, $request->pwd)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
-			return result;
+			return $result;
 		}
 		
 		$joblist = TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/jobs.xml";
@@ -55,6 +55,6 @@ class TCronService extends TService {
 				if (!$result) $result = $handled; 
 			}
 		}
-		return result;
+		return $result;
 	}
 }
