@@ -50,7 +50,8 @@
  * @property-read string $Root gets application path relative to host root
  * @property-read string $RelativePath gets a request path relative to TApplication::$Root
  * @property-read string $Host gets a request host name
- * @property-read string $ConfCompileDir gets directory where application compiled configuration files are stored 
+ * @property-read string $ConfCompileDir gets directory where application compiled configuration files are stored
+ * @property-read int $CallType 
  * 
  * @property-write string $Language sets current i18n and l10n language name;
  * @see TI18n::SetLanguage()
@@ -78,6 +79,9 @@
 		const ENV_TESTING = 1;
 		const ENV_DEVELOPING = 2;
 		
+		const CALL_HTTP = 0;
+		const CALL_CONSOLE = 1;
+		
 		
 		private $_request_path_;
 /**
@@ -94,6 +98,7 @@
 		private $_default_service_name_;
 		private $_sef_;
 		private $_string_encoding_ = 'UTF-8';
+		private $_call_type_;
 /**
  * @var IExceptionHandler
  */		
@@ -138,6 +143,7 @@
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
 				case "StringEncoding":return $this->_string_encoding_;break;
+				case "CallType":return $this->_call_type_;break;
 			}
 			return parent::__get($nm);
 		}
@@ -454,7 +460,8 @@
 		private function _app_run(){
 			include_once $this->ConfCompileDir."/application.config";
 			$servicename = "";
-			if (isset($_SERVER['HTTP_HOST'])) {
+			$this->_call_type_ = isset($_SERVER['HTTP_HOST'])?self::CALL_HTTP:self::CALL_CONSOLE;
+			if ($this->_call_type_ == self::CALL_HTTP) {
 				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
 				if ($this->Sef){
 					include_once $this->ConfigDir."/url.config";
@@ -462,8 +469,9 @@
 				}
 				else 
 					self::$_request_ = new THttpRequest($servicename);		
-			} else 
+			} else {
 				self::$_request_ = new TConsoleCall();
+			}
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
