@@ -18,7 +18,11 @@ TApplication::import("core::utils::TScheduleHandler");
 
 
 class TCronService extends TService {
-	public function Handle(THttpRequest $request){
+	protected function checkRequest(TRequest $request){
+		return $request instanceof TConsoleCall;
+	}
+	
+	protected function handleRequest(TRequest $request){
 		$result = false;
 		
 		if (!$this->ACL()->Login($request->user, $request->pwd)){

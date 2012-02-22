@@ -369,7 +369,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		return  is_file($path.".xml") || is_file($path."_loader.php") || is_dir($path);   
 	}
 	
-	public function Handle(THttpRequest $request){
+	protected function handleRequest(TRequest $request){
 		$request->IsAjax = $request->IsAjax || ($request->ajaxcall == "on");
 		unset($request->ajaxcall);
 		if ($request->path){
@@ -382,7 +382,7 @@ abstract class TIntrinsicPageService extends TPageService {
 			$request->page = join("/",array_slice($path_parts,0,$ptr));
 			$request->path_remainder = array_slice($path_parts,$ptr,$cnt - $ptr);
 		}
-		parent::Handle($request); 
+		parent::handleRequest($request); 
 	}
 	
 	public function Url($page,$controller = null,$method = null, array $parameters = array()){

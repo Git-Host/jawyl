@@ -18,7 +18,11 @@ TApplication::import("common::soap");
 
 
 class TSOAPService extends TService {
-	public function Handle(THttpRequest $request){
+	protected function checkRequest(TRequest $request){
+		return $request instanceof THttpRequest;
+	}
+	
+	protected function handleRequest(TRequest $request){
 		$com = null;
 		if ($request->component)
 			$com = TApplication::Instance($request->component);

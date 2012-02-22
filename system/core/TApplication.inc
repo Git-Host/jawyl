@@ -22,6 +22,8 @@
 	require_once "TConfigurable.inc";
 	require_once "TBuiltinExceptionHandler.inc";
 	require_once "TServiceMap.inc";
+	require_once "TRequest.inc";
+	require_once "TConsoleCall.inc";
 	require_once "THttpRequest.inc";
 	require_once "TService.inc";
 	require_once "TI18n.inc";
@@ -451,18 +453,19 @@
 		
 		private function _app_run(){
 			include_once $this->ConfCompileDir."/application.config";
-						
 			$servicename = "";
-			if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"]; 
-			
-			if ($this->Sef){
-				include_once $this->ConfigDir."/url.config";
-				self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
-			}
-			else 
-				self::$_request_ = new THttpRequest($servicename);		
-				
-			$servicename = self::$_request_->getService();
+			if (isset($argc))
+				self::$_request_ = TConsoleCall();
+			else {
+				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
+				if ($this->Sef){
+					include_once $this->ConfigDir."/url.config";
+					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
+				}
+				else 
+					self::$_request_ = new THttpRequest($servicename);		
+			}	
+			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
 				

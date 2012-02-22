@@ -340,13 +340,15 @@ abstract class TPageService extends TService {
 		return false;
 	}
 	
+	protected function checkRequest(TRequest $request){
+		return $request instanceof THttpRequest;
+	}
+	
 /**
  * gets page that fits request and calls its Handle method
- * @see IService::Handle()
  * @return boolean
  */		
-	public function Handle(THttpRequest $request){
-		parent::Handle($request);
+	protected function handleRequest(TRequest $request){
 		if (!$request->page)
 			$this->page = $this->getDefaultPage();
 		 else 
