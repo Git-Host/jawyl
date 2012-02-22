@@ -154,6 +154,48 @@
  
 		}
 		
+	private function _console_exception_header(Exception $e){
+		$error = $e instanceof ErrorException;
+		echo $error?'Error ':'Exception ';
+		echo $e->getCode();
+		echo $error?' occured ':' raised ';
+		?>
+		in file <?php echo $e->getFile(); ?> on line <?php 
+		echo $e->getLine();echo "\n"; 
+		echo $e->getMessage();echo "\n";
+		$trace = $e->getTrace();
+		?>Stack trace:<?php echo "\n"; 
+		$n = count($trace);
+			foreach ($trace as $call){
+				 echo $n.". ";
+				if (isset($call['class'])) 
+					echo $call['class'];
+				if (isset($call['type']))	
+					echo $call['type'];
+				if (isset($call['function']))
+					echo $call['function']; 
+			?>(<?php
+					$args = array(); 
+						if (isset($call['args']))
+							foreach ($call['args'] as $arg) $args[] = is_object($arg)?(get_class($arg)):(is_numeric($arg)?$arg:(is_null($arg)?'null':("'".$arg."'")));
+						echo join(',', $args); 
+				?>) on line <?php if (isset($call['line'])) echo $call['line']; ?> in <?php 
+						if (isset($call['file'])) {
+								$file = str_replace('\\', '/', $call['file']);
+								if (stristr($file,TApplication::$SystemPath))
+									echo str_ireplace(TApplication::$SystemPath, 'SYS_PATH', $file);
+								else if (stristr($file,TApplication::$Application->AppPath))
+									echo str_ireplace(TApplication::$Application->AppPath, 'APP_PATH', $file);
+								else 
+									echo $file;	
+						} ?>
+<?php	
+						$n--;
+					}
+		}		
+		
+		
+		
 /**
  * Exception handling method
  * @param Exception $e
@@ -171,12 +213,19 @@
 					}
 				}break;
 				case TApplication::ENV_TESTING:{
-					$this->_exception_header($e);
-					?>
-					</div>
-					<?php
+					if (TApplication::$Application->CallType == TApplication::CALL_CONSOLE){
+						$this->_console_exception_header($e);
+					} else {
+						$this->_exception_header($e);
+						?>
+						</div>
+						<?php
+					}
 				}break;
 				case TApplication::ENV_DEVELOPING:{
+					if (TApplication::$Application->CallType == TApplication::CALL_CONSOLE){
+						$this->_console_exception_header($e);
+					} else {
 					$this->_exception_header($e);
 /*
  * @todo make file encoding flexible
@@ -207,6 +256,7 @@
 					?>
 					</div>
 					<?php
+					}
 				}break;
 			}
 			return true;
