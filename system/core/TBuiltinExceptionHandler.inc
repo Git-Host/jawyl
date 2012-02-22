@@ -159,8 +159,7 @@
 		echo $error?'Error ':'Exception ';
 		echo $e->getCode();
 		echo $error?' occured ':' raised ';
-		?>
-		in file <?php echo $e->getFile(); ?> on line <?php 
+		?>in file <?php echo $e->getFile(); ?> on line <?php 
 		echo $e->getLine();echo "\n"; 
 		echo $e->getMessage();echo "\n";
 		$trace = $e->getTrace();
@@ -188,8 +187,8 @@
 									echo str_ireplace(TApplication::$Application->AppPath, 'APP_PATH', $file);
 								else 
 									echo $file;	
-						} ?>
-<?php	
+						}
+						echo "\n"; 
 						$n--;
 					}
 		}		

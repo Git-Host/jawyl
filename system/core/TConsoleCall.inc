@@ -39,7 +39,7 @@ final class TConsoleCall extends TRequest {
 	public function __construct($service = null){
 		global $argc,$argv;
 		for ($i = 1; $i < $argc; $i++){
-			$temp = explode($argv[$i],'=');
+			$temp = explode('=',$argv[$i]);
 			if (count($temp) > 1){
 				if (is_null($service))
 					if ($temp[0] == 'service')
