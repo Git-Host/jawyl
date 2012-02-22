@@ -17,16 +17,14 @@
  * @subpackage Application
  * @category Core
  * 
- * @property-read string $service Name of service to which request was made
- * @property mixed $request_param_name You can access request parameters as THttpRequest properties
+ * @property-read string $Service Name of service to which request was made
  * 
  * @see TApplication
  */
-	final class THttpRequest {
+	final class THttpRequest extends TRequest {
 		private $_get_parameters_ = array();
 		private $_post_parameters_ = array();
 		private $_file_parameters_ = array();
-		private $_service_;
 /**
  * @var bool $IsXmlHttpRequest stores value indicating whether current request was sent by XmlHttpRequest object.
  */		
@@ -49,8 +47,8 @@
 /**
  * @ignore
  */		
-		public function __construct($service){
-			$this->_service_ = $service;
+		public function __construct($service = null){
+			parent::__construct($service);
 			$this->IsXmlHttpRequest = strtolower($this->Header("HTTP_X_REQUESTED_WITH")) == "xmlhttprequest";
 			$this->IsAjax = $this->IsXmlHttpRequest;
 			
@@ -60,7 +58,7 @@
 			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
 				
 			foreach ($_FILES as $key=>$file){
-				$this->$this->_file_parameters_[$key] = new TUploadedFile($file);
+				$this->_file_parameters_[$key] = new TUploadedFile($file);
 				$orig[$key] = $file["name"];
 			}
 
@@ -78,11 +76,6 @@
 		public function RequestURI(){
 			return $this->origin;
 		}
-		
-/**
- * Gets name of service to which request is made. 
- */
-		public function getService(){return $this->_service_;}
 		
 		private function _accept_value($value,$urldecode = false){
 			if (get_magic_quotes_gpc()){
@@ -129,7 +122,7 @@
  * @ignore
  */		
 		public function __set($nm,$value){
-			if ($nm == "service") return;
+			if (strtolower($nm) == "service") return;
 			$this->SetGetParameter($nm, $value);
 		}
 /**
@@ -174,7 +167,6 @@
  */		
 		
 		public function __get($nm){
-			if ($nm == "service") return $this->_service_;
 			if (key_exists($nm, $this->_get_parameters_))
 				return $this->_get_parameters_[$nm];
 			if (key_exists($nm, $this->_post_parameters_))
@@ -183,23 +175,20 @@
 				return $this->_file_parameters_[$nm];
 			if (key_exists($nm, $_COOKIE))
 				return $this->_accept_value($_COOKIE[$nm]);	
-			return null;
+			return parent::__get($nm);
 		}	
 
 /**
  * @ignore
  */		
 		public function __isset($nm){
-			if ($nm == "service") 
-				return !is_null($this->_service_);
-			else 
-				return key_exists($nm, $this->_get_parameters_) || key_exists($nm, $this->_post_parameters_) || key_exists($nm, $this->_file_parameters_) || key_exists($nm, $_COOKIE);
+			return key_exists($nm, $this->_get_parameters_) || key_exists($nm, $this->_post_parameters_) || key_exists($nm, $this->_file_parameters_) || key_exists($nm, $_COOKIE) || parent::__isset($nm);
 		}
 /**
  * @ignore
  */		
 		public function __unset($nm){
-			if ($nm != "service") {
+			if ($nm != "Service") {
 				if (isset($this->_get_parameters_[$nm]))
 					unset($this->_get_parameters_[$nm]);
 				if (isset($this->_post_parameters_[$nm]))

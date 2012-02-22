@@ -32,10 +32,10 @@ interface IService {
 	//public function Name();
 	/**
 	 * service handle method. used for request processing.
-	 * @param THttpRequest $request request object to process.
+	 * @param TRequest $request request object to process.
 	 * @return boolean should return true when request is handled by service and false otherwise. 
 	 */
-	public function Handle(THttpRequest $request);
+	public function Handle(TRequest $request);
 }
 
 class TServiceRole extends TPolicy {
@@ -104,6 +104,9 @@ interface ISecuredService extends IService {
  * @uses ISecuredService
  */
 abstract class TService extends TConfigurable implements ISecuredService, ISecurityObject {
+/**
+ * @var TRequest
+ */	
 	protected $request;
 	
 /**
@@ -181,8 +184,20 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
 		parent::__construct($name);
 	}
 	
-	public function Handle(THttpRequest $request){
+	protected abstract function handleRequest(TRequest $request);
+	
+/**
+ * Checks request object
+ * @param TRequest $request
+ * @return boolean
+ */	
+	protected abstract function checkRequest(TRequest $request);
+	
+	public final function Handle(TRequest $request){
 		$this->request = $request;
+		if (!$this->checkRequest($request))
+			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		return $this->handleRequest($request);
 	}
 }
 ?>
