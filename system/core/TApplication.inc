@@ -452,12 +452,9 @@
 		} 
 		
 		private function _app_run(){
-			global $argc;
 			include_once $this->ConfCompileDir."/application.config";
 			$servicename = "";
-			if (isset($argc) && !empty($argc))
-				self::$_request_ = new TConsoleCall();
-			else {
+			if (isset($_SERVER['HTTP_HOST'])) {
 				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
 				if ($this->Sef){
 					include_once $this->ConfigDir."/url.config";
@@ -465,7 +462,8 @@
 				}
 				else 
 					self::$_request_ = new THttpRequest($servicename);		
-			}	
+			} else 
+				self::$_request_ = new TConsoleCall();
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
