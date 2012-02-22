@@ -452,9 +452,10 @@
 		} 
 		
 		private function _app_run(){
+			global $argc;
 			include_once $this->ConfCompileDir."/application.config";
 			$servicename = "";
-			if (isset($argc))
+			if (isset($argc) && !empty($argc))
 				self::$_request_ = TConsoleCall();
 			else {
 				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
