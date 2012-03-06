@@ -192,6 +192,13 @@ final class TSoapOptions {
 			case 'UserAgent':$this->_user_agent_ = $value;break;
 			case 'StreamContext':$this->_stream_context_ = TConvertions::ConvertToArray($value);break;
 			case 'KeepAlive':$this->_keep_alive_ = TConvertions::ConvertToBoolean($value);break;
+			case 'ClassMappings':{
+				$mappings = $value;
+				if (!is_array($mappings))
+					$mappings = TConvertions::ConvertToArray($mappings,array(';','='),array(false,true));
+				foreach ($mappings as $wsdlname=>$classname)
+					$this->MapClass($wsdlname, $classname);
+			}break;
 		}
 	}
 	
@@ -241,11 +248,11 @@ final class TSoapOptions {
  								'KeepAlive',
  								'Encoding',
 								'CacheWsdl',
- 								'Feature'		
+ 								'Feature',
+								'ClassMappings'		
 		));
 	}
 }
-
 
 /**
  * 
@@ -253,7 +260,6 @@ final class TSoapOptions {
  * @author dakrasilnikov
  * @property string $Wsdl
  */
-
 class TSoapServer extends TConfigurable implements ISoapServer {
 	protected $wsdl = false;
 /**
@@ -268,7 +274,7 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'Wsdl':$this->wsdl = $value;break;
+			case 'WSDL':$this->wsdl = TApplication::$Application->AdjustPath($value);break;
 			default:{
 					if ($this->options->IsOption($nm))
 						$this->options->$nm = $value;
@@ -284,7 +290,7 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	}
 	
 	public function Handle(){
-		$server = new SoapServer($this->wsdlPath(),$this->options->ForConstructor(TSoapOptions::TYPE_SERVER));
+		$server = new SoapServer($this->wsdl,$this->options->ForConstructor(TSoapOptions::TYPE_SERVER));
 		$server->setObject($this->getHandler());
 		try {
 			$server->handle();
