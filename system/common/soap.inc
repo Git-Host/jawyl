@@ -1,5 +1,10 @@
 <?php
 /**
+ * @ignore 
+ */
+TApplication::import("core::utils::THttpMeta");
+
+/**
  * @package Common
  * @subpackage Soap
  * @category System
@@ -262,8 +267,10 @@ final class TSoapOptions {
  */
 class TSoapServer extends TConfigurable implements ISoapServer {
 	protected $wsdl = false;
-	
-	protected $httpHeaders = array();
+/**
+ * @var THttpMeta
+ */	
+	protected $httpMeta;
 	
 /**
  * @var TSoapOptions
@@ -272,20 +279,15 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	
 	public function __construct($name, IConfigurable $container = null){
 		parent::__construct($name,$container);
+		$this->httpMeta = new THttpMeta();
+		$this->httpMeta->ContentType = THttpMeta::TYPE_XML;
 		$this->options = new TSoapOptions();
 	}
 	
 	public function __set($nm,$value){
 		switch ($nm){
 			case 'WSDL':$this->wsdl = TApplication::$Application->AdjustPath($value);break;
-			case 'HttpHeaders':{
-				if (is_array($value))
-					$this->httpHeaders = $value;
-				else {	
-					preg_match_all('/([^:]*):([^:\r\n]*)/',$value,$h);
-					$this->httpHeaders = array_combine($h[1],$h[2]);
-				}
-			}break;
+			case 'HttpHeaders':$this->httpMeta->Headers = $value;break;
 			default:{
 					if ($this->options->IsOption($nm))
 						$this->options->$nm = $value;
@@ -303,8 +305,7 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	public function Handle(){
 		$server = new SoapServer($this->wsdl,$this->options->ForConstructor(TSoapOptions::TYPE_SERVER));
 		$server->setObject($this->getHandler());
-		foreach ($this->httpHeaders as $header=>$value)
-			header($header.":".$value);	
+		$this->httpMeta->SendHeaders();
 		
 		try {
 			$server->handle();
