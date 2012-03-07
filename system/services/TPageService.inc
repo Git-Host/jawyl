@@ -71,7 +71,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 /**
  * @var string
  */	
-	protected $ajaxContentType = TResponse::TYPE_XML;
+	protected $ajaxContentType = THttpMeta::TYPE_XML;
 /**
  * @var array
  * stores response widgets
@@ -92,7 +92,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		parent::__construct($service,$name);
 		$this->title = $title;
 		$this->templateName = $template;
-		$this->contentType = TResponse::TYPE_HTML;
+		$this->contentType = THttpMeta::TYPE_HTML;
 	}
 	
 /**
