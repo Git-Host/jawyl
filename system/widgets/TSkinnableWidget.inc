@@ -4,6 +4,9 @@ TApplication::import("common::widget::TSourcedWidget");
 
 abstract class TSkinnableWidget extends TSourcedWidget {
 	public function http_Scripts(){
+		$httpMeta = new THttpMeta();
+		$httpMeta->ContentType = THttpMeta::TYPE_JS;
+		$httpMeta->SendHeaders(); 
 		$file = $this->getAsset("js","override.js","dir");
 		if (!is_null($file))
 			include $file;
@@ -17,7 +20,9 @@ abstract class TSkinnableWidget extends TSourcedWidget {
 	}
 	
 	public function http_Styles(){
-		header("Content-Type:text/".TResponse::TYPE_CSS);
+		$httpMeta = new THttpMeta();
+		$httpMeta->ContentType = THttpMeta::TYPE_CSS;
+		$httpMeta->SendHeaders(); 
 		$file = $this->getAsset("css","override.css","dir");
 		if (!is_null($file))
 			include $file;

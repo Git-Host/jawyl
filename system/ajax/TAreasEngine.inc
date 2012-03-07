@@ -123,9 +123,9 @@ class TAreasEngine extends TAjaxEngine {
 	public function CommitResponse(TResponse $response){
 		foreach ($this->_queue_ as $resp)
 			switch ($response->CurrentContentType()){
-				case TResponse::TYPE_XML:$this->raXML($resp[0],$resp[1]);break;
-				case TResponse::TYPE_JSON:$this->raJSON($resp[0],$resp[1]);break;
-				case TResponse::TYPE_TEXT:$this->raText($resp[0],$resp[1]);break;
+				case THttpMeta::TYPE_XML:$this->raXML($resp[0],$resp[1]);break;
+				case THttpMeta::TYPE_JSON:$this->raJSON($resp[0],$resp[1]);break;
+				case THttpMeta::TYPE_TEXT:$this->raText($resp[0],$resp[1]);break;
 			}
 		parent::CommitResponse($response);	
 	}

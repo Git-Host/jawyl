@@ -32,6 +32,10 @@ TApplication::import("core::utils::TConvertions");
 /**
  * @ignore 
  */
+TApplication::import("core::utils::THttpMeta");
+/**
+ * @ignore 
+ */
 TApplication::import("common::theme::interfaces");
 
 /**
@@ -780,17 +784,6 @@ abstract class TWidget extends TResponseElement {
  * @see TMVCObject
  */
 abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEventHandler {
-	const TYPE_XML = "xml";
-	const TYPE_JSON = "json";
-	const TYPE_HTML = "html";
-	const TYPE_CSS = "css";
-	const TYPE_GIF = "gif";
-	const TYPE_JPEG = "jpg";
-	const TYPE_PNG = "png";
-	const TYPE_BMP = "bmp";
-	const TYPE_ICON = "icon";
-	const TYPE_TEXT = "text";
-
 	public $CacheLifeTime = 0;
 	
 	public $DefaultController;
@@ -805,17 +798,6 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  * stores value of DenyCallClean property 
  */	
 	protected $denyCallClean = false;
-
-/**
- * @var string
- * stores response ContentType property value
- */	
-	protected $contentType = self::TYPE_TEXT;
-/**
- * @var array
- * stores response headers as an associative array
- */	
-	protected $headers = array();
 /**
  * @var TService
  * service response belongs to
@@ -825,6 +807,11 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 	protected $request;
 	
 	private $_event_listeners_ = array();
+	
+/**
+ * @var THttpMeta
+ */	
+	private $_http_meta_;
 	
 	public function BroadCastEvent(TEvent $event){
 		foreach ($this->_event_listeners_ as $l)
@@ -854,42 +841,13 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 		}
 		return $result;
 	}
-
-/**
- * gets response content types as an array
- */	
-	protected static function ContentTypes(){
-		return array(
-			self::TYPE_XML,
-			self::TYPE_JSON,
-			self::TYPE_HTML,
-			self::TYPE_CSS,
-			self::TYPE_BMP,
-			self::TYPE_GIF,
-			self::TYPE_JPEG,
-			self::TYPE_PNG,
-			self::TYPE_ICON,
-			self::TYPE_TEXT);
-	} 
-
 /**
  * @ignore
  */	
 	public function __set($nm,$value){
 		switch ($nm){
-			case "ContentType":{
-				if (!in_array($value,self::ContentTypes()))
-					throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-				$this->contentType = $value;
-			}break;
-			case "Headers":{
-				if (is_array($value))
-					$this->headers = $value;
-				else {	
-					preg_match_all('/([^:]*):([^:\r\n]*)/',$value,$h);
-					$this->headers = array_combine($h[1],$h[2]);
-				}
-			}break;
+			case "ContentType":$this->_http_meta_->ContentType = $value;break;
+			case "Headers":$this->_http_meta_->Headers = $value;break;
 			case "DenyCallClean":$this->denyCallClean = TConvertions::ConvertToBoolean($value);
 			case "SaveState":$this->stateSave = $value;break;
 			default:parent::__set($nm,$value);
@@ -900,8 +858,8 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  */	
 	public function __get($nm){
 		switch ($nm){
-			case "ContentType":return $this->contentType;break;
-			case "Headers":return $this->headers;break;
+			case "ContentType":return $this->CurrentContentType();break;
+			case "Headers":return $this->_http_meta_->Headers;break;
 			case "DenyCallClean":return $this->denyCallClean;break;
 			case "SaveState":{if (is_null($this->stateSave)) return $this->service->SaveState;return $this->stateSave;}break;
 			case "Service":return $this->Service();break;
@@ -919,8 +877,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  * sends response additional headers
  */
 	public function SendHeaders(){
-		foreach ($this->headers as $key=>$value)
-			header($key.":".$value);			
+		$this->_http_meta_->SendHeaders();
 	}
 /**
  * Sets a cookie
@@ -958,28 +915,15 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  * @return string
  */
 	public function CurrentContentType(){
-		return $this->contentType;
+		return $this->_http_meta_->ContentType;
 	}
 		
 /**
- * sends content type header
+ * returns content type header
  * @param string $contentType optional content type. When not specified current content type is used.
  */	
 	public function ContentTypeHeader($contentType = null){
-		if (is_null($contentType))
-			$contentType = $this->contentType;
-		switch ($contentType){
-			case self::TYPE_XML:return "Content-Type:text/xml; charset=utf-8";break;
-			case self::TYPE_JSON:return "Content-Type:text/javascript; charset=utf-8";break;
-			case self::TYPE_HTML:return "Content-Type:text/html; charset=utf-8";break;
-			case self::TYPE_CSS:return "Content-Type:text/css; charset=utf-8";break;
-			case self::TYPE_GIF:return "Content-Type:img/gif";break;
-			case self::TYPE_PNG:return "Content-Type:img/png";break;
-			case self::TYPE_JPEG:return "Content-Type:img/jpeg";break;
-			case self::TYPE_BMP:return "Content-Type:img/bmp";break;
-			case self::TYPE_ICON:return "Content-Type:img/x-icon";break;
-			case self::TYPE_TEXT:return "Content-Type:text/plain; charset=utf-8";break;
-		}
+		return $this->_http_meta_->ContentTypeHeader($contentType);
 	}
 /**
  * gets service response belongs to
@@ -998,6 +942,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  * @param TService $service service response belongs to 
  */	
 	public function __construct(TService $service, $name = null){
+		$this->_http_meta_ = new THttpMeta();
 		if (!$name)
 			$name = $service->Name().'.response';
 		parent::__construct($name,$service);

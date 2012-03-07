@@ -50,9 +50,9 @@ abstract class TAjaxEngine extends TConfigurable implements IAjaxEngine {
  */	
 	public function Error(TResponse $response, $msg){
 		switch ($response->CurrentContentType()){
-			case TResponse::TYPE_XML:echo '<error><![CDATA['.$msg.']]></error>';break;
-			case TResponse::TYPE_JSON:$this->AddJsonItem("error",$msg);break;
-			case TResponse::TYPE_TEXT:echo '[--error--]'.$msg.'[--error--]';break;
+			case THttpMeta::TYPE_XML:echo '<error><![CDATA['.$msg.']]></error>';break;
+			case THttpMeta::TYPE_JSON:$this->AddJsonItem("error",$msg);break;
+			case THttpMeta::TYPE_TEXT:echo '[--error--]'.$msg.'[--error--]';break;
 		}	
 	}
 	
@@ -65,13 +65,13 @@ abstract class TAjaxEngine extends TConfigurable implements IAjaxEngine {
 		/* FIX IE behaviour. 
 			When loading via IFRAME IE treats javascript as file. 
 			Done for ajax file uploads. */ 
-		if (($response->CurrentContentType() != TResponse::TYPE_JSON) || $request->IsXmlHttpRequest)
+		if (($response->CurrentContentType() != THttpMeta::TYPE_JSON) || $request->IsXmlHttpRequest)
 				header($response->ContentTypeHeader($response->CurrentContentType()));
 			else
 				header("Content-Type:text/html; charset=utf-8");		
 				
 		switch ($response->CurrentContentType()){
-			case TResponse::TYPE_XML:echo '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<response>'."\n";break;
+			case THttpMeta::TYPE_XML:echo '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<response>'."\n";break;
 		}
 		
 	}
@@ -80,8 +80,8 @@ abstract class TAjaxEngine extends TConfigurable implements IAjaxEngine {
  */	
 	public function CommitResponse(TResponse $response){
 		switch ($response->CurrentContentType()){
-			case TResponse::TYPE_XML:echo '</response>';break;
-			case TResponse::TYPE_JSON:echo json_encode($this->jsonItems);break;
+			case THttpMeta::TYPE_XML:echo '</response>';break;
+			case THttpMeta::TYPE_JSON:echo json_encode($this->jsonItems);break;
 		}
 	}
 
