@@ -262,6 +262,9 @@ final class TSoapOptions {
  */
 class TSoapServer extends TConfigurable implements ISoapServer {
 	protected $wsdl = false;
+	
+	protected $httpHeaders;
+	
 /**
  * @var TSoapOptions
  */	
@@ -275,6 +278,14 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	public function __set($nm,$value){
 		switch ($nm){
 			case 'WSDL':$this->wsdl = TApplication::$Application->AdjustPath($value);break;
+			case 'HttpHeaders':{
+				if (is_array($value))
+					$this->httpHeaders = $value;
+				else {	
+					preg_match_all('/([^:]*):([^:\r\n]*)/',$value,$h);
+					$this->httpHeaders = array_combine($h[1],$h[2]);
+				}
+			}break;
 			default:{
 					if ($this->options->IsOption($nm))
 						$this->options->$nm = $value;
@@ -292,6 +303,9 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	public function Handle(){
 		$server = new SoapServer($this->wsdl,$this->options->ForConstructor(TSoapOptions::TYPE_SERVER));
 		$server->setObject($this->getHandler());
+		foreach ($this->httpHeaders as $header=>$value)
+			header($header.":".$value);	
+		
 		try {
 			$server->handle();
 		} catch (Exception $e) {
