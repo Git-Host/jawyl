@@ -263,7 +263,7 @@ final class TSoapOptions {
 class TSoapServer extends TConfigurable implements ISoapServer {
 	protected $wsdl = false;
 	
-	protected $httpHeaders;
+	protected $httpHeaders = array();
 	
 /**
  * @var TSoapOptions
