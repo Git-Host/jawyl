@@ -50,6 +50,7 @@
 
 	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
 	  		$temp = explode($separators[$separator],$v);
+	  		array_walk($temp, create_function('&$item', '$item = trim($item);'));
 	  		$result = array();
 	  		if ($separator < count($separators) - 1){
 	  			foreach ($temp as $t){
