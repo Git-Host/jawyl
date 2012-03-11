@@ -3,6 +3,7 @@
  * @ignore 
  */
 TApplication::import("core::utils::THttpMeta");
+TApplication::import("common::xml");
 
 /**
  * @package Common
@@ -277,6 +278,11 @@ class TSoapServer extends TConfigurable implements ISoapServer {
  */	
 	protected $options;
 	
+/**
+ * @var IXSLTransformer
+ */	
+	protected $_ioc_xsl_pre_processor_;
+	
 	public function __construct($name, IConfigurable $container = null){
 		parent::__construct($name,$container);
 		$this->httpMeta = new THttpMeta();
@@ -308,7 +314,11 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 		$this->httpMeta->SendHeaders();
 		
 		try {
-			$server->handle();
+			if ($this->_ioc_xsl_pre_processor_ instanceof IXSLTransformer){
+				global $HTTP_RAW_POST_DATA;
+				$server->handle($this->_ioc_xsl_pre_processor_->TransformXML($HTTP_RAW_POST_DATA));
+			} else
+				$server->handle();
 		} catch (Exception $e) {
 			$server->fault($e->getCode(),$e->getMessage());
 		}
