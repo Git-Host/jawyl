@@ -126,10 +126,14 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 		$this->_trancounter_++;
 	}
 	
-	protected function Commit(){
+	public function Commit(){
 		if ($this->_trancounter_ > 0) $this->_trancounter_--;
 		if (!oci_commit($this->_connection_))
 			 throw new TOracleException(null,oci_error($this->_connection_));			
+	}
+	
+	public function Rollback(){
+		$this->rollbackTransaction();
 	}
 	
 	protected function rollbackTransaction(){
