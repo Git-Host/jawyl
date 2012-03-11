@@ -283,6 +283,12 @@ class TSoapServer extends TConfigurable implements ISoapServer {
  */	
 	protected $_ioc_xsl_pre_processor_;
 	
+/**
+ * @var IXSLTransformer
+ */	
+	protected $_ioc_xsl_post_processor_;
+	
+	
 	public function __construct($name, IConfigurable $container = null){
 		parent::__construct($name,$container);
 		$this->httpMeta = new THttpMeta();
@@ -316,7 +322,11 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 		try {
 			if ($this->_ioc_xsl_pre_processor_ instanceof IXSLTransformer){
 				global $HTTP_RAW_POST_DATA;
+				if ($this->_ioc_xsl_post_processor_ instanceof IXSLTransformer)
+					TOutputBuffer::StartRecording();
 				$server->handle($this->_ioc_xsl_pre_processor_->TransformXML($HTTP_RAW_POST_DATA));
+				if ($this->_ioc_xsl_post_processor_ instanceof IXSLTransformer)
+					echo $this->_ioc_xsl_post_processor_->TransformXML(TOutputBuffer::StopRecording());
 			} else
 				$server->handle();
 		} catch (Exception $e) {
