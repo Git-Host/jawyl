@@ -46,7 +46,7 @@ class TXSLTransformer extends TConfigurable implements IXSLTransformer {
 				if (is_string($value))
 					$value = TConvertions::ConvertToArray($value,array(';','='),array(false,true));
 				if (is_array($value))
-					$this->_parameters_ = $value;
+					$this->_parameters_ = $value + $this->_parameters_;
 			}break;
 			case 'UsePHP':$this->_use_php_functions_ = TConvertions::ConvertToBoolean($value);break;
 			default:parent::__set($nm, $value);break;
