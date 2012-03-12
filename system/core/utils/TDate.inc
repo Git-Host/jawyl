@@ -95,15 +95,15 @@
 			$diff = $this->TimeStamp() - $date->TimeStamp();
 			switch ($type){
 				case self::DP_SECOND:return $diff;break;
-				case self::DP_MINUTE:return $diff/60;break;
-				case self::DP_HOUR:return $diff/3600;break;
-				case self::DP_DAY:return $diff/86400;break;
-				case self::DP_WEEK:return $diff/604800;break;
+				case self::DP_MINUTE:return round($diff/60);break;
+				case self::DP_HOUR:return round($diff/3600);break;
+				case self::DP_DAY:return round($diff/86400);break;
+				case self::DP_WEEK:return round($diff/604800);break;
 /*
  * @todo: make months calculation more accurate
  */				
-				case self::DP_MONTH:return $diff/2592000;break;
-				case self::DP_YEAR:return $diff/31536000 ;break;
+				case self::DP_MONTH:return round($diff/2592000);break;
+				case self::DP_YEAR:return round($diff/31536000);break;
 			}
 			
 		}
