@@ -91,21 +91,22 @@
 			return new TDate(array("mday"=>$day,"mon"=>$month,"year"=>$year,"hours"=>$hour,"minutes"=>$minutes,"seconds"=>$seconds));
 		}
 		
-		public function Diff(TDate $date, $type = TDate::DP_DAY){
+		public function Diff(TDate $date, $type = TDate::DP_DAY,$accurate = false){
 			$diff = $this->TimeStamp() - $date->TimeStamp();
 			switch ($type){
-				case self::DP_SECOND:return $diff;break;
-				case self::DP_MINUTE:return round($diff/60);break;
-				case self::DP_HOUR:return round($diff/3600);break;
-				case self::DP_DAY:return round($diff/86400);break;
-				case self::DP_WEEK:return round($diff/604800);break;
+				case self::DP_MINUTE:$diff = $diff/60;break;
+				case self::DP_HOUR:$diff = $diff/3600;break;
+				case self::DP_DAY:$diff = $diff/86400;break;
+				case self::DP_WEEK:$diff = $diff/604800;break;
 /*
  * @todo: make months calculation more accurate
  */				
-				case self::DP_MONTH:return round($diff/2592000);break;
-				case self::DP_YEAR:return round($diff/31536000);break;
+				case self::DP_MONTH:$diff = $diff/2592000;break;
+				case self::DP_YEAR:$diff = $diff/31536000;break;
 			}
-			
+			if (!$accurate)
+				$diff = round($diff);
+			return $diff;	
 		}
 		
 /**
