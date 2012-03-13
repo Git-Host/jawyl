@@ -30,6 +30,10 @@ TApplication::import("services::TPageService");
  * @package View
  * @subpackage Theming
  * @category System
+ * 
+ * @property string $TemplateDir
+ * @property string $CompileDir
+ * 
  * Native theme engine class
  */
 class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
