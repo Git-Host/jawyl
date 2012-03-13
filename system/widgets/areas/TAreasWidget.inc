@@ -164,29 +164,29 @@ jQuery.areas_OnDatePicker = function (inputs){
 		}
 		
 		public function RenderArea(IArea $area){
-				$engine = $this->response->ThemeEngine;
-				if ($engine instanceof TAreasEngine)
-					$engine->EnterArea($area);
+				$this->currentEngine = $this->response->ThemeEngine;
+				if ($this->currentEngine instanceof TAreasEngine)
+					$this->currentEngine->EnterArea($area);
 				$accs = $this->areaCssClass($area);
 				$style = $this->areaStyle($area);
 				$context = $area->Context();
 				if (is_null($context)) $context = $this;
 
 				TOutputBuffer::StartRecording();
-				$skinfile = $this->Skin($engine,$area->Skin());
+				$skinfile = $this->Skin($this->currentEngine,$area->Skin());
 				if ($skinfile) 
-					$engine->ProcessTemplate($context,$skinfile);
+					$this->currentEngine->ProcessTemplate($context,$skinfile);
 				else
 					if (method_exists($this,"render".$area->Skin())){
 						$skincache = $this->__get($area->Skin()."CacheLifeTime");
 						$cachename = $this->Name()."_render".$area->Skin();
 						$callmethod = true;
 						if ($skincache > 0)
-							$callmethod = !$this->startCache($engine, $area->Skin(), $skincache);
+							$callmethod = !$this->startCache($this->currentEngine, $area->Skin(), $skincache);
 						if ($callmethod)	
 							call_user_func(array($this,"render".$area->Skin()),$area);
 						if ($skincache > 0)
-							$this->stopCache($engine, $cachename, $skincache);	
+							$this->stopCache($this->currentEngine, $cachename, $skincache);	
 					}
 				$html = TOutputBuffer::StopRecording();
 					
@@ -196,8 +196,8 @@ jQuery.areas_OnDatePicker = function (inputs){
 				if (!$skipwrapper){ ?><div id="<?php echo $area->Id(); ?>" class="area-holder<?php echo $accs?(" ".$accs):""; ?>"<?php echo $style?' style="'.$style.'"':''; ?>><?php }
 					echo $html;
 				if (!$skipwrapper){ ?></div><?php }
-				if ($engine instanceof TAreasEngine)
-					$engine->ExitArea($area);				
+				if ($this->currentEngine instanceof TAreasEngine)
+					$this->currentEngine->ExitArea($area);				
 		}
 					
 		public function __toString(){
