@@ -55,4 +55,8 @@ class TScheduleHandler extends TConfigurable implements IScheduleHandler {
 				}
 		return false;	
 	}
+	
+	public function Soid(){
+		return $this->name;
+	}
 }
