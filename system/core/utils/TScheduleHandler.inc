@@ -39,14 +39,18 @@ class TJobSecurityObject implements ISecurityObject, ISecurityChild {
 	}
 }
 
+interface IScheduleHandler extends ISecurityObject {
+	public function ExecuteJob(IACLManager $acl, IPolicyChecker $policy, $jobname, array $parameters = array());
+}
 
-class TScheduleHandler {
-	public static function ExecuteJob(ISecurityObject $object, IACLManager $acl, IPolicyChecker $policy, $jobname, array $parameters = array()){
-		$rm = new ReflectionMethod(get_class($object), "schedule_".$jobname);
+class TScheduleHandler extends TConfigurable implements IScheduleHandler {
+	public function ExecuteJob(IACLManager $acl, IPolicyChecker $policy, $jobname, array $parameters = array()){
+		$mn = "schedule_".$jobname;
+		$rm = new ReflectionMethod(get_class($this), $mn);
 		if ($rm)
 			if (!$rm->isPublic())
-				if ($policy->CheckPolicy($acl->CurrentUser(),new TJobPolicy(new TJobSecurityObject($jobname, $object)))) {
-					$rm->invokeArgs($object, $parameters);
+				if ($policy->CheckPolicy($acl->CurrentUser(),new TJobPolicy(new TJobSecurityObject($jobname, $this)))) {
+					call_user_func_array(array($this,$mn), $parameters);
 					return true;
 				}
 		return false;	
