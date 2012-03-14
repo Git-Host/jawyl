@@ -46,12 +46,12 @@ class TCronService extends TService {
 		
 		foreach ($jobs as $job){
 			$item = TApplication::Instance($job->getAttribute("component"));
-			if ($item instanceof ISecurityObject){
+			if ($item instanceof IScheduleHandler){
 				$parameters = array();
 				$params = $xpath->query("parameter",$job);
 				foreach ($params as $p)
 					$parameters[$p->getAttribute("name")] = $p->nodeValue;
-				$handled = TScheduleHandler::ExecuteJob($item, $this->ACL(), $this->Policy(), $job->getAttribute("name"), $parameters);
+				$handled = $item->ExecuteJob($this->ACL(), $this->Policy(), $job->getAttribute("name"), $parameters);
 				if (!$result) $result = $handled; 
 			}
 		}
