@@ -13,7 +13,7 @@
  * @ignore
  */
 TApplication::import("core::security::policy");
-TApplication::import("models::TOrmModel");
+TApplication::import("models::TMetaModel");
 
 /**
  * @package Components
@@ -21,12 +21,12 @@ TApplication::import("models::TOrmModel");
  * @category System
  * policy component class
  */
-class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IPolicyChecker {
+class TPolicyModel extends TMetaModel implements IInstallable, IPolicyManager, IPolicyChecker {
 	const POLICY_CLASS_POLICY = "Policy";
 	
 /**
- * @see TOrmModel::WrapItem()
- * @return TOrmItem returns null if passed instance is not of TPolicyModel::POLICY_CLASS_PERMISSION orm class.
+ * @see TMetaModel::WrapItem()
+ * @return TMetaItem returns null if passed instance is not of TPolicyModel::POLICY_CLASS_PERMISSION class.
  */	
 	public function WrapItem(IInstance $item){
 		if ($item->InstanceClass()->IsClass(self::POLICY_CLASS_POLICY))
@@ -97,10 +97,10 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
 	public function DenyAll(ISecuritySubject $subject, ISecurityObject $object){
 		$this->dbDriver->begin();
 		$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-		$ds = new TOrmClassDataSource($c, null);
+		$ds = new TMetaClassDataSource($c, null);
 		$ds->IsTarget = true;
-		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("object",null,$ds),$object->Soid())); 
-		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("subject",null,$ds),$subject->Guid()));
+		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute("object",null,$ds),$object->Soid())); 
+		$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute("subject",null,$ds),$subject->Guid()));
 		$this->dbDriver->DeleteInstances($ds);
 		$this->commit();
 		return true;
@@ -115,11 +115,11 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
 		$this->begin();
 		try {
 			$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-			$ds = new TOrmClassDataSource($c, null);
+			$ds = new TMetaClassDataSource($c, null);
 			$ds->IsTarget = true;
-			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("code",null,$ds),$policy->Type()));
-			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("object",null,$ds),is_null($policy->SecurityObject())?null:$policy->SecurityObject()->Soid())); 
-			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute("subject",null,$ds),$subject->Guid()));
+			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute("code",null,$ds),$policy->Type()));
+			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute("object",null,$ds),is_null($policy->SecurityObject())?null:$policy->SecurityObject()->Soid())); 
+			$ds->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute("subject",null,$ds),$subject->Guid()));
 			$this->dbDriver->DeleteInstances($ds);
 			$this->commit();
 		} catch (Exception $e){
@@ -172,11 +172,11 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
 			return false;
 			
 		$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-		$ds = new TOrmClassDataSource($c);
+		$ds = new TMetaClassDataSource($c);
 		
-		$code = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("code"),null,$ds);
-		$subj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
-		$obj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
+		$code = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("code"),null,$ds);
+		$subj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
+		$obj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
 		
 		$ds->Fetch = $code;  	
 		
@@ -223,10 +223,10 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
 	public function SubjectPolicies(ISecuritySubject $subject, ISecurityObject $object = null){
 		$result = array();
 		$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-		$ds = new TOrmClassDataSource($c);
-		$code = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("code"),null,$ds);
-		$subj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
-		$obj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
+		$ds = new TMetaClassDataSource($c);
+		$code = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("code"),null,$ds);
+		$subj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
+		$obj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
 		$ds->Fetch = $code;
 		$ds->Filter = new TCondition(TCondition::C_EQUAL, array($obj,($object?$object->Soid():null))); 
 		$ds->Filter = new TCondition(TCondition::C_EQUAL, array($subj,$subject->Guid()));
@@ -253,10 +253,10 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
 		foreach ($subjects as $s) $subjs[] = $s->Guid();
 		
 		$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-		$ds = new TOrmClassDataSource($c);
-		$code = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("code"),null,$ds);
-		$subj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
-		$obj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
+		$ds = new TMetaClassDataSource($c);
+		$code = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("code"),null,$ds);
+		$subj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
+		$obj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
 		$ds->Fetch = $code;
 		$ds->Filter = new TCondition(TCondition::C_EQUAL, array($obj,($object?$object->Soid():null))); 
 		$ds->Filter = new TCondition(TCondition::C_IN, array($subj,$subjs));
@@ -273,9 +273,9 @@ class TPolicyModel extends TOrmModel implements IInstallable, IPolicyManager, IP
  */	
 	public function ObjectSubjects(ISecurityObject $object){
 		$c = $this->GetClass(self::POLICY_CLASS_POLICY);
-		$ds = new TOrmClassDataSource($c);
-		$subj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
-		$obj = new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
+		$ds = new TMetaClassDataSource($c);
+		$subj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("subject"),null,$ds);
+		$obj = new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("object"),null,$ds);
 		$ds->Fetch = $subj;
 		$ds->Filter = new TCondition(TCondition::C_EQUAL, array($obj,$object->Soid())); 
 		return $this->dbDriver->FetchRecords($ds);

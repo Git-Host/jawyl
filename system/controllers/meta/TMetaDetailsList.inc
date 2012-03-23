@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TOrmReferedList");
+TApplication::import("controllers::TMetaReferedList");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Orm item associated items
+ * Meta item associated items
  */
-class TOrmDetailsList extends TOrmReferedList {
+class TMetaDetailsList extends TMetaReferedList {
 /**
  * @var string name of attribute to use for detail join to master
  */	
@@ -32,15 +32,15 @@ class TOrmDetailsList extends TOrmReferedList {
  */	
 	public function ActionAvailable(IAction $action){
 		switch ($action->LocalName()){
-			case TOrmReferedList::AN_REMOVE:return ($this->ReferenceAttribute) && (!is_null($this->currentItem)) && (!is_null($this->MasterList->CurrentItem()));break;
-			case TOrmReferedList::AN_ADD:return !is_null($this->MasterList->CurrentItem());break;
-			case TOrmList::AN_CREATE:return parent::ActionAvailable($action) && (!is_null($this->MasterList->CurrentItem()));break;
+			case TMetaReferedList::AN_REMOVE:return ($this->ReferenceAttribute) && (!is_null($this->currentItem)) && (!is_null($this->MasterList->CurrentItem()));break;
+			case TMetaReferedList::AN_ADD:return !is_null($this->MasterList->CurrentItem());break;
+			case TMetaList::AN_CREATE:return parent::ActionAvailable($action) && (!is_null($this->MasterList->CurrentItem()));break;
 			default:return parent::ActionAvailable($action);
 		}
 	}
 	
 /**
- * Adds orm item to associations list (associates an item with controller master list selected item)
+ * Adds item to associations list (associates an item with controller master list selected item)
  * @param mixed $id
  * @return boolean
  */	
@@ -56,7 +56,7 @@ class TOrmDetailsList extends TOrmReferedList {
 		}
 		//$item = $this->DataSource->GetItem($id);
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -75,7 +75,7 @@ class TOrmDetailsList extends TOrmReferedList {
 	public function RemoveCurrentItem(){
 		$item = $this->CurrentItem();
 		$id = $this->CurrentItemId();
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -105,7 +105,7 @@ class TOrmDetailsList extends TOrmReferedList {
 		return $result;
 	}
 /**
- * @see TOrmList::getItems()
+ * @see TMetaList::getItems()
  * @param int $page
  * @param int $pagesize
  * @return IIterator
@@ -118,8 +118,8 @@ class TOrmDetailsList extends TOrmReferedList {
 	}
 /**
  * creates new item and associates it with master list selected item
- * @see TOrmList::ItemCreation()
- * @return TOrmItem
+ * @see TMetaList::ItemCreation()
+ * @return TMetaItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		if ($this->ReferenceAttribute){

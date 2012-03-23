@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,18 +12,18 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TOrmReferedList");
+TApplication::import("controllers::TMetaReferedList");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * 
- * Orm vocabulary items
+ * Meta vocabulary items
  */
-class TOrmVocabulary extends TOrmReferedList {
+class TMetaVocabulary extends TMetaReferedList {
 /**
- * @var string name of orm vocabulary structure to use
+ * @var string name of vocabulary structure to use
  */		
 	public $Vocabulary;
 /**
@@ -40,7 +40,7 @@ class TOrmVocabulary extends TOrmReferedList {
  * @return boolean
  */	
 	public function ActionAvailable(IAction $action){
-		if ($action->LocalName() == TOrmReferedList::AN_REMOVE)
+		if ($action->LocalName() == TMetaReferedList::AN_REMOVE)
 			return !is_null($this->currentItem);
 		return parent::ActionAvailable($action);
 	}
@@ -53,7 +53,7 @@ class TOrmVocabulary extends TOrmReferedList {
 	public function AddItem($id){
 		if (is_null($this->Vocabulary)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -71,7 +71,7 @@ class TOrmVocabulary extends TOrmReferedList {
 	public function RemoveCurrentItem(){
 		if (is_null($this->Vocabulary)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$item = $this->CurrentItem();
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -82,7 +82,7 @@ class TOrmVocabulary extends TOrmReferedList {
 		return $result;
 	}	
 /**
- * @see TOrmList::getItems()
+ * @see TMetaList::getItems()
  * @param int $page
  * @param int $pagesize
  * @return IIterator
@@ -101,8 +101,8 @@ class TOrmVocabulary extends TOrmReferedList {
 	
 /**
  * creates new item and assigns it a key in vocabulary
- * @see TOrmList::ItemCreation()
- * @return TOrmItem
+ * @see TMetaList::ItemCreation()
+ * @return TMetaItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		$result = null;

@@ -65,6 +65,10 @@ class TMySqlDataSetProcessor {
 		return $prefix."*"; 
 	} 
 	
+	protected function getFieldName(IDataSourceField $fld){
+		return $fld->Name();
+	}
+	
 	protected final function parseField(IDataSourceField $fld,$forfetch = false){
 		if (($fld instanceof TAllField) || ($fld instanceof TNestedSetsAllField))
 			return $this->parseAllField($fld);
@@ -73,7 +77,7 @@ class TMySqlDataSetProcessor {
 		$prefix = $this->getFieldPrefix($fld);
 		if ($prefix)
 			$prefix .= ".";
-		return $prefix.$fld->Name.($forfetch?($fld->Alias?(" as ".$fld->Alias):""):""); 
+		return $prefix.$this->getFieldName($fld).($forfetch?($fld->Alias?(" as ".$fld->Alias):""):""); 
 	}
 	
 	protected final function parseOperand($operand){
@@ -418,7 +422,7 @@ class TMySqlDataSetUpdateProcessor extends TMySqlDataSetProcessor {
  * @subpackage MySql
  * @category System
  * 
- * MySql database orm driver. 
+ * MySql database driver. 
  * @see IDBDriver
  */
 

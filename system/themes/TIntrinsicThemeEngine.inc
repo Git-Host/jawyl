@@ -20,10 +20,6 @@ TApplication::import("common::theme::interfaces");
 /**
  * @ignore
  */
-TApplication::import("common::orm");
-/**
- * @ignore
- */
 TApplication::import("services::TPageService");
 
 /**

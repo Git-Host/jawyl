@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,35 +12,35 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TOrmList");
+TApplication::import("controllers::TMetaList");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Orm item associated items
+ * Meta item associated items
  */
-class TOrmReferedList extends TOrmList implements IItemsCollection {
+class TMetaReferedList extends TMetaList implements IItemsCollection {
 	const AN_ADD = "AddItem";
 	const AN_REMOVE = "RemoveItem";
 	
 /**
- * Adding and removing action is added to TOrmList actions
+ * Adding and removing action is added to TMetaList actions
  * @see IActionList::Actions()
  * @return array 
  */	
 	protected function actionsList(){
 		$result = parent::actionsList();
-		$addaction = new TControllerAction($this,TOrmReferedList::AN_ADD,"AddItem","Add");
+		$addaction = new TControllerAction($this,TMetaReferedList::AN_ADD,"AddItem","Add");
 		$result[$addaction->LocalName()] = $addaction;
-		$removeaction = new TControllerAction($this,TOrmReferedList::AN_REMOVE,"RemoveCurrentItem","Remove");
+		$removeaction = new TControllerAction($this,TMetaReferedList::AN_REMOVE,"RemoveCurrentItem","Remove");
 		$result[$removeaction->LocalName()] = $removeaction;
 		return $result;
 	}
 	
 	protected function setupAction(TControllerAction $action){
 		switch ($action->LocalName()){
-			case TOrmReferedList::AN_ADD:{
+			case TMetaReferedList::AN_ADD:{
 				$action->ClearParameters();
 				if ($this->DataSource && $this->BaseClass){
 					$c = $this->DataSource->GetClass($this->BaseClass);
@@ -63,8 +63,8 @@ class TOrmReferedList extends TOrmList implements IItemsCollection {
  */	
 	public function ActionAvailable(IAction $action){
 		switch ($action->LocalName()){
-			case TOrmReferedList::AN_ADD:return !is_null($this->BaseClass);
-			case TOrmReferedList::AN_REMOVE:return !is_null($this->currentItem);break;
+			case TMetaReferedList::AN_ADD:return !is_null($this->BaseClass);
+			case TMetaReferedList::AN_REMOVE:return !is_null($this->currentItem);break;
 		}
 		return parent::ActionAvailable($action);
 	}	
@@ -73,8 +73,8 @@ class TOrmReferedList extends TOrmList implements IItemsCollection {
 		switch ($nm){
 			case "BaseClass":{
 				parent::__set($nm,$value);
-				if ($this->DataSource && key_exists(TOrmReferedList::AN_ADD,$this->_actions_))
-					$this->setupAction($this->_actions_[TOrmReferedList::AN_ADD]);
+				if ($this->DataSource && key_exists(TMetaReferedList::AN_ADD,$this->_actions_))
+					$this->setupAction($this->_actions_[TMetaReferedList::AN_ADD]);
 			}break;
 			default:parent::__set($nm,$value);break;
 		}
@@ -84,8 +84,8 @@ class TOrmReferedList extends TOrmList implements IItemsCollection {
 		switch ($nm){
 			case "BaseClass":{
 				parent::__unset($nm);
-				if ($this->DataSource && key_exists(TOrmReferedList::AN_ADD,$this->_actions_))
-					$this->setupAction($this->_actions_[TOrmReferedList::AN_ADD]);
+				if ($this->DataSource && key_exists(TMetaReferedList::AN_ADD,$this->_actions_))
+					$this->setupAction($this->_actions_[TMetaReferedList::AN_ADD]);
 			}break;
 			default:parent::__unset($nm);break;
 		}

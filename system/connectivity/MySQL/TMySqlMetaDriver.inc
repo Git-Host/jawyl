@@ -12,15 +12,15 @@ TApplication::import("connectivity::MySQL::TMySqlDBDriver");
  * @property string $Limit 
  */
 
-class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
-	private function _subclass_alias(TOrmClassDataSource $ds, IClass $class){
+class TMySqlMetaDataSetProcessor extends TMySqlDataSetProcessor {
+	private function _subclass_alias(TMetaClassDataSource $ds, IClass $class){
 		return $ds->Name."_e".$class->Id();
 	}
 	
 	protected function getFieldPrefix(IDataSourceField $fld){
-		if ($fld instanceof TOrmClassDataSourceAttribute)
+		if ($fld instanceof TMetaClassDataSourceAttribute)
 			return $this->_subclass_alias($fld->DataSource, $fld->Attribute->Class);
-		else if ($fld instanceof TSysField){
+		else if ($fld instanceof TMetaSysField){
 			switch ($fld->SysField){
 				case TSysField::CLASS_ID:return $fld->DataSource->Name."_e";break;
 				case TSysField::CLASS_NAME:return $fld->DataSource->Name."_c";break;
@@ -30,8 +30,19 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 		return parent::getFieldPrefix($fld);
 	}
 	
+	protected function getFieldName(IDataSourceField $fld){
+		if ($fld instanceof TMetaSysField){
+			switch ($fld->SysField){
+				case TMetaSysField::CLASS_ID:return TMySqlMetaDriver::CLASS_PK_FIELD;break;
+				case TMetaSysField::CLASS_NAME:return TMySqlMetaDriver::CLASS_NAME_FIELD;break;
+				case TMetaSysField::INSTANCE_ID:return TMySqlMetaDriver::ENTITY_PK_FIELD;break;
+			}
+		}
+		return parent::getFieldName($fld);
+	}	
+	
 	protected function dataSourceTargetName(TDataSource $ds){
-		if ($ds instanceof TOrmClassDataSource)
+		if ($ds instanceof TMetaClassDataSource)
 			return $ds->Name."_e";
 		return parent::dataSourceTargetName($ds);
 	}
@@ -53,7 +64,7 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 	}
 	
 	protected function parseAllField(IDataSourceField $fld){
-		if ($fld->DataSource instanceof TOrmClassDataSource){
+		if ($fld->DataSource instanceof TMetaClassDataSource){
 			$result = array($this->_subclass_alias($fld->DataSource,$fld->DataSource->Class).".*",$fld->DataSource->Name."_c.*");
 			$this->_anc_srcs($fld->DataSource,$fld->DataSource->Class,$result);
 			$this->_dsc_srcs($fld->DataSource,$fld->DataSource->Class,$result);
@@ -68,7 +79,7 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 			if ($ds->FullFetch || key_exists($anc->Id(),$classfilter)){
 				$alias = $this->_subclass_alias($ds, $class);
 				$palias = $this->_subclass_alias($ds, $anc);
-				return " inner join [".TMySqlORMDriver::ENTITIES_TABLE."_".$anc->Id()."] as ".$palias." on ".$palias.".".TMySqlORMDriver::ENTITY_PK_FIELD." = ".$alias.".".TMySqlORMDriver::ENTITY_PK_FIELD.$this->_inner_joins($ds, $anc, $classfilter);
+				return " inner join [".TMySqlMetaDriver::ENTITIES_TABLE."_".$anc->Id()."] as ".$palias." on ".$palias.".".TMySqlMetaDriver::ENTITY_PK_FIELD." = ".$alias.".".TMySqlMetaDriver::ENTITY_PK_FIELD.$this->_inner_joins($ds, $anc, $classfilter);
 			}
 		return "";
 	}
@@ -81,7 +92,7 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 				if (($ds->FullFetch) || (key_exists($d->Id(),$classfilter))) {
 				$alias = $this->_subclass_alias($ds, $class);
 				$dalias = $this->_subclass_alias($ds, $d);
-				$result .= " left join [".TMySqlORMDriver::ENTITIES_TABLE."_".$anc->Id()."] as ".$dalias." on ".$dalias.".".TMySqlORMDriver::ENTITY_PK_FIELD." = ".$alias.".".TMySqlORMDriver::ENTITY_PK_FIELD.$this->_left_joins($ds, $d, $classfilter);
+				$result .= " left join [".TMySqlMetaDriver::ENTITIES_TABLE."_".$anc->Id()."] as ".$dalias." on ".$dalias.".".TMySqlMetaDriver::ENTITY_PK_FIELD." = ".$alias.".".TMySqlMetaDriver::ENTITY_PK_FIELD.$this->_left_joins($ds, $d, $classfilter);
 				}
 			return $result;	
 		}
@@ -98,10 +109,10 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 	}
 	
 	protected function parseDataSource(TDataSource $ds, array $joinconditions){
-		if ($ds instanceof TOrmClassDataSourceAttribute){
+		if ($ds instanceof TMetaClassDataSourceAttribute){
 			$on = ((!empty($joinconditions))?(" on ".$this->parseOperations($joinconditions)):"");
 			$alias = $this->_subclass_alias($ds, $ds->Class); 
-			$result = "[".TMySqlORMDriver::ENTITIES_TABLE."_".$ds->Class->Id()."] as ".$alias.$on;
+			$result = "[".TMySqlMetaDriver::ENTITIES_TABLE."_".$ds->Class->Id()."] as ".$alias.$on;
 
 			$malias = $ds->Name."_e";
 			$calias = $ds->Name."_c";
@@ -109,8 +120,8 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 			$classfilter = $this->_class_filter();
 			
 			$result .= $this->_inner_joins($ds, $ds->Class, $classfilter);
-			$result .= " inner join [".TMySqlORMDriver::ENTITIES_TABLE."] ".$malias." on ".$malias.".".TMySqlORMDriver::ENTITY_PK_FIELD." = ".$alias.".".TMySqlORMDriver::ENTITY_PK_FIELD;
-			$result .= " inner join [".TMySqlORMDriver::CLASSES_TABLE."] ".$calias." on ".$calias.".".TMySqlORMDriver::CLASS_PK_FIELD." = ".$malias.".".TMySqlORMDriver::CLASS_PK_FIELD;
+			$result .= " inner join [".TMySqlMetaDriver::ENTITIES_TABLE."] ".$malias." on ".$malias.".".TMySqlMetaDriver::ENTITY_PK_FIELD." = ".$alias.".".TMySqlMetaDriver::ENTITY_PK_FIELD;
+			$result .= " inner join [".TMySqlMetaDriver::CLASSES_TABLE."] ".$calias." on ".$calias.".".TMySqlMetaDriver::CLASS_PK_FIELD." = ".$malias.".".TMySqlMetaDriver::CLASS_PK_FIELD;
 			$result .= $this->_left_joins($ds, $ds->Class, $classfilter);
 			return $result;			
 		}
@@ -118,13 +129,13 @@ class TMySqlORMDataSetProcessor extends TMySqlDataSetProcessor {
 	}
 }
 
-class TMySqlORMDataSetUpdateProcessor extends TMySqlDataSetUpdateProcessor {
+class TMySqlMetaDataSetUpdateProcessor extends TMySqlDataSetUpdateProcessor {
 	protected function createInternalProcessor(TDataSource $dataset, TMySqlDBDriver $driver){
-		return new TMySqlORMDataSetProcessor($dataset, $driver);
+		return new TMySqlMetaDataSetProcessor($dataset, $driver);
 	}	
 } 
 
-class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {	
+class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {	
 	private $_check_db_ = false;
 	private $_class_pool_start_ = 1;
 	private $_class_pool_size_ = null;	
@@ -445,7 +456,7 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 	
 	protected static function transformColType(TDataType $type){
 		switch ($type->TypeCode){
-			case TOrmReferenceType::ORM_REFERENCE:return parent::transformColType(new TLongType(20));break;
+			case TMetaReferenceType::META_REFERENCE:return parent::transformColType(new TLongType(20));break;
 			default:return parent::transformColType($type);break;
 		}
 	}	
@@ -454,7 +465,7 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 		if ($a->Class instanceof TDBDefinedClass){
 			$coltype = self::TransformColType($a->Type);
 			$refclass = null;
-			if ($a->Type instanceof TOrmReferenceType)
+			if ($a->Type instanceof TMetaReferenceType)
 				$refclass = $attrtype->Class->Id(); 
 				
 			$table = $this->RealTableName(self::ATTRDEFINITIONS_TABLE);				
@@ -480,7 +491,7 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 				else 
 					$q = "ALTER TABLE ".$_table_." ADD COLUMN `".$fieldname."` ".$coltype." ".($a->Nullable?"NULL":"NOT NULL")." ".(isset($a->Default)?(sprintf("DEFAULT %s ",$this->quoteValue($a->Default))):" ");
 					
-				if ($a->Type instanceof TOrmReferenceType)
+				if ($a->Type instanceof TMetaReferenceType)
 					$q = $q." , ADD INDEX `i".$fieldname."` (`".$fieldname."`), ADD CONSTRAINT fk_".$_table_."_".$fieldname." FOREIGN KEY `".$fieldname."` (`".$fieldname."`) REFERENCES `".$this->RealTableName(self::ENTITIES_TABLE).(is_null($a->ReferenceClass)?"":"_".$a->Type->ReferenceClass->Id())."` (`".self::ENTITY_PK_FIELD."`) ON DELETE ".($a->Type->IntergrityDelete?"CASCADE":($a->Nullable?"SET NULL":"RESTRICT"))." ON UPDATE RESTRICT";
 				else if ($a->Type instanceof TTableReferenceType)
 					$q = $q." , ADD INDEX `i".$fieldname."` (`".$fieldname."`), ADD CONSTRAINT fk_".$_table_."_".$fieldname." FOREIGN KEY `".$fieldname."` (`".$fieldname."`) REFERENCES `".$a->Type->MasterField->Table->Name."` (`".$a->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($a->Type->OnDelete)." ON UPDATE ".self::transformRefIntegrity($a->Type->OnUpdate);
@@ -546,7 +557,7 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 						$a = TMySqlRowConverter::ToAttrDefinition($temp, $this);
 				}
 				if (!($a instanceof TDBDefinedAttribute))
-					throw new TOrmStorageException(TOrmStorageException::ERR_ORM_ATTR_NOT_DEFINED, array("attr"=>$a->Name,"class"=>$a->Class->Name()));
+					throw new TMetaStorageException(TMetaStorageException::ERR_META_ATTR_NOT_DEFINED, array("attr"=>$a->Name,"class"=>$a->Class->Name()));
 				$_table_ = 	$a->Static?($this->RealTableName(self::CLASSES_STATICS).($a->Periodic?self::SNAPSHOTS_PREFIX:"")):$this->RealTableName(self::ENTITIES_TABLE)."_".$a->Class->Id();
 				$this->query("ALTER TABLE ".$_table_." DROP COLUMN ".$a->Field);
 				$this->Execute("delete from ".$table." where (".self::CLASS_ATTR_NAME_FIELD." = :name) and (".self::CLASS_PK_FIELD." = :cid)",array("name"=>$a->Name(),"cid"=>$a->Class->Id()));
@@ -665,7 +676,7 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 		$this->_load_classes();
 		$result = TMySqlDBClass::Obtain($name, $this);
 		if (is_null($result))
-			throw new TOrmStorageException(TOrmStorageException::ERR_STORE_CLASS_NOT_FOUND, array("class"=>$name));
+			throw new TMetaStorageException(TMetaStorageException::ERR_STORE_CLASS_NOT_FOUND, array("class"=>$name));
 		return $result;
 	}
 	
@@ -881,10 +892,10 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
 			 }
 		
 		foreach ($attributes as $a){
-			$fields[] = new TOrmClassDataSourceAttribute($a->Definition(),null,$ds);
+			$fields[] = new TMetaClassDataSourceAttribute($a->Definition(),null,$ds);
 			$values[] = $a->getValue();
 		}
-		$p = new TMySqlORMDataSetUpdateProcessor($instances, $this, $fields, $values);
+		$p = new TMySqlMetaDataSetUpdateProcessor($instances, $this, $fields, $values);
 		return $this->Execute($p->UpdateQuery(), $p->Parameters);
 	}
 /**
@@ -1010,12 +1021,12 @@ class TMySqlORMDriver extends TMySqlDBDriver implements IORMDriver {
  * @return boolean
  */		
 	public function DeleteInstances(TDataSource $instances){
-		$p = new TMySqlORMDataSetProcessor($instances, $this);
+		$p = new TMySqlMetaDataSetProcessor($instances, $this);
 		return $this->Execute($p->DeleteQuery(), $p->Parameters);
 	}		
 	
 	public function FetchInstances(TDataSource $instances){
-		$p = new TMySqlORMDataSetProcessor($instances, $this);
+		$p = new TMySqlMetaDataSetProcessor($instances, $this);
 		return new TMySqlDBInstanceIteratorAdapter($this->Fetch($p->SelectQuery(), $p->Parameters));
 	}							
 }

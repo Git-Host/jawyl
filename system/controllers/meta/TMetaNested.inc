@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,24 +12,24 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TOrmStructure");
+TApplication::import("controllers::TMetaStructure");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Nested orm items structure
- * @property TOrmList $Navigation master list object, which selection becomes current opened item of controller, can be set by name  
- * @property TOrmNested $Partner nested structure which opened item is taken as container when moving items, can be set by name 
+ * Nested items structure
+ * @property TMetaList $Navigation master list object, which selection becomes current opened item of controller, can be set by name  
+ * @property TMetaNested $Partner nested structure which opened item is taken as container when moving items, can be set by name 
  */
-class TOrmNested extends TOrmStructure implements INestedItems {
+class TMetaNested extends TMetaStructure implements INestedItems {
 	const AN_MOVECHILD = "MoveAsChild";
 /**
- * @var TOrmList
+ * @var TMetaList
  */	
 	protected $_ioc_navigation_;
 /**
- * @var TOrmNested 
+ * @var TMetaNested 
  */	
 	protected $_ioc_partner_;
 /**
@@ -41,7 +41,7 @@ class TOrmNested extends TOrmStructure implements INestedItems {
  * adjusts current container to navigation list current item 
  */	
 	protected function syncNavigation(){
-		if ($this->_ioc_navigation_ instanceof TOrmList){
+		if ($this->_ioc_navigation_ instanceof TMetaList){
 			if ($this->currentContainer != $this->_ioc_navigation_->CurrentItemId()){
 				$this->currentContainer = $this->_ioc_navigation_->CurrentItemId();
 				$this->saveStateParameter("container",$this->currentContainer);
@@ -102,7 +102,7 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 			case "Partner":{
 				if ($this->_ioc_partner_ != $value){
 					parent::__set($nm, $value);
-					if ($this->_ioc_partner_ instanceof TOrmNested)
+					if ($this->_ioc_partner_ instanceof TMetaNested)
 						$this->_ioc_partner_->Partner = $this;
 				}	
 			}break;
@@ -121,7 +121,7 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 			}break;
 			case "Partner":{
 				$p = parent::__get($nm);
-				if ($p instanceof TOrmNested)
+				if ($p instanceof TMetaNested)
 					$p->Partner = $this;
 				return $p;
 			}break;
@@ -137,13 +137,13 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 		$this->currentContainer = $this->loadStateParameter("container");
 	}
 /**
- * Moving action is added to TOrmStructure actions
+ * Moving action is added to TMetaStructure actions
  * @see IActionList::Actions()
  * @return array
  */	
 	protected function actionsList(){
 		$result = parent::actionsList();
-		$moveaction = new TControllerAction($this,TOrmNested::AN_MOVECHILD,"MoveAsChild","Move");
+		$moveaction = new TControllerAction($this,TMetaNested::AN_MOVECHILD,"MoveAsChild","Move");
 		$result[$moveaction->LocalName()] = $moveaction;
 		return $result;
 	}
@@ -162,7 +162,7 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 	}	
 	
 /**
- * moves orm item within structure, using controller parent as acceptor
+ * moves item within structure, using controller parent as acceptor
  * @return boolean
  */	
 	public function MoveAsChild(){
@@ -221,7 +221,7 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 	
 /**
  * @see INestedItems::CurrentContainer()
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	public function CurrentContainer(){
 		$result = null;
@@ -245,16 +245,16 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 	}
 	
 /**
- * @see TOrmList::CurrentPage()
+ * @see TMetaList::CurrentPage()
  * @param int $pagesize
- * @return IIterator iterator of TOrmItem 
+ * @return IIterator iterator of TMetaItem 
  */		
 	public function CurrentPage($pagesize){
 		$check = false;
 		if ($this->currentContainer)
-			$check = $this->CheckPermission($this->CurrentContainer(),TOrmItemPermission::ORM_LIST);
+			$check = $this->CheckPermission($this->CurrentContainer(),TMetaItemPermission::META_LIST);
 		else  
-			$check = $this->CheckPermission($this->DataSource->GetClass($this->BaseClass),TOrmClassPermission::ORM_INSTLIST);
+			$check = $this->CheckPermission($this->DataSource->GetClass($this->BaseClass),TMetaClassPermission::META_INSTLIST);
 		
 		if (!$check){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
@@ -264,8 +264,8 @@ class TOrmNested extends TOrmStructure implements INestedItems {
 	}
 	
 /**
- * @see TOrmStructure::getCreateParent()
- * @return TOrmItem
+ * @see TMetaStructure::getCreateParent()
+ * @return TMetaItem
  */	
 	protected function getCreateParent(){
 		return $this->CurrentContainer();

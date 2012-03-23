@@ -4,7 +4,7 @@
  * @package Common
  * @subpackage Items
  * @category System
- * Orm item property types class.	 
+ * item property types class.	 
  */	
 	final class TItemPropertyType {
 		private $_code_;
@@ -22,7 +22,7 @@
 		const PT_REFERENCE = "ref";
 		const PT_SET = "set";
 /**
- * gets list of orm property types
+ * gets list of property types
  * @return array
  */		
 		public static function TypeList(){
@@ -92,7 +92,7 @@
  * @package Common
  * @subpackage Items
  * @category System
- * interface for implementing orm item properties
+ * interface for implementing  item properties
  */	
 	interface IProperty extends IPropertyMeta {
 /**
@@ -161,11 +161,11 @@
  * @package Common
  * @subpackage Items
  * @category System
- * interface for implementing orm items 
+ * interface for implementing items 
  */	
 	interface IItem extends IIdentity {
 /**
- * gets item orm class name
+ * gets item class name
  * @return string
  */		
 		public function ClassName();

@@ -1,5 +1,5 @@
 <?php
-TApplication::import("common::ormstorage");
+TApplication::import("common::metastorage");
 
 /**
  * @package Connectivity
@@ -125,7 +125,7 @@ class TMySqlNestingsIterator extends TIteratorAdapter {
  * @package Connectivity
  * @subpackage MySql
  * @category System
- * stored orm class
+ * stored meta class
  * @property TAttributeDefinition[] $AttributeDefinitions
  */
 class TMySqlDBClass extends  TDBDefinedClass {
@@ -136,7 +136,7 @@ class TMySqlDBClass extends  TDBDefinedClass {
  * @param int $id
  * @param string $name
  */	
-	public function __construct($id,$name,TMySqlOrmDriver $driver, TDBDefinedClass $ancestor = null,$attributes = null){
+	public function __construct($id,$name,TMySqlMetaDriver $driver, TDBDefinedClass $ancestor = null,$attributes = null){
 		if (!key_exists($driver->Name(),self::$_loaded_classes_))
 			self::$_loaded_classes_[$driver->Name()] = array();
 		if (!key_exists($driver->Name(),self::$_classes_by_id_))
@@ -146,7 +146,7 @@ class TMySqlDBClass extends  TDBDefinedClass {
 		parent::__construct($id,$name,$driver,$ancestor,$attributes);
 	}
 	
-	public static function Create($id,$name,TMySqlOrmDriver $driver,TDBDefinedClass $ancestor = null, $attributes = null){
+	public static function Create($id,$name,TMySqlMetaDriver $driver,TDBDefinedClass $ancestor = null, $attributes = null){
 		if ($c = self::Obtain($id, $driver))
 			return $c;
 		if ($c = self::Obtain($name, $driver))
@@ -154,7 +154,7 @@ class TMySqlDBClass extends  TDBDefinedClass {
 		return new TMySqlDBClass($id,$name,$driver,$ancestor,$attributes);
 	}  
 	
-	public static function Obtain($id,TMySqlOrmDriver $driver){
+	public static function Obtain($id,TMySqlMetaDriver $driver){
 		if (is_numeric($id)){
 			if (key_exists($driver->Name(),self::$_classes_by_id_))
 				if (key_exists($name,self::$_classes_by_id_[$driver->Name()]))
@@ -182,7 +182,7 @@ class TMySqlDBClass extends  TDBDefinedClass {
  * @package Connectivity
  * @subpackage MySql
  * @category System
- * stored orm instance
+ * stored instance
  */
 class TMySqlDBInstance extends TDBInstance {
 /**
@@ -199,14 +199,14 @@ class TMySqlDBInstance extends TDBInstance {
  * @subpackage MySql
  * @category System
  * 
- * converts dataset row to orm object
+ * converts dataset row to object
  */
 class TMySqlRowConverter {
 /**
  * converts row to class
  * @return IClass
  */	
-	public static function ToClass(array $row, TMySqlOrmDriver $driver){
+	public static function ToClass(array $row, TMySqlMetaDriver $driver){
 		if (key_exists(TMySqlDBDriver::CLASS_NAME_FIELD,$row))
 			return  $driver->GetClass($row[TMySqlDBDriver::CLASS_NAME_FIELD]);
 		else if (key_exists(TMySqlDBDriver::CLASS_PK_FIELD,$row))
@@ -232,13 +232,13 @@ class TMySqlRowConverter {
 				$onupdate = $result[1];
 				return new TTableReferenceType($field, $reftype, $ondelete, $onupdate);
 			}break;
-			case TOrmReferenceType::ORM_REFERENCE:{
+			case TMetaReferenceType::META_REFERENCE:{
 				$refclass = null;
 				preg_match('/refclass=([^;]*)/', $options,$result);
 				$refclass = $result[1];
 				if (!is_null($refclass))
 					$refclass = $driver->GetClass($refclass);
-				return new TOrmReferenceType($refclass,	strpos($options, "integritydelete") !== false);
+				return new TMetaReferenceType($refclass,	strpos($options, "integritydelete") !== false);
 			}break;
 			default:{
 				preg_match('/size=([^;]*)/', $options,$result);
@@ -257,7 +257,7 @@ class TMySqlRowConverter {
  * converts row to attribute definition
  * @return IAttributeDefinition
  */
-	public static function ToAttrDefinition(array $row, TMySqlOrmDriver $driver){
+	public static function ToAttrDefinition(array $row, TMySqlMetaDriver $driver){
 		if (!(
 			(key_exists(TMySqlDBDriver::CLASS_ATTR_PK_FIELD,$row))
 			&& (key_exists(TMySqlDBDriver::CLASS_ATTR_NAME_FIELD,$row))
@@ -277,28 +277,28 @@ class TMySqlRowConverter {
 		$default = $result[1];
 
 		$c = null;
-		if (key_exists(TMySqlOrmDriver::CLASS_PK_FIELD,$row))
-			$c = $driver->GetClass($row[TMySqlOrmDriver::CLASS_PK_FIELD]);
-		else if (key_exists(TMySqlOrmDriver::CLASS_NAME_FIELD,$row))	
-			$c = $driver->GetClass($row[TMySqlOrmDriver::CLASS_NAME_FIELD]);
+		if (key_exists(TMySqlMetaDriver::CLASS_PK_FIELD,$row))
+			$c = $driver->GetClass($row[TMySqlMetaDriver::CLASS_PK_FIELD]);
+		else if (key_exists(TMySqlMetaDriver::CLASS_NAME_FIELD,$row))	
+			$c = $driver->GetClass($row[TMySqlMetaDriver::CLASS_NAME_FIELD]);
 		
-		if (!is_null($type) && (key_exists(TMySqlOrmDriver::CLASS_ATTR_PK_FIELD,$row)) && (key_exists(TMySqlOrmDriver::CLASS_ATTR_NAME_FIELD,$row)) && (key_exists(TMySqlOrmDriver::CLASS_ATTR_FIELD_FIELD,$row)))	
-			return new TDBDefinedAttribute($row[TMySqlOrmDriver::CLASS_ATTR_PK_FIELD],$row[TMySqlOrmDriver::CLASS_ATTR_NAME_FIELD],$row[TMySqlOrmDriver::CLASS_ATTR_FIELD_FIELD],$type,$c,$row[TMySqlOrmDriver::CLASS_ATTR_STATIC_FIELD] == 1,$unique, $indexed, $nullable, $default, $periodic);
+		if (!is_null($type) && (key_exists(TMySqlMetaDriver::CLASS_ATTR_PK_FIELD,$row)) && (key_exists(TMySqlMetaDriver::CLASS_ATTR_NAME_FIELD,$row)) && (key_exists(TMySqlMetaDriver::CLASS_ATTR_FIELD_FIELD,$row)))	
+			return new TDBDefinedAttribute($row[TMySqlMetaDriver::CLASS_ATTR_PK_FIELD],$row[TMySqlMetaDriver::CLASS_ATTR_NAME_FIELD],$row[TMySqlMetaDriver::CLASS_ATTR_FIELD_FIELD],$type,$c,$row[TMySqlMetaDriver::CLASS_ATTR_STATIC_FIELD] == 1,$unique, $indexed, $nullable, $default, $periodic);
 		return null;
 	}
 /**
  * converts to instance
  * @return IInstance
  */	
-	public static function ToInstance(array $row, TMySqlOrmDriver $driver){
-		if (!((key_exists(TMySqlOrmDriver::CLASS_NAME_FIELD,$row) || key_exists(TMySqlOrmDriver::CLASS_PK_FIELD,$row))
-			&& (key_exists(TMySqlOrmDriver::ENTITY_PK_FIELD,$row))
+	public static function ToInstance(array $row, TMySqlMetaDriver $driver){
+		if (!((key_exists(TMySqlMetaDriver::CLASS_NAME_FIELD,$row) || key_exists(TMySqlMetaDriver::CLASS_PK_FIELD,$row))
+			&& (key_exists(TMySqlMetaDriver::ENTITY_PK_FIELD,$row))
 			)) return null;
-		if (key_exists(TMySqlOrmDriver::CLASS_NAME_FIELD,$row))	
-			$c = $driver->GetClass($row[TMySqlOrmDriver::CLASS_NAME_FIELD]);
+		if (key_exists(TMySqlMetaDriver::CLASS_NAME_FIELD,$row))	
+			$c = $driver->GetClass($row[TMySqlMetaDriver::CLASS_NAME_FIELD]);
 		else	
-			$c = $driver->GetClass($row[TMySqlOrmDriver::CLASS_PK_FIELD]);
-		$instance = new TMySqlDBInstance($row[TMySqlOrmDriver::ENTITY_PK_FIELD],$c);
+			$c = $driver->GetClass($row[TMySqlMetaDriver::CLASS_PK_FIELD]);
+		$instance = new TMySqlDBInstance($row[TMySqlMetaDriver::ENTITY_PK_FIELD],$c);
 			
 		foreach ($row as $key=>$value)
 			if (is_string($key)){

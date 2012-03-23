@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -22,20 +22,20 @@ TApplication::import("common::controller::interfaces");
  */
 TApplication::import("common::controller::TItemsSource");
 
-TApplication::import("models::TOrmModel");
+TApplication::import("models::TMetaModel");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Items list interacting with TOrmModel
- * @property TOrmModel $DataSource orm component to interact with, can be set by component name
+ * Items list interacting with TMetaModel
+ * @property TMetaModel $DataSource meta component to interact with, can be set by component name
  * @property array $CreationAttributes array of names of attributes used for item creation, can be set as semicolon separated string
  * @property array $FilterAttributes array of names of attributes used for filtering, can be set as semicolon separated string
  * @property array $SortingAttributes array of names of attributes used for sorting, can be set as semicolon separated string
- * @see TOrmModel 
+ * @see TMetaModel 
  */
-class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems, IPagedItems {
+class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems, IPagedItems {
 	const AN_CREATE = "CreateItem";
 	const AN_DELETE = "DeleteItem";
 	const AN_FILTER = "SetFilter";
@@ -55,7 +55,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  */	
 	protected $create_params = array();
 /**
- * @var TOrmModel
+ * @var TMetaModel
  */	
 	protected $__datasource__;
 	
@@ -88,7 +88,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 
 	protected function setupAction(TControllerAction $action){
 		switch ($action->LocalName()){
-			case TOrmList::AN_CREATE:{
+			case TMetaList::AN_CREATE:{
 					if (($this->DataSource) && ($this->BaseClass)){
 						$action->ClearParameters();
 						$c = $this->DataSource->GetClass($this->BaseClass);
@@ -99,7 +99,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 							if ((!$abstractbc) || ($desc->Id() != $c->Id()))
 								$classes[$desc->Name()] = $desc->Name();
 
-						$action->AddParameter(new TActionParameter("ormclass","Class",TActionParameterType::TYPE_SELECT,null,$classes));
+						$action->AddParameter(new TActionParameter("metaclass","Class",TActionParameterType::TYPE_SELECT,null,$classes));
 		
 						if ($this->CreationAttributes){
 								$ca = $this->CreationAttributes;
@@ -118,7 +118,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 						}
 					}
 			}break;
-			case TOrmList::AN_FILTER:{
+			case TMetaList::AN_FILTER:{
 				if ($this->DataSource && $this->BaseClass){
 					$action->ClearParameters();
 					$params = array();
@@ -130,7 +130,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 					}
 				}
 			}break;
-			case TOrmList::AN_SORT:{
+			case TMetaList::AN_SORT:{
 				if ($this->DataSource && $this->BaseClass){
 					$action->ClearParameters();
 					$params = array();
@@ -148,7 +148,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 	
 	protected function checkDataSource($src){
-		return $src instanceof TOrmModel;
+		return $src instanceof TMetaModel;
 	}
 	
 	
@@ -160,8 +160,8 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 			case "DataSource":$this->getIocMember($this->__datasource__, $value, "checkDataSource");break;
 			case "BaseClass":{
 				$this->_baseClass_ = $value;
-				if ($this->BaseClass && $this->DataSource && (key_exists(TOrmList::AN_CREATE,$this->_actions_)))
-					$this->setupAction($this->_actions_[TOrmList::AN_CREATE]);
+				if ($this->BaseClass && $this->DataSource && (key_exists(TMetaList::AN_CREATE,$this->_actions_)))
+					$this->setupAction($this->_actions_[TMetaList::AN_CREATE]);
 			}break;	
 			case "CreationAttributes":{
 				if (is_string($value))
@@ -169,18 +169,18 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 				else if (is_array($value))
 					$this->create_params = $value;
 				else throw new TCoreException(TCoreException::ERR_BAD_VALUE,array());
-				if ($this->BaseClass && $this->DataSource && (key_exists(TOrmList::AN_CREATE,$this->_actions_)))
-					$this->setupAction($this->_actions_[TOrmList::AN_CREATE]);
+				if ($this->BaseClass && $this->DataSource && (key_exists(TMetaList::AN_CREATE,$this->_actions_)))
+					$this->setupAction($this->_actions_[TMetaList::AN_CREATE]);
 			}break;
 			case "FilterAttributes":{
 				$this->filter_attributes = explode(";",$value);
-				if ($this->DataSource && key_exists(TOrmList::AN_FILTER,$this->_actions_))
-					$this->setupAction($this->_actions_[TOrmList::AN_FILTER]);
+				if ($this->DataSource && key_exists(TMetaList::AN_FILTER,$this->_actions_))
+					$this->setupAction($this->_actions_[TMetaList::AN_FILTER]);
 			}break;			
 			case "SortAttributes":{
 				$this->sorting_attributes = explode(";",$value);
-				if ($this->DataSource && key_exists(TOrmList::AN_SORT,$this->_actions_))
-					$this->setupAction($this->_actions_[TOrmList::AN_SORT]);
+				if ($this->DataSource && key_exists(TMetaList::AN_SORT,$this->_actions_))
+					$this->setupAction($this->_actions_[TMetaList::AN_SORT]);
 			}break;			
 			//case "ExcludeClasses":{$this->class_filter = explode(";",$value);TApplicationSession::Set($this->UniqueId()."_items_count",null);}break;
 			case "PageSize":$this->page_size = $value;break;
@@ -225,10 +225,10 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	public function __unset($nm){
 		switch ($nm){
 			case "DataSource":unset($this->__datasource__);break;
-			case "BaseClass":{unset($this->_baseClass_);$this->setupAction(TOrmList::AN_CREATE);}break;
-			case "CreationAttributes":{unset($this->create_params);$this->setupAction(TOrmList::AN_CREATE);}break;
-			case "FilterAttributes":{unset($this->filter_attributes);$this->setupAction(TOrmList::AN_FILTER);}break;			
-			case "SortAttributes":{unset($this->sorting_attributes);$this->setupAction(TOrmList::AN_SORT);}break;
+			case "BaseClass":{unset($this->_baseClass_);$this->setupAction(TMetaList::AN_CREATE);}break;
+			case "CreationAttributes":{unset($this->create_params);$this->setupAction(TMetaList::AN_CREATE);}break;
+			case "FilterAttributes":{unset($this->filter_attributes);$this->setupAction(TMetaList::AN_FILTER);}break;			
+			case "SortAttributes":{unset($this->sorting_attributes);$this->setupAction(TMetaList::AN_SORT);}break;
 			case "PageSize":unset($this->page_size);break;			
 			default:parent::__unset($nm);break;
 		}
@@ -244,10 +244,10 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 		$this->PAGE = $this->loadStateParameter("page");
 		if (is_null($this->PAGE)) $this->PAGE = 0;
 		
-		if (key_exists(TOrmList::AN_FILTER,$this->_actions_))
-			$this->filter_action = $this->_actions_[TOrmList::AN_FILTER];
-		if (key_exists(TOrmList::AN_SORT,$this->_actions_))	
-			$this->sorting_action = $this->_actions_[TOrmList::AN_SORT];
+		if (key_exists(TMetaList::AN_FILTER,$this->_actions_))
+			$this->filter_action = $this->_actions_[TMetaList::AN_FILTER];
+		if (key_exists(TMetaList::AN_SORT,$this->_actions_))	
+			$this->sorting_action = $this->_actions_[TMetaList::AN_SORT];
 		
 		$fs = $this->loadStateParameter("filter");
 		if (!is_null($fs)){
@@ -299,7 +299,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 					$ci = $ca->Type()->Class->ClassInstances();
 					$sellist["null"]="";
 					foreach ($ci as $i){
-						$wi = TOrmModel::GlobalWrap($i);
+						$wi = TMetaModel::GlobalWrap($i);
 						if (!is_null($wi)) 
 							$sellist[$wi->Instance()->Id()] = $wi->__toString();
 					}
@@ -318,10 +318,10 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  * @return array array of TControllerAction
  */	
 	protected function actionsList(){
-		$ucreateaction = new TControllerAction($this,TOrmList::AN_CREATE,"CreateOrmItem","New Item");
-		$deleteaction = new TControllerAction($this,TOrmList::AN_DELETE,"DeleteCurrentItem","Delete");
-		$filteraction = new TControllerAction($this,TOrmList::AN_FILTER,"SetFilter","Filter setup");
-		$sortingaction = new TControllerAction($this,TOrmList::AN_SORT,"SetSorting","Sorting setup");
+		$ucreateaction = new TControllerAction($this,TMetaList::AN_CREATE,"CreateMetaItem","New Item");
+		$deleteaction = new TControllerAction($this,TMetaList::AN_DELETE,"DeleteCurrentItem","Delete");
+		$filteraction = new TControllerAction($this,TMetaList::AN_FILTER,"SetFilter","Filter setup");
+		$sortingaction = new TControllerAction($this,TMetaList::AN_SORT,"SetSorting","Sorting setup");
 		$result = array(
 			$ucreateaction->LocalName()=>$ucreateaction,
 			$deleteaction->LocalName()=>$deleteaction,
@@ -338,10 +338,10 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  */	
 	public function ActionAvailable(IAction $action){
 		switch ($action->LocalName()){
-			case TOrmList::AN_CREATE:return !is_null($this->BaseClass);
-			case TOrmList::AN_DELETE:return !is_null($this->currentItem);break;
-			case TOrmList::AN_FILTER:
-			case TOrmList::AN_SORT:return (count($action->ParametersArray()) > 0);break;
+			case TMetaList::AN_CREATE:return !is_null($this->BaseClass);
+			case TMetaList::AN_DELETE:return !is_null($this->currentItem);break;
+			case TMetaList::AN_FILTER:
+			case TMetaList::AN_SORT:return (count($action->ParametersArray()) > 0);break;
 		}
 		return true;
 	}
@@ -382,8 +382,8 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 				switch ($ca->Type()->TypeCode){
 					case TAttributeType::HTML:
 					case TAttributeType::STRING:
-					case TAttributeType::TEXT:$result[] = new TOrmItemFilter($ca, $this->SEARCH_CONDITIONS[$aname],TCondition::C_LIKE);break;
-					default:$result[] = new TOrmItemFilter($ca, $this->SEARCH_CONDITIONS[$aname]);break;
+					case TAttributeType::TEXT:$result[] = new TMetaItemFilter($ca, $this->SEARCH_CONDITIONS[$aname],TCondition::C_LIKE);break;
+					default:$result[] = new TMetaItemFilter($ca, $this->SEARCH_CONDITIONS[$aname]);break;
 				}
 			}
 		return $result;
@@ -400,7 +400,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 		foreach ($this->SortAttributes as $aname)
 			if (key_exists($aname,$this->SORTING)){
 				$ca = $c->GetAttributeDefinition($aname);
-				$result[] =new TOrmItemSorting($ca,$this->SORTING[$aname]);
+				$result[] =new TMetaItemSorting($ca,$this->SORTING[$aname]);
 			}
 		return $result;
 	}	
@@ -468,15 +468,15 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 	
 /**
- * create new orm item
- * @param string $ormclass orm class name
- * @return TOrmItem
+ * create new item
+ * @param string $metaclass class name
+ * @return TMetaItem
  */	
-	public function CreateOrmItem($ormclass){
+	public function CreateMetaItem($metaclass){
 		$params = array();
 		if (func_num_args() > 1){
 			$request = func_get_arg(1);
-			$c = $this->DataSource->GetClass($ormclass);
+			$c = $this->DataSource->GetClass($metaclass);
 			$ca = $this->CreationAttributes;
 			foreach ($ca as $a){
 				$ad = $c->GetAttributeDefinition($a);
@@ -487,7 +487,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 				}
 			}
 		}
-		$ci = new TCreateInfo($ormclass,$params);
+		$ci = new TCreateInfo($metaclass,$params);
 		return $this->CreateItem($ci);
 	}	
 
@@ -537,14 +537,14 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 
 /**
  * @see IPagedItems::CurrentPage()
- * @return IIterator iterator of TOrmItem
+ * @return IIterator iterator of TMetaItem
  */	
 	public function CurrentPage(){
 		$check = false;
 		if ($this->CURRENT_CONTAINER)
-			$check = $this->CheckPermission($this->CurrentContainer(),TOrmItemPermission::ORM_LIST);
+			$check = $this->CheckPermission($this->CurrentContainer(),TMetaItemPermission::META_LIST);
 		else  
-			$check = $this->CheckPermission($this->DataSource->GetClass($this->BaseClass),TOrmClassPermission::ORM_INSTLIST);
+			$check = $this->CheckPermission($this->DataSource->GetClass($this->BaseClass),TMetaClassPermission::META_INSTLIST);
 		
 		if (!$check){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
@@ -561,7 +561,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  * Can be overriden in descendants.
  * @param int $page
  * @param int $pagesize
- * @return IIterator iterator of TOrmItem 
+ * @return IIterator iterator of TMetaItem 
  */	
 	protected function getItems($page = null, $pagesize = null){
 		$result = array();
@@ -579,13 +579,13 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
  * gets list items on specified page with permission check. 
  * if page or page size not specified returns all items, matching current filter.
  * @param int $page
- * @return IIterator iterator of TOrmItem 
- * @uses TOrmList::getItems()
+ * @return IIterator iterator of TMetaItem 
+ * @uses TMetaList::getItems()
  */	
 	public function Items($page = null){
 		$result = array();
 		$c = $this->DataSource->GetClass($this->BaseClass);
-		if (!$this->CheckPermission($c,TOrmClassPermission::ORM_INSTLIST)){
+		if (!$this->CheckPermission($c,TMetaClassPermission::META_INSTLIST)){
 		  throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 		  return $result;
 		}
@@ -594,7 +594,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 
 /**
- * gets orm item property by item id and property name
+ * gets item property by item id and property name
  * @param mixed $id item id
  * @param string $name property name
  * @return IProperty
@@ -603,7 +603,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 		$result = false;
 		$item = $this->DataSource->GetItem($id);
 		$result = $item->Property($name);
-		if (!$this->CheckPermission($result,TOrmPropertyPermission::ORM_READ)){
+		if (!$this->CheckPermission($result,TMetaPropertyPermission::META_READ)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -612,7 +612,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 	
 /**
- * edits orm item
+ * edits item
  * @param mixed $id item id
  * @param string $attrname attribute name
  * @param mixed $value new attribute value
@@ -623,7 +623,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 		$item = $this->DataSource->GetItem($id);
 		foreach ($attrvalues as $attrname=>$value){
 			$prop = $item->Property($attrname);
-			if (!$this->CheckPermission($prop,TOrmPropertyPermission::ORM_WRITE)){
+			if (!$this->CheckPermission($prop,TMetaPropertyPermission::META_WRITE)){
 				throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 				return $result;
 			}
@@ -632,14 +632,14 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 	
 /**
- * gets orm item by item id with permission check
+ * gets item by item id with permission check
  * @param mixed $id item id
- * @return TOrmItem 
+ * @return TMetaItem 
  */	
 	public function Item($id){
 		$result = null;
 		$item = $this->DataSource->GetItem($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_VIEW)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_VIEW)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -647,14 +647,14 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	}
 
 /**
- * gets orm item properties
+ * gets item properties
  * @param mixed $id item id
  * @return array array of IProperty
  */	
 	protected function itemProperties($id){
 		$result = false;
 		$item = $this->DataSource->GetItem($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_VIEW)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_VIEW)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -662,8 +662,8 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 		return $result;
 	}
 /**
- * checks specified orm class to be base class, if success creates new orm item and resets page information
- * @return TOrmItem
+ * checks specified class to be base class, if success creates new item and resets page information
+ * @return TMetaItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		$result = null;
@@ -700,15 +700,15 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	
 
 /**
- * creates orm item according to creation information in $createinfo.
+ * creates item according to creation information in $createinfo.
  * Performs permission check.
  * @see TItemsSource::Create()
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	protected function create(TCreateInfo $createinfo = null){
 		$result = array();
 		$cc = $this->DataSource->GetClass($createinfo->ItemType());
-		if ($this->CheckPermission($cc,TOrmClassPermission::ORM_INSTANCIATE))
+		if ($this->CheckPermission($cc,TMetaClassPermission::META_INSTANCIATE))
 			$result = $this->ItemCreation($cc, $createinfo->Parameters()); 
 		else  throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 		return $result;
@@ -722,7 +722,7 @@ class TOrmList extends TItemsSource implements ISortableItems, IFilterableItems,
 	protected function deleteItem($id){
 		$result = false;
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_DELETE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_DELETE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
