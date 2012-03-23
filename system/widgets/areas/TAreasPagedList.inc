@@ -47,7 +47,7 @@ class TAreasPagedList extends TAreasList {
 		return $this->Source->CurrentPageNumber() + 1;
 	}
 /**
- * gets list orm items
+ * gets list of items
  * @return IIterator
  * @see TAjaxList::getItems()
  */	

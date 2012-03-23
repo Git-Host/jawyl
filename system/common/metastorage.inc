@@ -1,14 +1,14 @@
 <?php
-TApplication::import("common::orm");
+TApplication::import("common::meta");
 TApplication::import("common::storage");
 
 /**
  * @package Common
  * @subpackage Storage
  * @category System
- * base class for orm storage exceptions
+ * base class for meta storage exceptions
  */
-class TOrmStorageException extends TOrmException {
+class TMetaStorageException extends TMetaException {
 	const ERR_QUERY_INCORRECT = 501;
 	const ERR_QUERY_NOT_LOADED = 502;
 	const ERR_STORE_CLASS_NOT_FOUND = 503;
@@ -38,9 +38,9 @@ class TOrmStorageException extends TOrmException {
  * @package Common
  * @subpackage Storage
  * @category System
- * interface for implementing database engine orm drivers  
+ * interface for implementing database engine meta drivers  
  */
-interface IORMDriver {
+interface IMetaDriver {
 /**
  * defines class or attribute
  * @param IClass|IAttributeDefinition|array $meta
@@ -134,11 +134,11 @@ interface IORMDriver {
  * gets instances of class
  * @param string $classname class name
  * @param boolean $exact optional,defaults to false, when set to true instances of class descendants are not fetched
- * @param TOrmFetchOptions $options optional fetch options
+ * @param TMetaFetchOptions $options optional fetch options
  * @return IIterator iterator of IInstance
  * @see IIterator
  * @see IInstance
- * @see TOrmFetchOptions
+ * @see TMetaFetchOptions
  */		
 	public function FetchInstances(TDataSource $instances);
 /**
@@ -158,7 +158,7 @@ interface IORMDriver {
 
 interface IReflectionDriver {
 /**
- * gets orm class for php class. 
+ * gets meta class for php class. 
  * If CHECK_REFLECTION is set to true then storage class is checked to fit php class, 
  * which means performing all necessary data definitions in database.    
  * @return IClass
@@ -171,10 +171,10 @@ interface IReflectionDriver {
  * @subpackage Storage
  * @category System
  * class for storage system fields
- * @property int $SysField type of system field, returns one of TSysField constants
- * @property TOrmClassSource $Source  
+ * @property int $SysField type of system field, returns one of TMetaSysField constants
+ * @property TMetaClassSource $Source  
  */
-final class TSysField extends TDataSourceField {
+final class TMetaSysField extends TDataSourceField {
 	const INSTANCE_ID = 0;
 	const CLASS_ID  = 1;
 	const CLASS_NAME = 2;
@@ -193,20 +193,20 @@ final class TSysField extends TDataSourceField {
 	
 	public function Name(){
 		switch ($this->_sysfield_){
-			case self::INSTANCE_ID:return TMySqlORMDriver::ENTITY_PK_FIELD;break;
-			case self::CLASS_ID:return TMySqlORMDriver::CLASS_PK_FIELD;break;
-			case self::CLASS_NAME:return TMySqlORMDriver::CLASS_NAME_FIELD;break;
+			case self::INSTANCE_ID:return "id";break;
+			case self::CLASS_ID:return "cid";break;
+			case self::CLASS_NAME:return "classname";break;
 		}
 	}
 /**
  * constructor
- * @param int $field one of TSysField constants
+ * @param int $field one of TMetaSysField constants
  */	
 	public function __construct($field, $alias = null, $dataset = null){
 		if (!in_array($field,array(self::INSTANCE_ID,self::CLASS_ID,self::CLASS_NAME)))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		if (!is_null($dataset))
-			if (!($dataset instanceof TOrmClassDataSource))
+			if (!($dataset instanceof TMetaClassDataSource))
 				throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 		parent::__construct($this->Name(),$alias,$dataset);	
 	}  
@@ -216,21 +216,21 @@ final class TSysField extends TDataSourceField {
  * @package Common
  * @subpackage Storage
  * @category System
- * base class for database orm drivers alowing reflection of php classes to orm database  
+ * base class for database meta drivers alowing reflection of php classes to orm database  
  */
 class TReflectionDriver implements IReflectionDriver {
 /**
-@var IORMDriver
+@var IMetaDriver
  */	
-	private $_orm_driver_; 
+	private $_meta_driver_; 
 	
 /**
  * @var boolean indicates whether to check class storage meta and tables when it is reflected
  */	
 	private $_check_reflection_ = false;
 	
-	public function __construct(IORMDriver $driver){
-		$this->_orm_driver_ = $driver;
+	public function __construct(IMetaDriver $driver){
+		$this->_meta_driver_ = $driver;
 	}
 
 /**
@@ -268,7 +268,7 @@ class TReflectionDriver implements IReflectionDriver {
 	}
 
 /**
- * gets orm class for php class. 
+ * gets meta class for php class. 
  * If CHECK_REFLECTION is set to true then storage class is checked to fit php class, 
  * which means performing all necessary data definitions in database.    
  * @return IClass
@@ -278,7 +278,7 @@ class TReflectionDriver implements IReflectionDriver {
 			throw new TCoreException(TCoreException::ERR_NOT_CLASS,null,null,array("class"=>"TDBReflectedInstance"));
 			return null;
 		}
-		$c = $this->_orm_driver_->GetClass($class->getName());	
+		$c = $this->_meta_driver_->GetClass($class->getName());	
 		if ($this->_check_reflection_){
 			if (!$c){
 				$parent = $class->getParentClass();
@@ -288,8 +288,8 @@ class TReflectionDriver implements IReflectionDriver {
 					if ($dbpc) $dbpc = $dbpc->Name();
 				}
 					
-				$this->_orm_driver_->Define(new TDBClass($class->getName(),$dbpc));
-				$c = $this->_orm_driver_->GetClass($class->getName());	
+				$this->_meta_driver_->Define(new TDBClass($class->getName(),$dbpc));
+				$c = $this->_meta_driver_->GetClass($class->getName());	
 			}
 
 			$classattrs = $c->AttributeDefinitions();
@@ -307,7 +307,7 @@ class TReflectionDriver implements IReflectionDriver {
 				}
 					
 				if ($delete)
-					$this->_orm_driver_->Undefine($ca);
+					$this->_meta_driver_->Undefine($ca);
 				else
 					$eca[$ca->Name()] = 1;
 			}
@@ -316,9 +316,9 @@ class TReflectionDriver implements IReflectionDriver {
 			foreach ($props as $property){
 				$at = $this->propType($property);
 				if (!is_null($at) && !isset($eca[$property->getName()]))
-					$this->_orm_driver_->Define(new TAttributeDefinition($property->getName(), $at, $c));
+					$this->_meta_driver_->Define(new TAttributeDefinition($property->getName(), $at, $c));
 			}
-			$c = $this->_orm_driver_->GetClass($class->getName());
+			$c = $this->_meta_driver_->GetClass($class->getName());
 		}
 		return $c;
 	}
@@ -326,9 +326,9 @@ class TReflectionDriver implements IReflectionDriver {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm class attribute definition 
+ * class of meta class attribute definition 
  * @property string $Name
  * @property TDataType $Type
  * @property TDBClass $Class
@@ -466,9 +466,9 @@ class TAttributeDefinition implements IAttributeDefinition {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm class attribute definition 
+ * class of meta class attribute definition 
  * @property mixed $Id
  * @property string $Name
  * @property string $Field
@@ -563,12 +563,12 @@ class TDBClass extends TClass {
  * @package Common
  * @subpackage Storage
  * @category System
- * Base class for orm classes using orm database drivers  
+ * Base class for meta classes using meta database drivers  
  * @property TDBDefinedClass[] $Descendants 
  */
 class TDBDefinedClass extends TDBClass {
 /**
- * @var IORMDBDriver
+ * @var IMetaDriver
  */	
 	protected $driver;
 /**
@@ -582,10 +582,10 @@ class TDBDefinedClass extends TDBClass {
  * constructor
  * @param mixed $id class unique id
  * @param string $name class unique name
- * @param IORMDBDriver $driver driver to use
+ * @param IMetaDriver $driver driver to use
  * @param array $attributes 
  */	
-	public function __construct($id,$name,IORMDBDriver $driver, TDBDefinedClass $ancestor = null, $attributes = null){
+	public function __construct($id,$name,IMetaDriver $driver, TDBDefinedClass $ancestor = null, $attributes = null){
 		$this->id = $id;
 		$this->driver = $driver;
 		if ($ancestor){
@@ -618,7 +618,7 @@ class TDBDefinedClass extends TDBClass {
 	
 /**
  * gets used driver
- * @return IORMDBDriver
+ * @return IMetaDriver
  */	
 	public function Driver(){return $this->driver;}
 /**
@@ -660,7 +660,7 @@ class TDBDefinedClass extends TDBClass {
  *
  */
 
-final class TOrmClassDataSource extends TDataSource {
+final class TMetaClassDataSource extends TDataSource {
 	private $_class_;
 	private $_full_fetch_ = false;
 	
@@ -669,7 +669,7 @@ final class TOrmClassDataSource extends TDataSource {
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$flds = array();
 		foreach ($fields as $f)
-			if ($f instanceof TOrmClassDataSourceAttribute)
+			if ($f instanceof TMetaClassDataSourceAttribute)
 				$flds[] = $f;
 		parent::__construct($alias, $flds, $filter,$join,$sorting,$istarget,$offset,$count);
 		$this->_class_ = $class;
@@ -691,7 +691,7 @@ final class TOrmClassDataSource extends TDataSource {
 	}
 	
 	public function AttachField(TDataSourceField $fld){
-		if (!(($fld instanceof TOrmClassDataSourceField) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
+		if (!(($fld instanceof TMetaClassDataSourceAttribute) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		if ($fld instanceof TAllField)
 			$this->_full_fetch_ = true;	
@@ -704,7 +704,7 @@ final class TOrmClassDataSource extends TDataSource {
  *
  */
 
-final class TOrmClassDataSourceAttribute extends TDataSourceField {
+final class TMetaClassDataSourceAttribute extends TDataSourceField {
 	private $_attr_;
 	private $_alias_;
 	
@@ -714,7 +714,7 @@ final class TOrmClassDataSourceAttribute extends TDataSourceField {
 	}
 	
 	public function AttachTo(TDataSource $datasource){
-		if (!($datasource instanceof TOrmClassDataSource))
+		if (!($datasource instanceof TMetaClassDataSource))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		parent::AttachTo($datasource);
 	}
@@ -731,7 +731,7 @@ final class TOrmClassDataSourceAttribute extends TDataSourceField {
  * @package Common
  * @subpackage Storage
  * @category System
- * Base class for orm instances using orm database drivers  
+ * Base class for instances using meta database drivers  
  */	
 class TDBInstance extends TInstance {
 /**
@@ -781,7 +781,7 @@ abstract class TDBReflectedInstance extends TDBInstance {
 			if ($prop->isPrivate()){
 				parent::__set($nm,$val);
 				return;
-			} else throw new TOrmException(TOrmException::ERR_ORM_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this)));
+			} else throw new TMetaException(TMetaException::ERR_META_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this)));
 		}
 		parent::__set($nm,$val);
 	}
@@ -794,7 +794,7 @@ abstract class TDBReflectedInstance extends TDBInstance {
 			$prop = new ReflectionProperty(get_class($this),$nm);
 			if ($prop->isPrivate())
 				return parent::__get($nm);
-			else throw new TOrmException(TOrmException::ERR_ORM_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this))); 
+			else throw new TMetaException(TMetaException::ERR_META_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this))); 
 		}
 		return parent::__get($nm);
 	}
@@ -807,7 +807,7 @@ abstract class TDBReflectedInstance extends TDBInstance {
 			$prop = new ReflectionProperty(get_class($this),$nm);
 			if ($prop->isPrivate())
 				return !is_null(parent::__get($nm));
-			else throw new TOrmException(TOrmException::ERR_ORM_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this)));
+			else throw new TMetaException(TMetaException::ERR_META_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this)));
 		}
 		return parent::__isset($nm);
 	}
@@ -820,7 +820,7 @@ abstract class TDBReflectedInstance extends TDBInstance {
 			$prop = new ReflectionProperty(get_class($this),$nm);
 			if ($prop->isPrivate())
 				parent::__unset($nm);
-			else throw new TOrmException(TOrmException::ERR_ORM_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this))); 
+			else throw new TMetaException(TMetaException::ERR_META_NO_PROPERTY,array("property"=>$nm, "class"=>get_class($this))); 
 		}
 		parent::__unset($nm);
 	}
@@ -829,13 +829,13 @@ abstract class TDBReflectedInstance extends TDBInstance {
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
  * abstract converter from DT_RAW iterator to DT_INSTANCE iterator 
  */	
 abstract class TRawToInstanceIterator extends TIteratorAdapter {
 /**
- * protected convertion method, used internally in TRawToInstanceIterator::Item() to convert from raw data to orm instance
+ * protected convertion method, used internally in TRawToInstanceIterator::Item() to convert from raw data to instance
  */		
 	protected abstract function Convert(array &$instanceinfo);
 		

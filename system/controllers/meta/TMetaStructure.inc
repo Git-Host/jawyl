@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TOrmCollection");
+TApplication::import("controllers::TMetaCollection");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  */
 class TLevelIterator extends TArrayIterator {
@@ -28,33 +28,33 @@ class TLevelIterator extends TArrayIterator {
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * flat orm structure items
+ * flat structure items
  */
-class TOrmStructure extends TOrmList implements IItemsStructure {
+class TMetaStructure extends TMetaList implements IItemsStructure {
 /**
  * @var array
  */	
 	protected $structures = null;
-/*
- * @var string orm agregation name to use
+/**
+ * @var string agregation name to use
  */	
 	public $Agregation;
 					
 /**
  * gets container for newly created items
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	protected function getCreateParent(){
 		return $this->CurrentItem();
 	}	
 
 /**
- * @see TOrmList::getItems()
+ * @see TMetaList::getItems()
  * @param int $page
  * @param int $pagesize
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	protected function getItems($page = null, $pagesize = null){
 		$result = $this->DataSource->FetchChildren($this->Agregation,$this->BaseClass,null,false,$this->getFilter(),$this->getSorting());
@@ -73,7 +73,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 /**
  * @see IItemsStructure::ItemParent()
  * @param mixed $id
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	public function ItemParent($id){
 		if (is_null($this->STRUCTURE))
@@ -83,7 +83,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 	} 
 	
 /**
- * @see TOrmList::DeleteItem()
+ * @see TMetaList::DeleteItem()
  * @param mixed $id
  * @return boolean
  */	
@@ -100,17 +100,17 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
  * @param mixed $id
  * @param mixed $parent
  * @return boolean
- * @uses TOrmStructure::ItemMovement()
+ * @uses TMetaStructure::ItemMovement()
  */	
 	public function MoveItem($id,$parent){
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return false;
 		}
 		if (!is_null($parent)){
 			$p = new TIdentity($parent);
-			if (!$this->CheckPermission($p,TOrmItemPermission::ORM_RELATE)){
+			if (!$this->CheckPermission($p,TMetaItemPermission::META_RELATE)){
 				throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 				return false;
 			}
@@ -122,8 +122,8 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 	}
 	
 /**
- * @see TOrmList::CreateItem()
- * @return TOrmItem
+ * @see TMetaList::CreateItem()
+ * @return TMetaItem
  */	
 	public function CreateItem(TCreateInfo $createinfo = null){
 		$result = null;
@@ -139,7 +139,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 	}	
 	
 /**
- * performs orm item movement within a structure, can be overrden in descendants
+ * performs item movement within a structure, can be overrden in descendants
  * @return boolean
  */	
 	protected function itemMovement(IIdentity $item, IIdentity $parent = null){
@@ -157,7 +157,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
  * @param mixed $parent parent item id
  * @param int $page optional page number (meaningful only when $pagesize is also set)
  * @param int $pagesize optional page size
- * @return IIterator iterator of TOrmItem
+ * @return IIterator iterator of TMetaItem
  */	
 	public function SubItems($parent, $page = null, $pagesize = null){
 		$result = $this->DataSource->FetchChildren($this->Agregation,$this->BaseClass,new TIdentity($parent),true,$this->getFilter(),$this->getSorting());
@@ -171,8 +171,8 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 
 /**
  * creates new item and puts it into current container
- * @see TOrmList::ItemCreation()
- * @return TOrmItem
+ * @see TMetaList::ItemCreation()
+ * @return TMetaItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		$result = parent::itemCreation($c,$parameters);
@@ -186,7 +186,7 @@ class TOrmStructure extends TOrmList implements IItemsStructure {
 		
 /**
  * gets item container
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	protected function getStructParent(Identity $item){
 		if (is_null($this->Agregation)){

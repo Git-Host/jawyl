@@ -1,5 +1,4 @@
 <?php
-	TApplication::import("common::orm");
 	TApplication::import("common::item");
 	TApplication::import("common::mvc");
 	TApplication::import("widgets::TJQueryWidget");

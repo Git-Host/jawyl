@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,17 +12,17 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TOrmReferedList");
+TApplication::import("controllers::TMetaReferedList");
 
 /**
  * @package Controllers
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * items in orm collection 
+ * items in collection 
  */
-class TOrmCollection extends TOrmReferedList {
+class TMetaCollection extends TMetaReferedList {
 /**
- * @var string orm collection name to use
+ * @var string collection name to use
  */	
 	public $Collection;
 	
@@ -35,20 +35,20 @@ class TOrmCollection extends TOrmReferedList {
  * @return boolean
  */	
 	public function ActionAvailable(IAction $action){
-		if ($action->LocalName() == TOrmReferedList::AN_REMOVE)
+		if ($action->LocalName() == TMetaReferedList::AN_REMOVE)
 			return !is_null($this->currentItem);
 		return parent::ActionAvailable($action);
 	}
 	
 /**
- * Adds orm item to collection
+ * Adds item to collection
  * @param mixed $id item id
  * @return boolean  
  */	
 	public function AddItem($id){
 		if (is_null($this->Collection)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -67,7 +67,7 @@ class TOrmCollection extends TOrmReferedList {
 		if (is_null($this->Collection)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$item = $this->CurrentItem();
 		$id = $this->CurrentItemId();
-		if (!$this->CheckPermission($item,TOrmItemPermission::ORM_RELATE)){
+		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -79,7 +79,7 @@ class TOrmCollection extends TOrmReferedList {
 	}
 	
 /**
- * @see TOrmList::getItems()
+ * @see TMetaList::getItems()
  * @param int $page
  * @param int $pagesize
  * @return IIterator
@@ -99,8 +99,8 @@ class TOrmCollection extends TOrmReferedList {
 	
 /**
  * creates new item and adds it to collection
- * @see TOrmList::ItemCreation()
- * @return TOrmItem
+ * @see TMetaList::ItemCreation()
+ * @return TMetaItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		$result = null;

@@ -122,9 +122,9 @@ class TAreasList extends TAreasWidget implements IList {
 		return preg_replace('/\\A'.$this->Name().'/','',$listitemid);
 	}
 /**
- * gets list orm items
- * @return IIterator iterator of TOrmItem
- * @see TOrmItem
+ * gets list items
+ * @return IIterator iterator of IItem
+ * @see IItem
  */	
 	protected function getItems(){
 		if (!($this->Source instanceof IItemsList))

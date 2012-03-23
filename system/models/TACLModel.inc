@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("models::TOrmModel");
+TApplication::import("models::TMetaModel");
 
 /**
  * @package Components
@@ -20,9 +20,9 @@ TApplication::import("models::TOrmModel");
  * @category System
  * security subject implementation
  * @see ISecuritySubject
- * @see TOrmItem
+ * @see TMetaItem
  */
-class TSecuritySubject extends TOrmItem implements ISecurityContext {
+class TSecuritySubject extends TMetaItem implements ISecurityContext {
 /**
  * constructor
  * @param IInstance $instance instance to wrap
@@ -105,7 +105,7 @@ class TUser extends TSecuritySubject {
  * @package Components
  * @subpackage ACL
  * @category System
- * security items iterator. converts orm items to subsequent security item class. 
+ * security items iterator. converts items to subsequent security item class. 
  * @see TIteratorAdapter
  */
 class TSecurityItemIterator extends TIteratorAdapter {
@@ -122,7 +122,7 @@ class TSecurityItemIterator extends TIteratorAdapter {
 
 /**
  * constructor.
- * @param IIterator $iterator orm items iterator
+ * @param IIterator $iterator items iterator
  * @param TACLModel $com acl component to interact with
  */	
 	public function __construct(IIterator $iterator, TACLModel $com){
@@ -136,11 +136,11 @@ class TSecurityItemIterator extends TIteratorAdapter {
  * @subpackage ACL
  * @category System
  * acl component class 
- * @see TOrmModel
+ * @see TMetaModel
  * @see IInstallable
  * @see IACLManager
  */
-class TACLModel extends TOrmModel implements IInstallable, IACLManager {
+class TACLModel extends TMetaModel implements IInstallable, IACLManager {
 	const SECURITY_SUBJECT_CLASS = "SecuritySubject";
 	const SECURITY_USER_CLASS = "User";
 	const SECURITY_GROUP_CLASS = "Group";
@@ -169,8 +169,8 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 			)));
 			
 			$this->dbDriver->DefineTable(self::SECURITY_RELATIONS, array(
-				new TFieldDefinition('container', new TOrmReferenceType($sgc)),
-				new TFieldDefinition('content', new TOrmReferenceType($ssc,true))
+				new TFieldDefinition('container', new TMetaReferenceType($sgc)),
+				new TFieldDefinition('content', new TMetaReferenceType($ssc,true))
 			));
 			$this->commit();
 		} catch (Exception $e){
@@ -210,7 +210,7 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 	} 
 
 /**
- * @see TOrmModel::CreateItem()
+ * @see TMetaModel::CreateItem()
  */	
 	public function CreateItem(IClass $c,array $parameters){
 		if ($c->IsClass(self::SECURITY_USER_CLASS))
@@ -250,7 +250,7 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 	}
 
 /**
- * @see TOrmModel::WrapItem()
+ * @see TMetaModel::WrapItem()
  * @return TUser|TGroup
  */	
 	public function WrapItem(IInstance $item){
@@ -269,8 +269,8 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
  * @return boolean
  */	
 	public function UserExists($login){
-		$ds = new TOrmClassDataSource($this->GetClass(self::SECURITY_USER_CLASS));
-		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("login")),$login)); 
+		$ds = new TMetaClassDataSource($this->GetClass(self::SECURITY_USER_CLASS));
+		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("login")),$login)); 
 		$res = $this->dbDriver->FetchInstances($ds);
 		return $res->ItemCount() > 0;
 	}
@@ -394,9 +394,9 @@ class TACLModel extends TOrmModel implements IInstallable, IACLManager {
 	
 	protected function doLogin($login,$pwd){			
 		$password = TUser::Hash($pwd);
-		$ds = new TOrmClassDataSource($this->GetClass(self::SECURITY_USER_CLASS));
-		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("login")),$login)); 
-		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TOrmClassDataSourceAttribute($c->GetAttributeDefinition("pwd")),$password)); 
+		$ds = new TMetaClassDataSource($this->GetClass(self::SECURITY_USER_CLASS));
+		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("login")),$login)); 
+		$ds->Filter = new TCondition(TOperation::C_EQUAL,array(new TMetaClassDataSourceAttribute($c->GetAttributeDefinition("pwd")),$password)); 
 		$res = $this->dbDriver->FetchInstances($ds);
 		foreach ($res as $item)
 			return $item->Id();

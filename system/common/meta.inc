@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -14,13 +14,13 @@ TApplication::import("common::data");
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * orm exception class
+ * meta exception class
  */
-class TOrmException extends TException {
-	const ERR_ORM_ATTR_NOT_DEFINED = 401;
-	const ERR_ORM_NO_PROPERTY = 402;	
+class TMetaException extends TException {
+	const ERR_META_ATTR_NOT_DEFINED = 401;
+	const ERR_META_NO_PROPERTY = 402;	
 
 /**
  * @param int $msgcode
@@ -28,8 +28,8 @@ class TOrmException extends TException {
  */	
 	protected function getMessageText($msgcode){
 		switch ($msgcode){
-			case self::ERR_ORM_ATTR_NOT_DEFINED:return 'Attribute %attr not defined in orm class %class!';break;
-			case self::ERR_ORM_NO_PROPERTY:return 'Property %property not found in php class %class!';break;
+			case self::ERR_META_ATTR_NOT_DEFINED:return 'Attribute %attr not defined in meta class %class!';break;
+			case self::ERR_META_NO_PROPERTY:return 'Property %property not found in php class %class!';break;
 		}
 		return "";
 	}
@@ -37,24 +37,24 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * class of reference attribute type
  * @property IClass $ReferenceClass
  * @property boolean $IntegrityDelete
  * @uses TDataType
  */	
-	final class TOrmReferenceType extends TDataType {
-		const ORM_REFERENCE = "ORMREF";
+	final class TMetaReferenceType extends TDataType {
+		const META_REFERENCE = "METAREF";
 /**
- * @var IClass - orm class to which attribute refer
+ * @var IClass - meta class to which attribute refer
  */		
 		private $_class_;
 		
 		private $_integrity_delete_ = false;
 		
 		public function __construct(IClass $c, $integritydelete = false){
-			$this->typeCode = self::ORM_REFERENCE;
+			$this->typeCode = self::META_REFERENCE;
 			$this->_integrity_delete_ = $integritydelete;
 			$this->_class_ = $c;
 		}
@@ -78,9 +78,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * interface for implementing orm classes
+ * interface for implementing meta classes
  */	
 	interface IClass {
 /**
@@ -144,9 +144,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * interface for implementing orm class attribute definitions
+ * interface for implementing meta class attribute definitions
  * @property string $Name
  * @property TDataType $Type
  * @property TDBClass $Class
@@ -191,9 +191,9 @@ class TOrmException extends TException {
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * interface for implementing orm instance attributes
+ * interface for implementing meta instance attributes
  */	
 	interface IInstanceAttribute {
 /**
@@ -222,9 +222,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * interface for implementing orm instances
+ * interface for implementing meta instances
  */	
 	interface IInstance {
 /**
@@ -233,7 +233,7 @@ class TOrmException extends TException {
  */		
 		public function Id();
 /**
- * gets instance orm class
+ * gets instance meta class
  * @return IClass
  * @see IClass
  */		
@@ -291,9 +291,9 @@ class TOrmException extends TException {
 		
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm instance attribute 
+ * class of meta instance attribute 
  */		
 	class TInstanceAttribute implements IInstanceAttribute {
 /**
@@ -372,9 +372,9 @@ class TOrmException extends TException {
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm instance boolean attribute 
+ * class of meta instance boolean attribute 
  */	
 	class TInstanceBooleanAttribute extends TInstanceAttribute {
 /**
@@ -405,9 +405,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm instance datetime attribute 
+ * class of meta instance datetime attribute 
  */	
 	class TInstanceDateTimeAttribute extends TInstanceAttribute {
 /**
@@ -426,9 +426,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm instance file attribute 
+ * class of meta instance file attribute 
  */	
 	class TInstanceFileAttribute extends TInstanceAttribute {
 /**
@@ -452,9 +452,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * class of orm instance file link attribute 
+ * class of meta instance file link attribute 
  */	
 	class TInstanceFileLinkAttribute extends TInstanceAttribute {
 /**
@@ -483,9 +483,9 @@ class TOrmException extends TException {
 
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * abstract base class for orm instances. Provides ability to refer to instance attributes through properties. 
+ * abstract base class for meta instances. Provides ability to refer to instance attributes through properties. 
  */	
 	abstract class TInstance implements IInstance {
 /**
@@ -537,7 +537,7 @@ class TOrmException extends TException {
 					$this->attrValues[$attr->Id()]->SetValue($value,$needsave);
 				return true;
 			}
-			throw new TOrmException(TOrmException::ERR_ORM_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->class->Name()));
+			throw new TMetaException(TMetaException::ERR_META_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->class->Name()));
 			return false;
 		}
 	
@@ -554,7 +554,7 @@ class TOrmException extends TException {
 					return $this->attrValues[$attr->Id()]->GetValue();
 				return null;	
 			}
-			throw new TOrmException(TOrmException::ERR_ORM_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->class->Name()));
+			throw new TMetaException(TMetaException::ERR_META_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->class->Name()));
 			return false;
 		}
 	
@@ -605,9 +605,9 @@ class TOrmException extends TException {
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
- * abstract base class for orm classes. 
+ * abstract base class for meta classes. 
  */		
 	abstract class TClass implements IClass {
 /**
@@ -673,7 +673,7 @@ class TOrmException extends TException {
 		public function GetAttributeDefinition($name){
 			$result = $this->_get_attr($name);
 			if (!$result)
-				throw new TOrmException(TOrmException::ERR_ORM_ATTR_NOT_DEFINED, array("attr"=>$name,"class"=>$this->Name()));
+				throw new TMetaException(TMetaException::ERR_META_ATTR_NOT_DEFINED, array("attr"=>$name,"class"=>$this->Name()));
 		}
 		
 /**
@@ -777,7 +777,7 @@ class TOrmException extends TException {
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Meta
  * @category System 
  * base class for instance wrappers.
  */	
@@ -856,7 +856,7 @@ class TOrmException extends TException {
 				} 
 				return parent::SetAttributeValue($name,$value,$needsave);
 			}
-			throw new TOrmException(TOrmException::ERR_ORM_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->class->Name()));
+			throw new TMetaException(TMetaException::ERR_META_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->class->Name()));
 			return false;
 		}
 	
@@ -874,7 +874,7 @@ class TOrmException extends TException {
 				} 
 				return parent::GetAttributeValue($name);
 			}
-			throw new TOrmException(TOrmException::ERR_ORM_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->InstanceClass()->Name()));
+			throw new TMetaException(TMetaException::ERR_META_ATTR_NOT_DEFINED,array("attr"=>$name,"class"=>$this->InstanceClass()->Name()));
 			return false;
 		}
 	

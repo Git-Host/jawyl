@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -10,37 +10,37 @@
 */
 
 
-TApplication::import("common::orm");
+TApplication::import("common::metastorage");
 TApplication::import("common::item"); 
 TApplication::import("models::TDataModel");
 
-class TOrmClassPermission extends TPolicy {
-	const ORM_INSTANCIATE = "orm.instant";
-	const ORM_INSTLIST = "orm.instlist";
+class TMetaClassPermission extends TPolicy {
+	const META_INSTANCIATE = "meta.instant";
+	const META_INSTLIST = "meta.instlist";
 	
 	protected function checkType($type){
-		return ($this->sobj instanceof TClass) && (in_array($type, array(self::ORM_INSTANCIATE,self::ORM_INSTLIST)));
+		return ($this->sobj instanceof TClass) && (in_array($type, array(self::META_INSTANCIATE,self::META_INSTLIST)));
 	}
 	
 	public function Descendants(){
 		switch ($this->type){
-			case self::ORM_INSTANCIATE:
-			case self::ORM_INSTLIST:return array(new TServiceRole(TServiceRole::USER));break;
+			case self::META_INSTANCIATE:
+			case self::META_INSTLIST:return array(new TServiceRole(TServiceRole::USER));break;
 		}
 		return array();
 	}	
 }
 
-class TOrmItemRole extends TPolicy {
-	const ORM_OWNER = "orm.owner";
+class TMetaItemRole extends TPolicy {
+	const META_OWNER = "meta.owner";
 	
 	protected function checkType($type){
-		return ($this->sobj instanceof TOrmItem) && ($type == self::ORM_OWNER);
+		return ($this->sobj instanceof TMetaItem) && ($type == self::META_OWNER);
 	}
 	
 	public function Descendants(){
 		switch ($this->type){
-			case self::ORM_OWNER:return array(new TServiceRole(TServiceRole::ADMIN));break;
+			case self::META_OWNER:return array(new TServiceRole(TServiceRole::ADMIN));break;
 		}
 		return array();
 	}
@@ -50,49 +50,49 @@ class TOrmItemRole extends TPolicy {
  * @return boolean
  */
 	public static function IsRole($policy){
-		return $policy == self::ORM_OWNER;
+		return $policy == self::META_OWNER;
 	}
 }
 
-class TOrmItemPermission extends TPolicy {
-	const ORM_DELETE = "orm.delete";
-	const ORM_RELATE = "orm.relate";
-	const ORM_LIST = "orm.list";
-	const ORM_VIEW = "orm.view";
-	const ORM_MODIFY = "orm.modify";
-	const ORM_ACL = "orm.acl";
+class TMetaItemPermission extends TPolicy {
+	const META_DELETE = "meta.delete";
+	const META_RELATE = "meta.relate";
+	const META_LIST = "meta.list";
+	const META_VIEW = "meta.view";
+	const META_MODIFY = "meta.modify";
+	const META_ACL = "meta.acl";
 
 	protected function checkType($type){
-		return ($this->sobj instanceof TOrmItem) && (in_array($type, array(self::ORM_ACL,self::ORM_DELETE,self::ORM_LIST,self::ORM_MODIFY,self::ORM_RELATE,self::ORM_VIEW)));
+		return ($this->sobj instanceof TMetaItem) && (in_array($type, array(self::META_ACL,self::META_DELETE,self::META_LIST,self::META_MODIFY,self::META_RELATE,self::META_VIEW)));
 	}
 	
 	public function Descendants(){
 		switch ($this->type){
-			case self::ORM_ACL:
-			case self::ORM_DELETE:
-			case self::ORM_MODIFY:return array(new TServiceRole(TServiceRole::ADMIN),new TOrmItemRole(TOrmItemRole::ORM_OWNER,$this->sobj));break;
-			case self::ORM_RELATE:return array(new TServiceRole(TServiceRole::USER),new TOrmItemRole(TOrmItemRole::ORM_OWNER,$this->sobj));break;
-			case self::ORM_VIEW:
-			case self::ORM_LIST:return array(new TServiceRole(TServiceRole::ANONYMOUS),new TOrmItemRole(TOrmItemRole::ORM_OWNER,$this->sobj));break;
+			case self::META_ACL:
+			case self::META_DELETE:
+			case self::META_MODIFY:return array(new TServiceRole(TServiceRole::ADMIN),new TMetaItemRole(TMetaItemRole::META_OWNER,$this->sobj));break;
+			case self::META_RELATE:return array(new TServiceRole(TServiceRole::USER),new TMetaItemRole(TMetaItemRole::META_OWNER,$this->sobj));break;
+			case self::META_VIEW:
+			case self::META_LIST:return array(new TServiceRole(TServiceRole::ANONYMOUS),new TMetaItemRole(TMetaItemRole::META_OWNER,$this->sobj));break;
 		}
 		return array();
 	}	
 }
 
-class TOrmPropertyPermission extends TPolicy {
-	const ORM_READ = "orm.read";
-	const ORM_WRITE = "orm.write";
+class TMetaPropertyPermission extends TPolicy {
+	const META_READ = "meta.read";
+	const META_WRITE = "meta.write";
 	
 	protected function checkType($type){
-		return ($this->sobj instanceof TOrmProperty) && (in_array($type, array(self::ORM_READ,self::ORM_WRITE)));
+		return ($this->sobj instanceof TMetaProperty) && (in_array($type, array(self::META_READ,self::META_WRITE)));
 	}
 	
 	public function Descendants(){
 		$result = array(new TServiceRole(TServiceRole::USER));
 		$item = $this->sobj->Item();
 		switch ($this->type){
-			case self::ORM_READ:$result[] = new TOrmItemPermission(TOrmItemPermission::ORM_VIEW,$item);break;
-			case self::ORM_WRITE:$result[] = new TOrmItemPermission(TOrmItemPermission::ORM_MODIFY,$item);break;
+			case self::META_READ:$result[] = new TMetaItemPermission(TMetaItemPermission::META_VIEW,$item);break;
+			case self::META_WRITE:$result[] = new TMetaItemPermission(TMetaItemPermission::META_MODIFY,$item);break;
 		}
 		return $result;
 	}
@@ -100,25 +100,25 @@ class TOrmPropertyPermission extends TPolicy {
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Orm component exception class
+ * Meta component exception class
  */
-class TOrmModelException extends TOrmException {
-	const ERR_ORMMETA_INCORRECT = 801;
+class TMetaModelException extends TMetaException {
+	const ERR_META_INCORRECT = 801;
 /**
  * @param int $msgcode
  * @return string
  */	
 	protected function getMessageText($msgcode){
 		switch ($msgcode){
-			case self::ERR_ORMMETA_INCORRECT:return 'Orm model meta file incorrect!';break;
+			case self::ERR_META_INCORRECT:return 'Model meta file incorrect!';break;
 			default:return parent::getMessageText($msgcode);break;
 		}
 	}
 }
 
-class TOrmPropertyMeta implements IPropertyMeta {
+class TMetaPropertyMeta implements IPropertyMeta {
 /**
  * @var array
  */	
@@ -215,13 +215,13 @@ class TOrmPropertyMeta implements IPropertyMeta {
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Orm item property class
+ * Meta item property class
  */
-class TOrmProperty extends TProperty {
+class TMetaProperty extends TProperty {
 /**
- * @var TOrmItem  
+ * @var TMetaItem  
  */	
 	protected $item;	
 	
@@ -234,7 +234,7 @@ class TOrmProperty extends TProperty {
  * @param array $sellist optional values selection list, associative array of values and titles
  * @see IProperty  
  */	
-	public function __construct(TOrmItem $item, TOrmPropertyMeta $meta){
+	public function __construct(TMetaItem $item, TMetaPropertyMeta $meta){
 		$this->item = $item;
 		parent::__construct($meta);
 	}
@@ -251,7 +251,7 @@ class TOrmProperty extends TProperty {
 	}
 }
 
-class TOrmAttributePropertyMeta extends TOrmPropertyMeta {
+class TMetaAttributePropertyMeta extends TMetaPropertyMeta {
 /**
  * @var IAttributeDefinition
  */	
@@ -303,19 +303,19 @@ class TOrmAttributePropertyMeta extends TOrmPropertyMeta {
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Orm item property class
+ * Meta item property class
  */
-class TOrmAttributeProperty extends TOrmProperty {
+class TMetaAttributeProperty extends TMetaProperty {
 /**
  * constructor
- * @param TOrmItem $i instance wrapped attribute belongs to
+ * @param TMetaItem $i instance wrapped attribute belongs to
  * @param IAttributeDefinition $ca definition of wrapped attribute
  * @param array $sellist optional values selection list, associative array of values and titles
  * @see IProperty  
  */	
-	public function __construct(TOrmItem $item, TOrmAttributePropertyMeta $meta){
+	public function __construct(TMetaItem $item, TMetaAttributePropertyMeta $meta){
 		parent::__construct($item,$meta);
 	}
 	
@@ -324,7 +324,7 @@ class TOrmAttributeProperty extends TOrmProperty {
 	}
 }
 
-class TOrmReferencePropertyMeta extends TOrmAttributePropertyMeta implements IReferencePropertyMeta {
+class TMetaReferencePropertyMeta extends TMetaAttributePropertyMeta implements IReferencePropertyMeta {
 /**
  * @var array
  * stores fetched reference class items
@@ -345,7 +345,7 @@ class TOrmReferencePropertyMeta extends TOrmAttributePropertyMeta implements IRe
 			self::$selections[$ca->Type()->Class->Id()] = array();
 			$ci = $ca->Type()->Class->ClassInstances();
 			foreach ($ci as $i){
-				$wi = TOrmModel::GlobalWrap($i);
+				$wi = TMetaModel::GlobalWrap($i);
 				if (!is_null($wi)) 
 					self::$selections[$ca->Type()->Class->Id()][$wi->Instance()->Id()] = $wi->__toString();
 			}
@@ -364,48 +364,48 @@ class TOrmReferencePropertyMeta extends TOrmAttributePropertyMeta implements IRe
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * orm item reference property class
+ * Meta item reference property class
  */
-class TOrmReferenceProperty extends TOrmAttributeProperty implements IReferenceProperty {
+class TMetaReferenceProperty extends TMetaAttributeProperty implements IReferenceProperty {
 /**
  * constructor 
  */	
-	public function __construct(TOrmItem $item, TOrmReferencePropertyMeta $meta){
+	public function __construct(TMetaItem $item, TMetaReferencePropertyMeta $meta){
 		parent::__construct($item,$meta);
 	}
 /**
  * @see IProperty::Value()
- * @return TOrmItem
- * @see TOrmItem
+ * @return TMetaItem
+ * @see TMetaItem
  */	
 	public function ReferedInstance(){
 		$dbi = new TDBInstance($this->Value(),$this->attrDefinition->Type()->Class);
 		$dbi->Refresh();
-		return TOrmModel::GlobalWrap($dbi);	
+		return TMetaModel::GlobalWrap($dbi);	
 	}
 } 
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * Orm item class
+ * Meta item class
  */
-class TOrmItem extends TInstanceWrapper implements IItem {
+class TMetaItem extends TInstanceWrapper implements IItem {
 	protected static $propertyMetas = array();
 /**
  * @var array
  */	
 	protected $properties;
 /**
- * @var TOrmModel
+ * @var TMetaModel
  */	
 	protected $component;
 
 /**
- * gets item wrapped orm instance
+ * gets item wrapped Meta instance
  * @return IInstance
  */	
 	public function Instance(){
@@ -415,28 +415,28 @@ class TOrmItem extends TInstanceWrapper implements IItem {
 /**
  * constructor
  * @param IInstance $i instance to wrap
- * @param TOrmModel $com orm component to interact with
+ * @param TMetaModel $com Meta component to interact with
  */	
-	public function __construct(IInstance $i, TOrmModel $com){
+	public function __construct(IInstance $i, TMetaModel $com){
 		parent::__construct($i);
 		$this->properties = array();
 		$this->component = $com;
 		if (!key_exists($this->ClassName(),self::$propertyMetas)){
 			self::$propertyMetas[$this->ClassName()] = array();
-			$ca = TOrmModel::ClassAttributeDefinitions($this->INSTANCE->InstanceClass());
+			$ca = TMetaModel::ClassAttributeDefinitions($this->INSTANCE->InstanceClass());
 			foreach ($ca as $a){
 				if ($a->Type()->TypeCode == TAttributeType::REFERENCE)
-					self::$propertyMetas[$this->ClassName()][$a->Name()] = new TOrmReferencePropertyMeta($a);
+					self::$propertyMetas[$this->ClassName()][$a->Name()] = new TMetaReferencePropertyMeta($a);
 				else
-					self::$propertyMetas[$this->ClassName()][$a->Name()] = new TOrmAttributePropertyMeta($a);
+					self::$propertyMetas[$this->ClassName()][$a->Name()] = new TMetaAttributePropertyMeta($a);
 			}
 		}
 		
 		foreach (self::$propertyMetas[$this->ClassName()] as $pm){
-			if ($pm instanceof TOrmReferencePropertyMeta)
-				$this->properties[$pm->Name()] = new TOrmReferenceProperty($this,$pm);
+			if ($pm instanceof TMetaReferencePropertyMeta)
+				$this->properties[$pm->Name()] = new TMetaReferenceProperty($this,$pm);
 			else
-				$this->properties[$pm->Name()] = new TOrmAttributeProperty($this,$pm);
+				$this->properties[$pm->Name()] = new TMetaAttributeProperty($this,$pm);
 		}
 	}
 /**
@@ -468,7 +468,7 @@ class TOrmItem extends TInstanceWrapper implements IItem {
 	}
 /**
  * @see IItem::Property()
- * @return TOrmProperty
+ * @return TMetaProperty
  */	
 	public function Property($name){
 		if (key_exists($name,$this->properties))
@@ -489,26 +489,26 @@ class TOrmItem extends TInstanceWrapper implements IItem {
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * iterator adapter to wrap orm instances with orm items  
+ * iterator adapter to wrap meta instances with meta items  
  */
-class TOrmIteratorAdapter extends TIteratorAdapter {
+class TMetaIteratorAdapter extends TIteratorAdapter {
 /**
- * @var TOrmModel 
+ * @var TMetaModel 
  */	
 	protected $component;
 /**
  * constructor
  */	
-	public function __construct(IIterator $iterator, TOrmModel $com){
+	public function __construct(IIterator $iterator, TMetaModel $com){
 		parent::__construct($iterator);
 		$this->component = $com;
 	}
 /**
  * @see IIterator::Item()
- * @return TOrmItem
- * @see TOrmItem
+ * @return TMetaItem
+ * @see TMetaItem
  */	
 	public function Item(){
 		$result = null;
@@ -524,7 +524,7 @@ class TOrmIteratorAdapter extends TIteratorAdapter {
  * @property mixed $Value
  * @property int $Operation
  */
-class TOrmItemFilter {
+class TMetaItemFilter {
 	private $_attribute_definition_ = null;
 	private $_value_ = null;
 	private $_oper_ = TCondition::C_EQUAL;
@@ -548,7 +548,7 @@ class TOrmItemFilter {
  * @property IAttributeDefinition $Attribute
  * @property int $SortType
  */
-class TOrmItemSorting {
+class TMetaItemSorting {
 	private $_attribute_definition_ = null;
 	private $_sort_type_ = TSorting::SORT_ASC;
 	
@@ -569,13 +569,13 @@ class TOrmItemSorting {
 
 /**
  * @package Components
- * @subpackage Orm
+ * @subpackage Meta
  * @category System
- * basic component to interact with orm storage
+ * basic component to interact with Meta storage
  * @property string $MetaFile name of file to use for installation. File must be located in application folder. 
  */
-class TOrmModel extends TDataModel implements IPolicyProvider {
-	protected static $ormModels = array();
+class TMetaModel extends TDataModel implements IPolicyProvider {
+	protected static $metaModels = array();
 /**
  * @var DOMDocument
  */	
@@ -583,33 +583,33 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 
 /**
  * @var array
- * orm items cache
+ * items cache
  */	
 	protected $loadedItems = array();
 	
-	protected function securityItem(TOrmItem $item){return $item;}
+	protected function securityItem(TMetaItem $item){return $item;}
 	
-	protected function securityProperty(TOrmProperty $property){return $property;}
+	protected function securityProperty(TMetaProperty $property){return $property;}
 	
 	protected function securityClass(TClass $class){return $class;}
 		
 	public function GetPolicy(ISecurityObject $object, $policycode){
-		if ($object instanceof TOrmItem){
-			if (TOrmItemRole::IsRole($policycode))
-				return new TOrmItemRole($policycode,$this->securityItem($object));
+		if ($object instanceof TMetaItem){
+			if (TMetaItemRole::IsRole($policycode))
+				return new TMetaItemRole($policycode,$this->securityItem($object));
 			else	
-				return new TOrmItemPermission($policycode,$this->securityItem($object));				
-		} else if ($object instanceof TOrmProperty)
-			return new TOrmPropertyPermission($policycode,$this->securityProperty($object));
+				return new TMetaItemPermission($policycode,$this->securityItem($object));				
+		} else if ($object instanceof TMetaProperty)
+			return new TMetaPropertyPermission($policycode,$this->securityProperty($object));
 		else if ($object instanceof TClass)
-			return new TOrmClassPermission($policycode,$this->securityClass($object));
+			return new TMetaClassPermission($policycode,$this->securityClass($object));
 		return null;
 	}
 
 	public function SecurityWrap($object){
-		if ($object instanceof TOrmItem)
+		if ($object instanceof TMetaItem)
 			return $this->securityItem($object);
-		else if ($object instanceof TOrmProperty)
+		else if ($object instanceof TMetaProperty)
 			return $this->securityProperty($object);
 		else if ($object instanceof TClass)
 			return $this->securityClass($object);
@@ -621,12 +621,12 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
  * @param string $name
  */	
 	public function __construct($name){
-		self::$ormModels[$name] = $this;
+		self::$metaModels[$name] = $this;
 		parent::__construct($name);
 	} 
 	
 	private function _get_meta(){
-		$metapath = TApplication::$Application->PrivateDir."/orm-metas/";
+		$metapath = TApplication::$Application->PrivateDir."/metas/";
 		$filename = $this->MetaFile;
 		if (!file_exists($filename))
 			$filename = $metapath.$filename;
@@ -636,8 +636,8 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 			$this->_dom_ = new DOMDocument();
 			$this->_dom_->preserveWhiteSpace = false;
 			$this->_dom_->Load($filename);
-			if (!$this->_dom_->schemaValidate(self::$SystemPath."/schemas/ormmeta.xsd"))
-				throw new TOrmModelException(TOrmModelException::ERR_ORMMETA_INCORRECT);
+			if (!$this->_dom_->schemaValidate(self::$SystemPath."/schemas/meta.xsd"))
+				throw new TMetaModelException(TMetaModelException::ERR_META_INCORRECT);
 			return new DOMXPath($this->_dom_);
 		}	
 		return null;
@@ -670,10 +670,10 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	  					$classname = $mi->getAttribute("name");
 	  					$attrdefs = $meta->query("attribute",$mi);
 	  					foreach ($attrdefs as $ad){
-	  						if (strtoupper($ad->getAttribute("type")) != TOrmReferenceType::ORM_REFERENCE)
+	  						if (strtoupper($ad->getAttribute("type")) != TMetaReferenceType::META_REFERENCE)
 	  							$type = TDataType::getType(strtoupper($ad->getAttribute("type")),$ad->getAttribute("size"),$ad->getAttribute("decimals"),TConvertions::ConvertToBoolean($ad->getAttribute("autogenerate")));
 	  						else 
-	  							$type = new TOrmReferenceType($this->dbDriver->GetClass($ad->getAttribute("refers")),TConvertions::ConvertToBoolean($ad->getAttribute("integritydelete")));	
+	  							$type = new TMetaReferenceType($this->dbDriver->GetClass($ad->getAttribute("refers")),TConvertions::ConvertToBoolean($ad->getAttribute("integritydelete")));	
 							$this->dbDriver->Define(new TAttributeDefinition($ad->getAttribute("name"), $type,$c,TConvertions::ConvertToBoolean($ad->getAttribute("static")),TConvertions::ConvertToBoolean($ad->getAttribute("unique")),TConvertions::ConvertToBoolean($ad->getAttribute("index")),TConvertions::ConvertToBoolean($ad->getAttribute("nullable")),$ad->getAttribute("default"),TConvertions::ConvertToBoolean($ad->getAttribute("periodic"))));	  					
 	  					}
 	  				}break;
@@ -758,9 +758,9 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 		$properties = array();
 		foreach ($attributes as $a){
 			if ($a->Type()->TypeCode == TAttributeType::REFERENCE)
-				$properties[$a->Name()] = new TOrmReferencePropertyMeta($a);
+				$properties[$a->Name()] = new TMetaReferencePropertyMeta($a);
 			else
-				$properties[$a->Name()] = new TOrmAttributePropertyMeta($a);
+				$properties[$a->Name()] = new TMetaAttributePropertyMeta($a);
 		}
 		return $properties;
 	}	
@@ -771,8 +771,8 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	public function __set($nm,$val){
 		switch ($nm){
 			case "DataSource":{
-				$this->setIocMember($this->dbDriver, $val, 'IORMDriver');
-				if ($this->dbDriver instanceof IORMDBDriver){
+				$this->setIocMember($this->dbDriver, $val, 'IMetaDriver');
+				if ($this->dbDriver instanceof IMetaDBDriver){
 					if ($this->CheckInstall) {
 						if (!$this->IsInstalled())
 						throw new TInstallationException(TInstallationException::ERR_NOT_INSTALLED);
@@ -784,37 +784,37 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	}
 	
 /**
- * gets orm class object by class name
+ * gets class object by class name
  * @param string $className
  * @return IClass
- * @uses IORMDBDriver::getClass()
+ * @uses IMetaDBDriver::getClass()
  */	
 	public function GetClass($className){
 		return $this->dbDriver->getClass($className);
 	}
 	
 /**
- * gets orm class descendants by class name
+ * gets class descendants by class name
  * @param string $className
  * @return IIterator iterator of IClass
- * @uses IORMDBDriver::ClassDescendants()
+ * @uses IMetaDBDriver::ClassDescendants()
  */	
 	public function ClassDescendants($className){
 		return $this->dbDriver->ClassDescendants($className);
 	}
 
 /**
- * static function for wrapping orm instances with orm items globally.
- * it passes orm instance to WrapItem method of each existing orm component and returns first non null result.
+ * static function for wrapping instances with items globally.
+ * it passes instance to WrapItem method of each existing meta-component and returns first non null result.
  * Note that result depends on order of component loading. 
- * So you should load components that wrap items in any case (such as TOrmModel, because its WrapItem method always returns TOrmItem object) as late as possible.
- * @return TOrmItem
- * @uses TOrmModel::WrapItem()
+ * So you should load components that wrap items in any case (such as TMetaModel, because its WrapItem method always returns TMetaItem object) as late as possible.
+ * @return TMetaItem
+ * @uses TMetaModel::WrapItem()
  */	
 	public static function GlobalWrap(IInstance $item){
-		foreach (self::$ormModels as $name=>$ia)
+		foreach (self::$metaModels as $name=>$ia)
 			foreach ($ia as $com)
-				if ($com instanceof TOrmModel)
+				if ($com instanceof TMetaModel)
 				{
 					$wi = $com->WrapItem($item);
 					if (!is_null($wi)) return $wi;
@@ -823,29 +823,29 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	} 
 
 /**
- * function for wrapping orm instance with orm item.
- * @return TOrmItem
+ * function for wrapping instance with item.
+ * @return TMetaItem
  */	
 	public function WrapItem(IInstance $item){
-		return new TOrmItem($item,$this);
+		return new TMetaItem($item,$this);
 	}
 	
 /**
- * caches orm item in component cache, to prevent redundant storage queries
- * @param TOrmItem $item item to cache
+ * caches item in component cache, to prevent redundant storage queries
+ * @param TMetaItem $item item to cache
  * @param boolean $forcerewrite optional,defaults to false. When set to true rewrites already cached item with passes one.
- * @return TOrmItem returns cached item
+ * @return TMetaItem returns cached item
  */	
-	public function Cache(TOrmItem $item, $forcerewrite = false){
+	public function Cache(TMetaItem $item, $forcerewrite = false){
 		if ($forcerewrite || !isset($this->loadedItems[$item->ItemId()]))
 			$this->loadedItems[$item->ItemId()] = $item;
 		return $this->loadedItems[$item->ItemId()];
 	}
 /**
- * wraps instance and cache resulting orm item
+ * wraps instance and cache resulting item
  * @param IInstance $item instance to wrap and cache
  * @param boolean $forcerewrite optional,defaults to false. When set to true rewrites already cached item with new one.
- * @return TOrmItem returns cached item
+ * @return TMetaItem returns cached item
  */	
 	protected function WrapNCache(IInstance $item, $forcerewrite = false){
 		if ($i = $this->WrapItem($item))
@@ -856,15 +856,15 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 /**
  * deletes item from component cache
  */	
-	public function UnCache(TOrmItem $item){
+	public function UnCache(TMetaItem $item){
 		unset($this->loadedItems[$item->ItemId()]);
 	}
 /**
- * creates orm item
- * @param IClass $c orm class of new item
+ * creates item
+ * @param IClass $c class of new item
  * @param array $parameters associative array of attribute values, where keys are attribute names
- * @return TOrmItem
- * @uses TOrmModel::WrapNCache
+ * @return TMetaItem
+ * @uses TMetaModel::WrapNCache
  */	
 	public function CreateItem(IClass $c, array $parameters){
 		$dbi = new TDBInstance(null,$c);
@@ -874,9 +874,9 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 		return $dbi;
 	}
 /**
- * gets orm item by its id or code
+ * gets item by its id or code
  * @param mixed|IIdentity $identity item id
- * @return TOrmItem 
+ * @return TMetaItem 
  */	
 	public function GetItem($identity){
 		$id = $identity;
@@ -892,15 +892,15 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 		return $this->loadedItems[$id];
 	}
 /**
- * edits orm item
- * @param mixed $id orm item id
+ * edits item
+ * @param mixed $id item id
  * @param array $values associative array of new attribute values, keys are treated as attribute names
- * @return TOrmItem returns edited orm item 
+ * @return TMetaItem returns edited item 
  */	
 	public function EditItem(IIdentity $item,array $values){
-		if (!($item instanceof TOrmItem))
+		if (!($item instanceof TMetaItem))
 			$item = $this->GetItem($item);
-		if ($item instanceof TOrmItem){	
+		if ($item instanceof TMetaItem){	
 			foreach ($values as $key=>$value)
 				$item->__set($key,$value);
 			return $this->WrapNCache($item->Instance()->Save(),true);
@@ -908,46 +908,46 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 		return false;
 	}
 /**
- * deleted orm item
- * @param mixed $id orm item id
+ * deleted item
+ * @param mixed $id item id
  * @return boolean 
  */	
 	public function DeleteItem(IIdentity $item){
-		if (!($item instanceof TOrmItem))
+		if (!($item instanceof TMetaItem))
 			$item = $this->GetItem($item);
-		if ($item instanceof TOrmItem)
+		if ($item instanceof TMetaItem)
 			return $item->Delete();
 		return false;
 	}
 
 /**
  * creates datasource according to specified options
- * @param IClass $class orm class
- * @param TOrmItemFilter[] $filter filtering conditions 
- * @param TOrmItemSorting[] $sorting array of sorting options
- * @return TOrmClassDataSource
+ * @param IClass $class class
+ * @param TMetaItemFilter[] $filter filtering conditions 
+ * @param TMetaItemSorting[] $sorting array of sorting options
+ * @return TMetaClassDataSource
  */	
 	protected function makeDataSource(IClass $class, array $filters, array $sorting){
-		$result = new TOrmClassDataSource($class, "c".$class->Id());
+		$result = new TMetaClassDataSource($class, "c".$class->Id());
 		$result->Fields = new TAllField($result);
 		foreach ($filters as $f){
-			$result->Filter = new TCondition(TCondition::C_EQUAL, array(new TOrmClassDataSourceAttribute($f->Attribute,null,$result),$f->Value));
+			$result->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute($f->Attribute,null,$result),$f->Value));
 		}
 		foreach ($sorting as $s)
-			$result->Sorting = new TSorting(new TOrmClassDataSourceAttribute($s->Attribute,null,$result),$s->SortType);
+			$result->Sorting = new TSorting(new TMetaClassDataSourceAttribute($s->Attribute,null,$result),$s->SortType);
 		return $result;		 
 	}
 	
 /**
- * gets orm class items
- * @param IClass $class orm class
- * @param TOrmItemFilter[] $filter array of TCondition filtering conditions 
- * @param TOrmItemSorting[] $sorting array of TSorting results sorting
- * @return TOrmIteratorAdapter iterator of TOrmItem
- * @uses IORMDBDriver::FetchInstances()
+ * gets class items
+ * @param IClass $class class
+ * @param TMetaItemFilter[] $filter array of TCondition filtering conditions 
+ * @param TMetaItemSorting[] $sorting array of TSorting results sorting
+ * @return TMetaIteratorAdapter iterator of TMetaItem
+ * @uses IMetaDBDriver::FetchInstances()
  */	
 	public function GetItems(IClass $class, array $filters, array $sorting){
-		return new TOrmIteratorAdapter($this->dbDriver->FetchInstances($this->makeDataSource($class, $filters, $sorting)),$this);
+		return new TMetaIteratorAdapter($this->dbDriver->FetchInstances($this->makeDataSource($class, $filters, $sorting)),$this);
 	}
 
 /**
@@ -972,9 +972,9 @@ class TOrmModel extends TDataModel implements IPolicyProvider {
 	}
 	
 	public function FilePropertyContent(IIdentity $item,$name){
-		if (!($item instanceof TOrmItem))
+		if (!($item instanceof TMetaItem))
 			$item = $this->GetItem($item);
-		if ($item instanceof TOrmItem){
+		if ($item instanceof TMetaItem){
 			$p = $item->Property($name);
 			$dom = new DOMDocument();
 			$dom->loadXML($p->Value());
@@ -1021,16 +1021,16 @@ interface ICollectionsManager {
  * Gets collection items
  * @param string $collection
  * @param IClass $class
- * @param TOrmItemFilter[] $filter
- * @param TOrmItemSorting[] $sorting
- * @return TOrmIteratorAdapter
+ * @param TMetaItemFilter[] $filter
+ * @param TMetaItemSorting[] $sorting
+ * @return TMetaIteratorAdapter
  */	
 	public function CollectionItems($collection, IClass $class, array $filter = array(), array $sorting = array());
 }
 
 interface IVocabulariesManager {
 /**
- * Adds an association of orm item to specified key to vocabulary
+ * Adds an association of item to specified key to vocabulary
  * @param string $vocabulary
  * @param mixed $key
  * @param IIdentity $item
@@ -1038,7 +1038,7 @@ interface IVocabulariesManager {
  */	
 	public function AddToVocabulary($vocabulary, $key, IIdentity $item);
 /** 
- * Removes orm item association from vocabulary
+ * Removes item association from vocabulary
  * @param string $vocabulary
  * @param mixed $key
  * @param IIdentity $item
@@ -1046,13 +1046,13 @@ interface IVocabulariesManager {
  */	
 	public function DeleteFromVocabulary($vocabulary, $key, IIdentity $item);
 /** 
- * Fetches orm items associated with a specified key from a vocabulary
+ * Fetches items associated with a specified key from a vocabulary
  * @param string $vocabulary
  * @param IClass $class
  * @param mixed $key
- * @param TOrmItemFilter[] $filter
- * @param TOrmItemSorting[] $sorting
- * @return TOrmIteratorAdapter
+ * @param TMetaItemFilter[] $filter
+ * @param TMetaItemSorting[] $sorting
+ * @return TMetaIteratorAdapter
  */	
 	public function VocabularyItemsByKey($vocabulary, IClass $class, $key, array $filter = array(), array $sorting = array());
 }
@@ -1082,10 +1082,10 @@ interface IAssociationsManager {
  * @param string $association
  * @param IClass $class
  * @param IIdentity $item
- * @param TOrmItemFilter[] $filter
- * @param TOrmItemSorting[] $sorting
+ * @param TMetaItemFilter[] $filter
+ * @param TMetaItemSorting[] $sorting
  * @param int $direction relations direction set by FETCH_OBJECTS or FETCH_SUBJECTS constant
- * @return TOrmIteratorAdapter
+ * @return TMetaIteratorAdapter
  */	
 	public function Relatives($association, IClass $class, IIdentity $item, array $filter = array(), array $sorting = array(), $direction = IAssociationsManager::FETCH_OBJECTS);
 }
@@ -1105,16 +1105,16 @@ interface IStructuresManager {
  * @param IClass $class
  * @param IIdentity $parent
  * @param boolean $only_direct
- * @param TOrmItemFilter[] $filter
- * @param TOrmItemSorting[] $sorting
- * @return TOrmIteratorAdapter
+ * @param TMetaItemFilter[] $filter
+ * @param TMetaItemSorting[] $sorting
+ * @return TMetaIteratorAdapter
  */
 	public function FetchChildren($structure, IClass $class, IIdentity $parent = null, $only_direct = false, array $filter = array(), array $sorting = array());
 /** 
  * Gets item direct container
  * @param string $structure
  * @param IIdentity $item
- * @return TOrmItem
+ * @return TMetaItem
  */	
 	public function ItemContainer($structure, IIdentity $item);
 /**
@@ -1122,7 +1122,7 @@ interface IStructuresManager {
  * Gets item containers list
  * @param string $structure
  * @param IIdentity $item
- * @return TOrmIteratorAdapter
+ * @return TMetaIteratorAdapter
  */	
 	public function ItemContainers($structure, IIdentity $item);
 }

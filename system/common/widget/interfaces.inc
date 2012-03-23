@@ -260,7 +260,7 @@ class TNavigationMenuItem extends TMenuItem implements INavigable {
  * @package View
  * @subpackage Widgets
  * @category System 
- * converts orm items to list items
+ * converts items to list items
  */
 class TListIteratorAdapter extends TIteratorAdapter {
 /**

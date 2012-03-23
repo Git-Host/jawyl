@@ -38,7 +38,7 @@
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Iterator
  * @category System
  * abstract iterator class
  * @property-read mixed $Item current item
@@ -70,7 +70,7 @@
 	
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Iterator
  * @category System
  * iterator through an array
  */	
@@ -151,7 +151,7 @@
 	
 	/**
  * @package Common
- * @subpackage Orm
+ * @subpackage Iterator
  * @category System 
  * abstract iterator wrapper. Can be used to implement custom iterators that wrap other iterators.
  * This can be done by implementing IIterator::Item() method.

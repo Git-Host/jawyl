@@ -1,9 +1,9 @@
 <?php
 /**
  * @package Common
- * @subpackage Orm
+ * @subpackage Data
  * @category System
- * abstract base class for orm attribute types
+ * abstract base class for data types
  */
 	abstract class TDataType {
 		const STRING = "STRING";
