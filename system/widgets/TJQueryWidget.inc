@@ -9,8 +9,6 @@
  * @version 0.0.1 alpha  
 */
 
-TApplication::import("common::widget::interfaces");
-
 TApplication::import("widgets::TSkinnableWidget");
 
 /**

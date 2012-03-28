@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -11,22 +11,22 @@
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
-TApplication::import("common::controller::TSecuredController");
+TApplication::import("common::presenter::TSecuredPresenter");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * abstract class for holding and managing lists.
- * @property IItemsList $MasterList controller master list. You can set it assigning list name or list itself. Selecting item in masterlist forces controller to reload. 
+ * @property IItemsList $MasterList presenter master list. You can set it assigning list name or list itself. Selecting item in masterlist forces presenter to reload. 
  * 
- * @see TSecuredController
+ * @see TSecuredPresenter
  * @see IItemsList
  */
-abstract class TItemsList extends TSecuredController implements IItemsList, IItemAccessor {
+abstract class TItemsList extends TSecuredPresenter implements IItemsList, IItemAccessor {
 /**
  * @var mixed
  * holds current item id
@@ -34,7 +34,7 @@ abstract class TItemsList extends TSecuredController implements IItemsList, IIte
 	protected $currentItem = null;
 /**
  * @var IItemsList
- * holds controller master list object.
+ * holds presenter master list object.
  */	
 	protected $_ioc_master_list_;
 
@@ -56,7 +56,7 @@ abstract class TItemsList extends TSecuredController implements IItemsList, IIte
 	}
 	
 /**
- * constructor. Sets current item if saved in controller state.
+ * constructor. Sets current item if saved in presenter state.
  */	
 	public function __construct($name, TResponse $response, array $settings = array()){
 		parent::__construct($name,$response, $settings);

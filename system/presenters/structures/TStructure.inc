@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,10 +12,10 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaCollection");
+TApplication::import("presenters::TMetaCollection");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  */
@@ -27,7 +27,7 @@ class TLevelIterator extends TArrayIterator {
 }
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * flat structure items

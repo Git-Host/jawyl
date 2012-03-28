@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,10 +12,10 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaList");
+TApplication::import("presenters::TMetaList");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * Meta item associated items
@@ -31,14 +31,14 @@ class TMetaReferedList extends TMetaList implements IItemsCollection {
  */	
 	protected function actionsList(){
 		$result = parent::actionsList();
-		$addaction = new TControllerAction($this,TMetaReferedList::AN_ADD,"AddItem","Add");
+		$addaction = new TPresenterAction($this,TMetaReferedList::AN_ADD,"AddItem","Add");
 		$result[$addaction->LocalName()] = $addaction;
-		$removeaction = new TControllerAction($this,TMetaReferedList::AN_REMOVE,"RemoveCurrentItem","Remove");
+		$removeaction = new TPresenterAction($this,TMetaReferedList::AN_REMOVE,"RemoveCurrentItem","Remove");
 		$result[$removeaction->LocalName()] = $removeaction;
 		return $result;
 	}
 	
-	protected function setupAction(TControllerAction $action){
+	protected function setupAction(TPresenterAction $action){
 		switch ($action->LocalName()){
 			case TMetaReferedList::AN_ADD:{
 				$action->ClearParameters();

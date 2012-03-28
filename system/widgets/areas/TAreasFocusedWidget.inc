@@ -12,10 +12,6 @@
 /**
  * @ignore
  */
-TApplication::import("common::widget::interfaces");
-/**
- * @ignore
- */
 TApplication::import("widgets::areas::TAreasWidget");
 
 

@@ -12,18 +12,18 @@
 /**
  * @ignore 
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 /**
  * @ignore 
  */
-TApplication::import("common::mvcEvents");
+TApplication::import("common::mvpEvents");
 
 /**
  * @package View
  * @subpackage Widgets
  * @category System
- * abstract class for implementing widgets interacting with controller, which is treated as datasource.
- * @property TController $Source a controller to interact with. Can be specified by assigning controller name or controller itself. 
+ * abstract class for implementing widgets interacting with presenter, which is treated as datasource.
+ * @property TPresenter $Source a presenter to interact with. Can be specified by assigning presenter name or presenter itself. 
  */
 abstract class TSourcedWidget extends TWidget  {
 /**
@@ -32,7 +32,7 @@ abstract class TSourcedWidget extends TWidget  {
 	private $_source_ = array();
 
 	protected function checkSource($src){
-		return $src instanceof TMVCObject;
+		return $src instanceof TMVPObject;
 	}
 	
 	protected function checkEvent(TEvent $event){

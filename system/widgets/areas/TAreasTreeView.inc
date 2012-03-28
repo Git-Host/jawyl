@@ -84,14 +84,14 @@ class TAreasTreeView extends TAreasList implements ITree {
 		return new TListIteratorAdapter($roots,$this);
 	}
 	
-	private function _handle_item_add(TControllerEvent $event){
+	private function _handle_item_add(TPresenterEvent $event){
 			$ci = $this->WrapItem($this->Source->Item($event->NodeId));
 			if ($event->ParentId)
 				$parent = $this->GetArea($this->WrapItem($this->Source->Item($event->ParentId)),"Item");
 			else	
 				$parent = $this->GetArea($this,"Container");
 				
-			if ($event->NAME == TControllerEvent::MOVE_EVENT_NAME)
+			if ($event->NAME == TPresenterEvent::MOVE_EVENT_NAME)
 				$this->moveArea($this->GetArea($ci,"Item",$parent));
 			else	
 				$this->addArea($this->GetArea($ci,"Item",$parent));

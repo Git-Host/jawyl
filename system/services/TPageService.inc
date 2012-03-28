@@ -14,8 +14,8 @@
  */
 TApplication::import("core::TService");
 TApplication::import("common::ajax");
-TApplication::import("common::service::interfaces");
-TApplication::import("common::mvc");
+TApplication::import("common::service::navigation");
+TApplication::import("common::mvp");
 
 
 class TPagePolicy extends TPolicy {
@@ -359,7 +359,7 @@ abstract class TPageService extends TService {
 			$this->page = $this->getAccessDeniedPage();
 		if (!($this->page instanceof TPage))
 			return false;	
-		$result = $this->page->Handle($this->Request);
+		$result = $this->page->Handle($this->Request);	
 		return $result;
 	}
 	

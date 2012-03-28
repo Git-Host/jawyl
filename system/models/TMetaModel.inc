@@ -11,92 +11,8 @@
 
 
 TApplication::import("common::metastorage");
-TApplication::import("common::item"); 
+TApplication::import("common::model::structures");
 TApplication::import("models::TDataModel");
-
-class TMetaClassPermission extends TPolicy {
-	const META_INSTANCIATE = "meta.instant";
-	const META_INSTLIST = "meta.instlist";
-	
-	protected function checkType($type){
-		return ($this->sobj instanceof TClass) && (in_array($type, array(self::META_INSTANCIATE,self::META_INSTLIST)));
-	}
-	
-	public function Descendants(){
-		switch ($this->type){
-			case self::META_INSTANCIATE:
-			case self::META_INSTLIST:return array(new TServiceRole(TServiceRole::USER));break;
-		}
-		return array();
-	}	
-}
-
-class TMetaItemRole extends TPolicy {
-	const META_OWNER = "meta.owner";
-	
-	protected function checkType($type){
-		return ($this->sobj instanceof TMetaItem) && ($type == self::META_OWNER);
-	}
-	
-	public function Descendants(){
-		switch ($this->type){
-			case self::META_OWNER:return array(new TServiceRole(TServiceRole::ADMIN));break;
-		}
-		return array();
-	}
-/**
- * checks whether specified policy is role  
- * @param string $type
- * @return boolean
- */
-	public static function IsRole($policy){
-		return $policy == self::META_OWNER;
-	}
-}
-
-class TMetaItemPermission extends TPolicy {
-	const META_DELETE = "meta.delete";
-	const META_RELATE = "meta.relate";
-	const META_LIST = "meta.list";
-	const META_VIEW = "meta.view";
-	const META_MODIFY = "meta.modify";
-	const META_ACL = "meta.acl";
-
-	protected function checkType($type){
-		return ($this->sobj instanceof TMetaItem) && (in_array($type, array(self::META_ACL,self::META_DELETE,self::META_LIST,self::META_MODIFY,self::META_RELATE,self::META_VIEW)));
-	}
-	
-	public function Descendants(){
-		switch ($this->type){
-			case self::META_ACL:
-			case self::META_DELETE:
-			case self::META_MODIFY:return array(new TServiceRole(TServiceRole::ADMIN),new TMetaItemRole(TMetaItemRole::META_OWNER,$this->sobj));break;
-			case self::META_RELATE:return array(new TServiceRole(TServiceRole::USER),new TMetaItemRole(TMetaItemRole::META_OWNER,$this->sobj));break;
-			case self::META_VIEW:
-			case self::META_LIST:return array(new TServiceRole(TServiceRole::ANONYMOUS),new TMetaItemRole(TMetaItemRole::META_OWNER,$this->sobj));break;
-		}
-		return array();
-	}	
-}
-
-class TMetaPropertyPermission extends TPolicy {
-	const META_READ = "meta.read";
-	const META_WRITE = "meta.write";
-	
-	protected function checkType($type){
-		return ($this->sobj instanceof TMetaProperty) && (in_array($type, array(self::META_READ,self::META_WRITE)));
-	}
-	
-	public function Descendants(){
-		$result = array(new TServiceRole(TServiceRole::USER));
-		$item = $this->sobj->Item();
-		switch ($this->type){
-			case self::META_READ:$result[] = new TMetaItemPermission(TMetaItemPermission::META_VIEW,$item);break;
-			case self::META_WRITE:$result[] = new TMetaItemPermission(TMetaItemPermission::META_MODIFY,$item);break;
-		}
-		return $result;
-	}
-}
 
 /**
  * @package Components
@@ -520,61 +436,13 @@ class TMetaIteratorAdapter extends TIteratorAdapter {
 }
 
 /**
- * @property IAttributeDefinition $Attribute
- * @property mixed $Value
- * @property int $Operation
- */
-class TMetaItemFilter {
-	private $_attribute_definition_ = null;
-	private $_value_ = null;
-	private $_oper_ = TCondition::C_EQUAL;
-	
-	public function __construct(IAttributeDefinition $attribute, $value, $oper = TCondition::C_EQUAL){
-		$this->_attribute_definition_ = $attribute;
-		$this->_value_ = $value;
-		$this->_oper_ = $oper;
-	}
-	
-	public function __get($nm){
-		switch ($nm){
-			case "Attribute":return $this->_attribute_definition_;break;
-			case "Value":return $this->_value_;break; 
-			case "Operation":return $this->_oper_;break;
-		}
-	}
-}
-
-/**
- * @property IAttributeDefinition $Attribute
- * @property int $SortType
- */
-class TMetaItemSorting {
-	private $_attribute_definition_ = null;
-	private $_sort_type_ = TSorting::SORT_ASC;
-	
-	public function __construct(IAttributeDefinition $attribute, $sorttype = TSorting::SORT_ASC){
-		$this->_attribute_definition_ = $attribute;
-		if (($sorttype == TSorting::SORT_ASC) || ($sorttype == TSorting::SORT_DESC))
-			$this->_sort_type_ = $sorttype;
-		else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-	}
-	
-	public function __get($nm){
-		switch ($nm){
-			case "Attribute":return $this->_attribute_definition_;break;
-			case "SortType":return $this->_sort_type_;break; 
-		}		
-	}
-}
-
-/**
  * @package Components
  * @subpackage Meta
  * @category System
  * basic component to interact with Meta storage
  * @property string $MetaFile name of file to use for installation. File must be located in application folder. 
  */
-class TMetaModel extends TDataModel implements IPolicyProvider {
+class TMetaModel extends TDataModel implements IItemsManager, IPolicyProvider {
 	protected static $metaModels = array();
 /**
  * @var DOMDocument
@@ -595,14 +463,14 @@ class TMetaModel extends TDataModel implements IPolicyProvider {
 		
 	public function GetPolicy(ISecurityObject $object, $policycode){
 		if ($object instanceof TMetaItem){
-			if (TMetaItemRole::IsRole($policycode))
-				return new TMetaItemRole($policycode,$this->securityItem($object));
+			if (TItemRole::IsRole($policycode))
+				return new TItemRole($policycode,$this->securityItem($object));
 			else	
-				return new TMetaItemPermission($policycode,$this->securityItem($object));				
+				return new TItemPermission($policycode,$this->securityItem($object));				
 		} else if ($object instanceof TMetaProperty)
-			return new TMetaPropertyPermission($policycode,$this->securityProperty($object));
+			return new TPropertyPermission($policycode,$this->securityProperty($object));
 		else if ($object instanceof TClass)
-			return new TMetaClassPermission($policycode,$this->securityClass($object));
+			return new TClassPermission($policycode,$this->securityClass($object));
 		return null;
 	}
 
@@ -931,7 +799,7 @@ class TMetaModel extends TDataModel implements IPolicyProvider {
 		$result = new TMetaClassDataSource($class, "c".$class->Id());
 		$result->Fields = new TAllField($result);
 		foreach ($filters as $f){
-			$result->Filter = new TCondition(TCondition::C_EQUAL, array(new TMetaClassDataSourceAttribute($f->Attribute,null,$result),$f->Value));
+			$result->Filter = new TCondition(TConditionType::C_EQUAL, array(new TMetaClassDataSourceAttribute($f->Attribute,null,$result),$f->Value));
 		}
 		foreach ($sorting as $s)
 			$result->Sorting = new TSorting(new TMetaClassDataSourceAttribute($s->Attribute,null,$result),$s->SortType);
@@ -941,8 +809,8 @@ class TMetaModel extends TDataModel implements IPolicyProvider {
 /**
  * gets class items
  * @param IClass $class class
- * @param TMetaItemFilter[] $filter array of TCondition filtering conditions 
- * @param TMetaItemSorting[] $sorting array of TSorting results sorting
+ * @param TItemFilter[] $filter array of TCondition filtering conditions 
+ * @param TItemSorting[] $sorting array of TSorting results sorting
  * @return TMetaIteratorAdapter iterator of TMetaItem
  * @uses IMetaDBDriver::FetchInstances()
  */	
@@ -976,154 +844,10 @@ class TMetaModel extends TDataModel implements IPolicyProvider {
 			$item = $this->GetItem($item);
 		if ($item instanceof TMetaItem){
 			$p = $item->Property($name);
-			$dom = new DOMDocument();
-			$dom->loadXML($p->Value());
-			$xpath = new DOMXPath($dom);
-			$fn = $xpath->query("/file/header/name");
-			$mime = "";
-			if ($fn->length > 0){
-				if ($fn->item(0)->nodeValue != "") 
-					$mime = mime_content_type($fn->item(0)->nodeValue);
-			}
-			if ($mime == ""){
-				$mt = $xpath->query("/file/header/mime");
-				if ($mt->length > 0) 
-					$mime = $mt->item(0)->nodeValue;
-			}
-			header("Content-Type:".$mime);
-			$content = $xpath->query("/file/content");
-			if ($content->length > 0) {
-				echo $content->item(0)->nodeValue;
-			}
+			if ($p instanceof IProperty)
+				return new TDBStoredFile($p->Value());
 		}
-		die;
+		return null;
 	}	
-}
-
-interface ICollectionsManager {
-/**
- * 
- * Adds item to collection
- * @param string $collection
- * @param IIdentity $item
- * @return boolean
- */	
-	public function AddToCollection($collection, IIdentity $item);
-/**
- * Deletes item from collection
- * @param string $collection
- * @param IIdentity $item
- * @return boolean
- */	
-	public function DeleteFromCollection($collection, IIdentity $item);
-/**
- * 
- * Gets collection items
- * @param string $collection
- * @param IClass $class
- * @param TMetaItemFilter[] $filter
- * @param TMetaItemSorting[] $sorting
- * @return TMetaIteratorAdapter
- */	
-	public function CollectionItems($collection, IClass $class, array $filter = array(), array $sorting = array());
-}
-
-interface IVocabulariesManager {
-/**
- * Adds an association of item to specified key to vocabulary
- * @param string $vocabulary
- * @param mixed $key
- * @param IIdentity $item
- * @return boolean
- */	
-	public function AddToVocabulary($vocabulary, $key, IIdentity $item);
-/** 
- * Removes item association from vocabulary
- * @param string $vocabulary
- * @param mixed $key
- * @param IIdentity $item
- * @return boolean
- */	
-	public function DeleteFromVocabulary($vocabulary, $key, IIdentity $item);
-/** 
- * Fetches items associated with a specified key from a vocabulary
- * @param string $vocabulary
- * @param IClass $class
- * @param mixed $key
- * @param TMetaItemFilter[] $filter
- * @param TMetaItemSorting[] $sorting
- * @return TMetaIteratorAdapter
- */	
-	public function VocabularyItemsByKey($vocabulary, IClass $class, $key, array $filter = array(), array $sorting = array());
-}
-
-interface IAssociationsManager {
-	const FETCH_OBJECTS = 0;
-	const FETCH_SUBJECTS = 1;
-	
-/** 
- * Association one item to another
- * @param string $association
- * @param IIdentity $subject
- * @param IIdentity $object
- * @return boolean
- */	
-	public function Associate($association, IIdentity $subject, IIdentity $object);
-/** 
- * Deassociates one item from another
- * @param string $association
- * @param IIdentity $subject
- * @param IIdentity $object
- * @return boolean
- */	
-	public function DeassociateItems($association, IIdentity $subject, IIdentity $object);
-/** 
- * Fetches item relatives
- * @param string $association
- * @param IClass $class
- * @param IIdentity $item
- * @param TMetaItemFilter[] $filter
- * @param TMetaItemSorting[] $sorting
- * @param int $direction relations direction set by FETCH_OBJECTS or FETCH_SUBJECTS constant
- * @return TMetaIteratorAdapter
- */	
-	public function Relatives($association, IClass $class, IIdentity $item, array $filter = array(), array $sorting = array(), $direction = IAssociationsManager::FETCH_OBJECTS);
-}
-
-interface IStructuresManager {
-/** 
- * Moves item within or out of structure
- * @param string $structure
- * @param IIdentity $item
- * @param IIdentity $parent
- * @return boolean
- */	
-	public function MoveItem($structure, IIdentity $item, IIdentity $parent = null);
-/** 
- * Fetches item children
- * @param string $structure
- * @param IClass $class
- * @param IIdentity $parent
- * @param boolean $only_direct
- * @param TMetaItemFilter[] $filter
- * @param TMetaItemSorting[] $sorting
- * @return TMetaIteratorAdapter
- */
-	public function FetchChildren($structure, IClass $class, IIdentity $parent = null, $only_direct = false, array $filter = array(), array $sorting = array());
-/** 
- * Gets item direct container
- * @param string $structure
- * @param IIdentity $item
- * @return TMetaItem
- */	
-	public function ItemContainer($structure, IIdentity $item);
-/**
- * 
- * Gets item containers list
- * @param string $structure
- * @param IIdentity $item
- * @return TMetaIteratorAdapter
- */	
-	public function ItemContainers($structure, IIdentity $item);
 }
 ?>

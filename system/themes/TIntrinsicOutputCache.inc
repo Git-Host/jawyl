@@ -1,5 +1,5 @@
 <?php
-TApplication::import("common::theme::interfaces");
+TApplication::import("common::theme::engine");
 
 class TIntrinsicOutputCache extends TConfigurable implements IOutputCache {
 	private $_cache_dir_;

@@ -33,6 +33,11 @@ interface IConfigurable {
  	protected $container;
  	
  	private static $_instances_ = array();
+ 	
+ 	private static $_ioc_types_ = array();
+ 	
+ 	public static $CompileIocTypes = false;
+ 	
 /**
  * class constructor. You need to pass it a unique name of configurable object.
  * It is declared as protected to make TApplication constructor protected. 
@@ -44,6 +49,49 @@ interface IConfigurable {
  		$this->name = $name;
  		$this->container = $container;
  		self::$_instances_[$name] = $this;
+ 		if (!isset(self::$_ioc_types_[get_class($this)])){
+			$filename = TApplication::$Application->IocTypesCompileDir.'/'.get_class($this).'.ioc.php'; 			
+ 			if (self::$CompileIocTypes)
+ 				self::$CompileIocTypes(get_class($this),$filename,true);
+ 			if (file_exists($filename)){
+ 				require_once($filename);
+ 				self::$_ioc_types_[get_class($this)] = $ioctypes;
+ 			}
+ 		}
+ 	}
+ 	
+ 	public static function CompileIocTypes($classname,$filename,$checkmtime = true){
+ 		$cft = file_exists($filename)?filemtime($filename):0;
+ 		$needcompile = (($cft == 0) || (!$checkmtime))?true:false;
+ 					
+ 		$classes = array();				
+ 		$rc = new ReflectionClass($classname);
+ 		while ($rc instanceof ReflectionClass){
+ 			$classes[] = $rc;
+ 			$needcompile = (filemtime($rc->getFileName()) > $cft)?true:$needcompile;
+ 			$rc = $rc->getParentClass();
+ 		}
+ 		if ($needcompile){
+ 			$needsave = false;
+ 			$types = array();
+ 			foreach ($classes as $rc){
+ 				$prop = $rc->getProperties(ReflectionProperty::IS_PROTECTED & (~ReflectionProperty::IS_STATIC));
+ 				foreach ($prop as $p){
+					$iocname = $p->getName();
+ 					if (preg_match('/^_ioc_[a-z_]*[a-z]_$/', $iocname)){
+						if ($dc = $p->getDocComment()){
+							preg_match('/@var\s+(\w*)(\[\s*\])?/',$dc,$matches);
+							if (isset($matches[1])){
+								$needsave = true;
+								$types[] = '"'.$iocname.'"=>array("type"=>"'.$matches[1].'","is_array"=>'.(isset($matches[2])?'true':'false').')';
+							}
+						}	
+ 					}
+ 				}
+ 			}
+ 			if ($needsave)	
+				file_put_contents($filename, '<?php $ioctypes = array('.join(',', $types).'); ?>');
+		} 		
  	}
  	
  	public function Name(){
@@ -179,14 +227,11 @@ interface IConfigurable {
 		$iocname = '_ioc'.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
  		if ($p = $this->_check_property($iocname)){
 			$type = 'IConfigurable';
-			if ($dc = $p->getDocComment()){
-				preg_match('/@var\s+(\w*)(\[\s*\])?/',$dc,$matches);
-				if (isset($matches[1])){
-					$type = $matches[1];
-					if (isset($matches[2]))
-						$is_ioc_array = true;
-				}	
-			}
+			if (isset(self::$_ioc_types_[get_class($this)]))
+				if (isset(self::$_ioc_types_[get_class($this)][$iocname])){
+					$type = self::$_ioc_types_[get_class($this)][$iocname]['type'];
+					$is_ioc_array = self::$_ioc_types_[get_class($this)][$iocname]['is_array'];
+				}
 			$nm = $iocname;
 			return true;
 		}

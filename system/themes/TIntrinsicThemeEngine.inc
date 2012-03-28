@@ -16,7 +16,7 @@ TApplication::import("core::TConfigurable");
 /**
  * @ignore
  */
-TApplication::import("common::theme::interfaces");
+TApplication::import("common::theme::engine");
 /**
  * @ignore
  */

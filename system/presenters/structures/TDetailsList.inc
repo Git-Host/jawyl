@@ -1,7 +1,7 @@
 <?php
 /**
- * @package Controllers
- * @subpackage Meta
+ * @package Presenters
+ * @subpackage Structures
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaReferedList");
+TApplication::import("presenters::TReferedList");
 
 /**
- * @package Controllers
- * @subpackage Meta
+ * @package Presenters
+ * @subpackage Structures
  * @category System
- * Meta item associated items
+ *  item associated items
  */
-class TMetaDetailsList extends TMetaReferedList {
+class TDetailsList extends TReferedList {
 /**
  * @var string name of attribute to use for detail join to master
  */	
@@ -32,15 +32,15 @@ class TMetaDetailsList extends TMetaReferedList {
  */	
 	public function ActionAvailable(IAction $action){
 		switch ($action->LocalName()){
-			case TMetaReferedList::AN_REMOVE:return ($this->ReferenceAttribute) && (!is_null($this->currentItem)) && (!is_null($this->MasterList->CurrentItem()));break;
-			case TMetaReferedList::AN_ADD:return !is_null($this->MasterList->CurrentItem());break;
-			case TMetaList::AN_CREATE:return parent::ActionAvailable($action) && (!is_null($this->MasterList->CurrentItem()));break;
+			case TReferedList::AN_REMOVE:return ($this->ReferenceAttribute) && (!is_null($this->currentItem)) && (!is_null($this->MasterList->CurrentItem()));break;
+			case TReferedList::AN_ADD:return !is_null($this->MasterList->CurrentItem());break;
+			case TList::AN_CREATE:return parent::ActionAvailable($action) && (!is_null($this->MasterList->CurrentItem()));break;
 			default:return parent::ActionAvailable($action);
 		}
 	}
 	
 /**
- * Adds item to associations list (associates an item with controller master list selected item)
+ * Adds item to associations list (associates an item with presenter master list selected item)
  * @param mixed $id
  * @return boolean
  */	
@@ -56,7 +56,7 @@ class TMetaDetailsList extends TMetaReferedList {
 		}
 		//$item = $this->DataSource->GetItem($id);
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
+		if (!$this->CheckPermission($item,TItemPermission::RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -69,13 +69,13 @@ class TMetaDetailsList extends TMetaReferedList {
 	}
 
 /**
- * Removes current controller item from associations (deassociates current item from master list selected item)
+ * Removes current presenter item from associations (deassociates current item from master list selected item)
  * @return boolean 
  */	
 	public function RemoveCurrentItem(){
 		$item = $this->CurrentItem();
 		$id = $this->CurrentItemId();
-		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
+		if (!$this->CheckPermission($item,TItemPermission::RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -105,7 +105,7 @@ class TMetaDetailsList extends TMetaReferedList {
 		return $result;
 	}
 /**
- * @see TMetaList::getItems()
+ * @see TList::getItems()
  * @param int $page
  * @param int $pagesize
  * @return IIterator
@@ -118,8 +118,8 @@ class TMetaDetailsList extends TMetaReferedList {
 	}
 /**
  * creates new item and associates it with master list selected item
- * @see TMetaList::ItemCreation()
- * @return TMetaItem
+ * @see TList::ItemCreation()
+ * @return TItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		if ($this->ReferenceAttribute){

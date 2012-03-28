@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,10 +12,10 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaReferedList");
+TApplication::import("presenters::TMetaReferedList");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * 
@@ -46,7 +46,7 @@ class TMetaVocabulary extends TMetaReferedList {
 	}
 	
 /**
- * Adds item to vocabulary using controller key
+ * Adds item to vocabulary using presenter key
  * @param mixed $id
  * @return boolean
  */	

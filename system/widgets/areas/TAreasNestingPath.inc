@@ -39,7 +39,7 @@
 			return ($src instanceof INestedItems) && parent::checkSource($src);
 		}
 		
-		private function _on_refresh(TControllerEvent $event){
+		private function _on_refresh(TPresenterEvent $event){
 			$this->refreshArea($this->GetArea($this,"Path"));
 		}
 		

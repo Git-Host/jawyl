@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,18 +12,18 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
 TApplication::import("services::TIntrinsicPageService");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * Xml link class
@@ -65,12 +65,12 @@ class TXmlLink implements ILink {
 }
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
- * List of links obtained from controller content in page configuration file
+ * List of links obtained from presenter content in page configuration file
  */
-class TXmlLinks extends TController {
+class TXmlLinks extends TPresenter {
 	private $_dom_;
 /**
  * constructor

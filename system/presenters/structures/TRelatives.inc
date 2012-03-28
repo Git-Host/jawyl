@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,10 +12,10 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaReferedList");
+TApplication::import("presenters::TMetaReferedList");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * Meta item associated items
@@ -43,7 +43,7 @@ class TMetaRelatives extends TMetaReferedList {
 	}
 
 /**
- * Adds item to associations list (associates an item with controller master list selected item)
+ * Adds item to associations list (associates an item with presenter master list selected item)
  * @param mixed $id
  * @return boolean
  */	
@@ -62,7 +62,7 @@ class TMetaRelatives extends TMetaReferedList {
 	}
 
 /**
- * Removes current controller item from associations (deassociates current item from master list selected item)
+ * Removes current presenter item from associations (deassociates current item from master list selected item)
  * @return boolean 
  */	
 	public function RemoveCurrentItem(){

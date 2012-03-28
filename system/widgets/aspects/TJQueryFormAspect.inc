@@ -1,6 +1,6 @@
 <?php
 	TApplication::import("common::item");
-	TApplication::import("common::mvc");
+	TApplication::import("common::mvp");
 	TApplication::import("widgets::TJQueryWidget");
 
 	final class TFormFieldType {

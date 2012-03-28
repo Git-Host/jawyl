@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,23 +12,23 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
 TApplication::import("services::TIntrinsicPageService");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * navigation structure obtained from navigation configuration file  
  */
-class TXmlWizardProvider extends TController implements IWizardProvider {
+class TXmlWizardProvider extends TPresenter implements IWizardProvider {
 	private $_dom_;
 	
 	private $_current_step_;

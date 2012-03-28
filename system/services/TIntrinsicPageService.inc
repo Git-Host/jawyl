@@ -76,7 +76,7 @@ class TIntrinsicPage extends TPage {
 				$classes[$node->getAttribute("name")] = array($node->getAttribute("classname"),$varname,$c->getName());
 				if (!$c) throw new TCoreException(TCoreException::ERR_NOT_CLASS);
 				if (!$c->implementsInterface("IConfigurable")) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-				if (!(is_subclass_of($c->getName(),"TConfigurable") || is_subclass_of($c->getName(),"TMVCObject"))) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+				if (!(is_subclass_of($c->getName(),"TConfigurable") || is_subclass_of($c->getName(),"TMVPObject"))) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 				$result .= '$params = array("name"=>"'.$node->getAttribute("name").'");'."\n";
 				if (is_subclass_of($c->getName(),"TResponseElement")){
 					$result .= '$params["response"] = $this;'."\n";

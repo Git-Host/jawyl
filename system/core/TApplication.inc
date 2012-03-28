@@ -51,6 +51,7 @@
  * @property-read string $RelativePath gets a request path relative to TApplication::$Root
  * @property-read string $Host gets a request host name
  * @property-read string $ConfCompileDir gets directory where application compiled configuration files are stored
+ * @property-read string $IocTypesCompileDir gets directory where application compiled configuration files are stored
  * @property-read int $CallType 
  * 
  * @property-write string $Language sets current i18n and l10n language name;
@@ -106,6 +107,7 @@
 		
 		public static $CompileAppConfig = false;
 		public static $ConfigCompileDirectory = 'config';
+		public static $IocTypesCompileDirectory = 'ioc';
 		
 		public static $Environment = self::ENV_PRODUCTION;
 		
@@ -139,6 +141,7 @@
 				case "Host":return $_SERVER["HTTP_HOST"];break;
 				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_;break;
 				case "ConfCompileDir":return $this->AdjustPath(self::$ConfigCompileDirectory);break;
+				case "IocTypesCompileDir":return $this->AdjustPath(self::$IocTypesCompileDirectory);break;
 				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
@@ -490,8 +493,8 @@
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($this->_current_service_->Handle(self::Request())) break;	
 				}
-			}	
-			TApplicationSession::Close();
+			}
+			TApplicationSession::Close();	
 		}
 		
 /**
@@ -581,11 +584,20 @@
    			return $path;
 		}
 		
-		private static function _adjust_error_level(){
+		private static function _adjust_environment(){
 			switch (self::$Environment){
-				case self::ENV_PRODUCTION:error_reporting(E_ERROR);break;
-				case self::ENV_TESTING:error_reporting(E_ERROR | E_WARNING | E_USER_ERROR | E_USER_WARNING);break;
-				case self::ENV_DEVELOPING:error_reporting(E_ALL | E_STRICT);break; 
+				case self::ENV_PRODUCTION:{
+					error_reporting(E_ERROR);
+					TConfigurable::$CompileIocTypes = false;
+				}break;
+				case self::ENV_TESTING:{
+					error_reporting(E_ERROR | E_WARNING | E_USER_ERROR | E_USER_WARNING);
+					TConfigurable::$CompileIocTypes = false;
+				}break;
+				case self::ENV_DEVELOPING:{
+					error_reporting(E_ALL | E_STRICT);
+					TConfigurable::$CompileIocTypes = true;
+				}break; 
 			}
 		}
 /**
@@ -618,7 +630,7 @@
 							$value = self::ENV_DEVELOPING;
 					}
 					self::$Environment = $value;
-					self::_adjust_error_level();
+					self::_adjust_environment();
 				}break;
 				case "StringEncoding":{
 					if (mb_internal_encoding($value))
@@ -633,7 +645,7 @@
 */		
 		public static function Run($callerPath){
 			global $Application;
-			self::_adjust_error_level();
+			self::_adjust_environment();
 			set_error_handler(array('TApplication','AppErrorHandler'));
 			set_exception_handler(array('TApplication','AppExceptionHandler'));
 			$Application = new TApplication(realpath(dirname($callerPath)));
