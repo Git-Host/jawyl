@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -18,10 +18,6 @@ TApplication::import("common::eventsystem");
  */
 TApplication::import("common::iterator");
 /**
- * @ignore
- */
-TApplication::import("common::controller::interfaces");
-/**
  * @ignore 
  */
 TApplication::import("core::TConfigurable");
@@ -36,17 +32,17 @@ TApplication::import("core::utils::THttpMeta");
 /**
  * @ignore 
  */
-TApplication::import("common::theme::interfaces");
+TApplication::import("common::theme::engine");
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * basic class for all MVC objects. 
- * Enables event processing for MVC objects, and allows them to be configurable.
+ * basic class for all MVP objects. 
+ * Enables event processing for MVP objects, and allows them to be configurable.
  * @uses TConfigurablePattern 
  */
-abstract class TMVCObject extends TConfigurable implements IEventListener, IEventSender {
+abstract class TMVPObject extends TConfigurable implements IEventListener, IEventSender {
 	
 /**
  * @var IEventBroadCaster[]
@@ -127,7 +123,10 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 	}
 	
 	public function HttpMethodCall($method, THttpRequest $request){
-		$this->__call($method, $request->Parameters());
+		$args = $request->Parameters();
+		if (!is_null($request->JsonObject))
+			$args[] = $request->JsonObject;
+		$this->__call($method, $args);
 	}
 
 /**
@@ -253,9 +252,9 @@ abstract class TMVCObject extends TConfigurable implements IEventListener, IEven
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * basic class for all MVC models
+ * basic class for all MVP models
  * @property-read string $Name component name
  * TModel derives settings from current service (and through service from application).
  * @see TService
@@ -299,7 +298,7 @@ abstract class TModel extends TConfigurable {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
  * interface for implementing objects that are part of response
  * @see TResponse
@@ -315,13 +314,13 @@ interface IResponseElement {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * basic class for all mvc objects that are also reponse elements
+ * basic class for all mvp objects that are also reponse elements
  * @property string $SaveState sets up where element should store its state. Should be one of TResponseElement::SS_SESSION, TResponseElement::SS_COOKIE constants. If not explicitly specified for element then derived from response object.  
  * @see TResponse
  */
-abstract class TResponseElement extends TMVCObject implements IResponseElement {
+abstract class TResponseElement extends TMVPObject implements IResponseElement {
 /**
  * @var TResponse response object element belogs to
  */	
@@ -334,7 +333,7 @@ abstract class TResponseElement extends TMVCObject implements IResponseElement {
 /**
  * @ignore
  */	
-	const SESS_STATE_SAVER = "mvc_state";
+	const SESS_STATE_SAVER = "mvp_state";
 	
 	const SS_SESSION = "session";
 	const SS_COOKIE = "cookie";
@@ -477,20 +476,20 @@ interface IAction extends IConfigurable {
 }
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
- * interface for implementing controllers with actions
+ * interface for implementing presenters with actions
  */	
 interface IActionsList {
 /**
- * gets controller actions list
- * @return TControllerAction[]
- * @see TControllerAction
+ * gets presenter actions list
+ * @return TPresenterAction[]
+ * @see TPresenterAction
  */		
 	public function Actions();
 /**
  * checks whether specified action can be executed
- * @param TControllerAction $action
+ * @param TPresenterAction $action
  * @return boolean
  */
 	public function ActionAvailable(IAction $action);
@@ -565,7 +564,7 @@ abstract class TAction extends TResponseElement implements IAction {
 	}
 	
 	protected function checkEvent(TEvent $event){
-		if ($event->Name == TMvcEvent::ACTION_EVENT_NAME)
+		if ($event->Name == TMvpEvent::ACTION_EVENT_NAME)
 			if ($event->ActionName == $this->name)
 				return true;
 		return false;
@@ -606,13 +605,13 @@ abstract class TAction extends TResponseElement implements IAction {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * basic class for all controllers.
- * @property IEventSender $Reloaders list of event senders causing controller reloading
+ * basic class for all presenters.
+ * @property IEventSender $Reloaders list of event senders causing presenter reloading
  * @see TResponseElement
  */
-abstract class TController extends TResponseElement implements IActionsList {
+abstract class TPresenter extends TResponseElement implements IActionsList {
 /**
  * @var IEventSender
  */
@@ -635,14 +634,14 @@ abstract class TController extends TResponseElement implements IActionsList {
 				new TDataReloadEvent($this);
 	}
 	
-	protected function setupAction(TControllerAction $action){}
+	protected function setupAction(TPresenterAction $action){}
 	
 	protected function actionsList(){return array();}
 	
 	public function Actions(){return $this->actions;}
 /**
  * checks whether specified action can be executed
- * @param TControllerAction $action
+ * @param TPresenterAction $action
  * @return boolean
  */
 	public function ActionAvailable(IAction $action){return false;}
@@ -654,7 +653,7 @@ abstract class TController extends TResponseElement implements IActionsList {
 }
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
  * basic class for all widgets.
  * @see TResponseElement
@@ -773,7 +772,7 @@ abstract class TWidget extends TResponseElement {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
  * basic class for all views.
  * @property string $ContentType response content type
@@ -781,12 +780,12 @@ abstract class TWidget extends TResponseElement {
  * @property boolean $DenyCallClean when set to true denies request parameter cleaning. Can be set by string that can be parsed by TConvertions::ConvertToBoolean
  * @property string $SaveState specifies response elements SaveSate option default value. If not explicitly set then is derived from current service. 
  * @see TConvertions::ConvertToBoolean()
- * @see TMVCObject
+ * @see TMVPObject
  */
-abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEventHandler {
+abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEventHandler {
 	public $CacheLifeTime = 0;
 	
-	public $DefaultController;
+	public $DefaultPresenter;
 	
 /**
  * @var string
@@ -804,6 +803,9 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
  */	
 	protected $service;
 	
+/**	
+ * @var THttpRequest
+ */
 	protected $request;
 	
 	private $_event_listeners_ = array();
@@ -1010,7 +1012,7 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 		
 		if ($result)
 			if (!(($controller->Name() == $this->DefaultController) && ($method == $controller->DefaultMethod)))
-				$this->CleanCall();
+				$this->CleanCall();	
 		return $result;
 	}
 
@@ -1035,9 +1037,9 @@ abstract class TResponse extends TMVCObject implements IEventBroadCaster, IEvent
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * class representing controller action parameter types.
+ * class representing presenter action parameter types.
  */
 final class TActionParameterType {
 	private $_code_;
@@ -1083,7 +1085,7 @@ final class TActionParameterType {
 	
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
  * class for holding item creation information
  */
@@ -1131,9 +1133,9 @@ final class TCreateInfo {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * class for holding controller action parameters
+ * class for holding presenter action parameters
  */
 class TActionParameter implements IActionParameter {	
 	private $_name_;
@@ -1215,7 +1217,7 @@ class TActionParameter implements IActionParameter {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
  * iterator of TActionParameter
  */
@@ -1241,18 +1243,18 @@ class TActionParameterIterator extends TArrayIterator {
 
 /**
  * @package Common
- * @subpackage Mvc
+ * @subpackage Mvp
  * @category System
- * class for holding controller actions
+ * class for holding presenter actions
  */
-final class TControllerAction extends TAction {
-	private $_controller_;
+final class TPresenterAction extends TAction {
+	private $_presenter_;
 	private $_method_;
 	
 	private $_local_name_;
 
-	public function Controller(){
-		return $this->_controller_;
+	public function Presenter(){
+		return $this->_presenter_;
 	}
 /**
  * gets name of method action should call
@@ -1261,7 +1263,7 @@ final class TControllerAction extends TAction {
 	public function Method(){return $this->_method_;}
 	
 	public function Execute(array $parameters){
-		$this->_controller_->__call($this->_method_,$parameters);
+		$this->_presenter_->__call($this->_method_,$parameters);
 	}
 	
 	public function LocalName(){
@@ -1269,15 +1271,15 @@ final class TControllerAction extends TAction {
 	}
 	
 	public function Available(){
-		return $this->_controller_->ActionAvailable($this);
+		return $this->_presenter_->ActionAvailable($this);
 	}
 	
 /**
- * invokes state invalidation event on action controllers events
+ * invokes state invalidation event on action presenters events
  * @see TAction::Dispatch()
  */	
 	public function Dispatch(TEvent $event){
-		if ($event->Sender === $this->_controller_)
+		if ($event->Sender === $this->_presenter_)
 			//$this->Invoke(
 			new TActionStateEvent($this,$event->Sender);
 			//);
@@ -1291,11 +1293,11 @@ final class TControllerAction extends TAction {
  * @param string $title action title
  * @param TActionParameterIterator $parameters iterator of action parameters 
  */	
-	public function __construct(TController $controller, $name, $method, $title,TActionParameterIterator $parameters = null){
+	public function __construct(TPresenter $presenter, $name, $method, $title,TActionParameterIterator $parameters = null){
 			$this->_local_name_ = $name;
-			$this->_controller_ = $controller;
+			$this->_presenter_ = $presenter;
 			$this->_method_ = $method;
-			parent::__construct($controller->Name().".".$name,$controller->Response(),array(),$controller,$title,$parameters);
+			parent::__construct($presenter->Name().".".$name,$presenter->Response(),array(),$presenter,$title,$parameters);
 	}
 }
 

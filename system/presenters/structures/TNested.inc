@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,14 +12,14 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaStructure");
+TApplication::import("presenters::TMetaStructure");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Meta
  * @category System
  * Nested items structure
- * @property TMetaList $Navigation master list object, which selection becomes current opened item of controller, can be set by name  
+ * @property TMetaList $Navigation master list object, which selection becomes current opened item of presenter, can be set by name  
  * @property TMetaNested $Partner nested structure which opened item is taken as container when moving items, can be set by name 
  */
 class TMetaNested extends TMetaStructure implements INestedItems {
@@ -143,7 +143,7 @@ class TMetaNested extends TMetaStructure implements INestedItems {
  */	
 	protected function actionsList(){
 		$result = parent::actionsList();
-		$moveaction = new TControllerAction($this,TMetaNested::AN_MOVECHILD,"MoveAsChild","Move");
+		$moveaction = new TPresenterAction($this,TMetaNested::AN_MOVECHILD,"MoveAsChild","Move");
 		$result[$moveaction->LocalName()] = $moveaction;
 		return $result;
 	}
@@ -162,7 +162,7 @@ class TMetaNested extends TMetaStructure implements INestedItems {
 	}	
 	
 /**
- * moves item within structure, using controller parent as acceptor
+ * moves item within structure, using presenter parent as acceptor
  * @return boolean
  */	
 	public function MoveAsChild(){

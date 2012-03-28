@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
@@ -65,7 +65,7 @@ class TXmlMenuItem implements IParent {
 }
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * class of navigation link
@@ -125,12 +125,12 @@ class TXmlGroupMenuItem extends TXmlMenuItem {
 }
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * navigation structure obtained from navigation configuration file  
  */
-class TXmlMenuSource extends TController implements IMenuStructure, IActionsList {
+class TXmlMenuSource extends TPresenter implements IMenuStructure, IActionsList {
 	private $_dom_;
 	
 	public function __construct($name,TIntrinsicPage $response, array $settings = array()){
@@ -176,7 +176,7 @@ class TXmlMenuSource extends TController implements IMenuStructure, IActionsList
 	}
 /**
  * checks whether specified action can be executed
- * @param TControllerAction $action
+ * @param TPresenterAction $action
  * @return boolean
  */
 	public function ActionAvailable(IAction $action){

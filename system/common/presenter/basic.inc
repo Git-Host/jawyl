@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -8,8 +8,8 @@
  * @version 0.0.1 alpha  
 */
 
-	TApplication::import("common::mvc");
-	TApplication::import("common::controller::events");
+	TApplication::import("common::mvp");
+	TApplication::import("common::presenter::events");
 	
 	interface IItemAccessor {
 /**
@@ -21,13 +21,13 @@
 	}
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * interface for implementing item lists 
  */		
 	interface IItemsList {
 /**
- * gets controller items list. If page is specified then a portion of list is returned
+ * gets presenter items list. If page is specified then a portion of list is returned
  * @param int $page page number
  * @return IIterator iterator of IItem
  * @see IIterator
@@ -54,9 +54,9 @@
 	
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
- * interface for implementing item management controllers
+ * interface for implementing item management presenters
  */	
 	interface IItemsSource extends IItemsList {
 /**
@@ -90,7 +90,7 @@
 	}	 
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * interface for implementing item structures
  */	
@@ -122,37 +122,37 @@
 	}
 
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * interface for implementing sortable item lists and structures 
  */	
 	interface ISortableItems {
 /**
- * gets controller sorting action or null if controller has no sorting. 
- * @return TControllerAction
- * @see TControllerAction
+ * gets presenter sorting action or null if presenter has no sorting. 
+ * @return TPresenterAction
+ * @see TPresenterAction
  */		
 		public function SortingAction();
 	}
 
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * interface for implementing filterable item lists and structures 
  */	
 	interface IFilterableItems {
 /**
- * gets controller filtering action or null if controller has no filtering. 
- * @return TControllerAction
- * @see TControllerAction
+ * gets presenter filtering action or null if presenter has no filtering. 
+ * @return TPresenterAction
+ * @see TPresenterAction
  */		
 		public function FilterAction();
 	}
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
- * interface for implementing paged list and structure controllers
+ * interface for implementing paged list and structure presenters
  */	
 	interface IPagedItems {
 /**
@@ -161,7 +161,7 @@
  */		
 		public function OpenPage($page);
 /**
- * Get controller pages count
+ * Get presenter pages count
  * @param int $pagesize size of page
  * @return int
  */		
@@ -184,13 +184,13 @@
 	}
 
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * interface for implementing nested item lists
  */	
 	interface INestedItems extends IItemsSource {
 /**
- * Open item. Makes controller list limited to children of specified item.
+ * Open item. Makes presenter list limited to children of specified item.
  * Created items also become children of specified item. Return true on success.
  * @param mixed $id item id
  * @return boolean
@@ -211,7 +211,7 @@
 	}
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Items
  * @category System
  * interface for implementing link items
@@ -240,7 +240,7 @@
 	}
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Items
  * @category System
  * interface for implementing option items
@@ -264,7 +264,7 @@
 	}
 	
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * interface for implementing options lists
  */	

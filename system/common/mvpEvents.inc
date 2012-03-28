@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -16,23 +16,23 @@ TApplication::import("common::eventsystem");
 /**
  * @ignore
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 
 
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
- * basic class for all mvc events.
+ * basic class for all mvp events.
 */
-class TMvcEvent extends TEvent {
+class TMvpEvent extends TEvent {
 	const RELOAD_EVENT_NAME = "reload";
 	const ACTION_EVENT_NAME = "action";
 	const ACTIONPARAM_EVENT_NAME = "actionparam";
 	const ACTIONSTATE_EVENT_NAME = "actionstate";
 }
 
-class TActionCallEvent extends TMvcEvent {
+class TActionCallEvent extends TMvpEvent {
 	public $ActionName;
 	public function __construct($action,IEventSender $sender){
 		$this->ActionName = $action;
@@ -40,7 +40,7 @@ class TActionCallEvent extends TMvcEvent {
 	}
 }
 
-class TActionParametersEvent extends TMvcEvent {
+class TActionParametersEvent extends TMvpEvent {
 	public $Action;
 	public function __construct(IAction $action,IEventSender $sender){
 		$this->Action = $action;
@@ -48,7 +48,7 @@ class TActionParametersEvent extends TMvcEvent {
 	}
 }
 
-class TActionStateEvent extends TMvcEvent {
+class TActionStateEvent extends TMvpEvent {
 	public $Action;
 	public function __construct(IAction $action,IEventSender $sender){
 		$this->Action = $action;
@@ -58,11 +58,11 @@ class TActionStateEvent extends TMvcEvent {
 
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * data reload event
 */
-class TDataReloadEvent extends TMvcEvent {
+class TDataReloadEvent extends TMvpEvent {
 /**
  * constructor
  * @see TEventPublisher

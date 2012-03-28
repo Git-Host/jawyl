@@ -1,14 +1,14 @@
 <?php
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * item selection event
 */
 
-TApplication::import("common::mvcEvents");
+TApplication::import("common::mvpEvents");
 
-class TControllerEvent extends TMvcEvent {
+class TPresenterEvent extends TMvpEvent {
 	const SELECT_EVENT_NAME = "select";
 	const CREATE_EVENT_NAME = "create";
 	const ADD_EVENT_NAME = "add";
@@ -20,7 +20,7 @@ class TControllerEvent extends TMvcEvent {
 }
 
 
-class TItemSelectEvent extends TControllerEvent {
+class TItemSelectEvent extends TPresenterEvent {
 /**
  * @var mixed id of node being selected
  */	
@@ -47,11 +47,11 @@ class TItemSelectEvent extends TControllerEvent {
 	
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * item creation event
 */
-class TItemCreateEvent extends TControllerEvent {
+class TItemCreateEvent extends TPresenterEvent {
 /**
  * @var mixed created node id
  */	
@@ -74,7 +74,7 @@ class TItemCreateEvent extends TControllerEvent {
 	}
 }
 
-class TItemAddEvent extends TControllerEvent {
+class TItemAddEvent extends TPresenterEvent {
 /**
  * @var mixed created node id
  */	
@@ -101,11 +101,11 @@ class TItemAddEvent extends TControllerEvent {
 	
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * item deletion event
 */
-class TItemDeleteEvent extends TControllerEvent {
+class TItemDeleteEvent extends TPresenterEvent {
 /**
  * @var id of deleted item
  */	
@@ -124,11 +124,11 @@ class TItemDeleteEvent extends TControllerEvent {
 
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * item removing event
 */
-class TItemRemoveEvent extends TControllerEvent {
+class TItemRemoveEvent extends TPresenterEvent {
 /**
  * @var id of deleted item
  */	
@@ -147,11 +147,11 @@ class TItemRemoveEvent extends TControllerEvent {
 	
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * item edition event
 */
-class TItemEditEvent  extends TControllerEvent {
+class TItemEditEvent  extends TPresenterEvent {
 /**
  * @var mixed id of item being edited
  */	
@@ -187,11 +187,11 @@ class TItemEditEvent  extends TControllerEvent {
 	
 /**
  * @package Common
- * @subpackage MvcEvents
+ * @subpackage MvpEvents
  * @category System
  * item moving event
 */
-class TItemMoveEvent extends TControllerEvent {
+class TItemMoveEvent extends TPresenterEvent {
 /**
  * @var mixed id of moving item
  */	
@@ -214,7 +214,7 @@ class TItemMoveEvent extends TControllerEvent {
 	}
 }
 
-class TItemOpenEvent extends TControllerEvent {
+class TItemOpenEvent extends TPresenterEvent {
 /**
  * @var mixed id of moving item
  */	

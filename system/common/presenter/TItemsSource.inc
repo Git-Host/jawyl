@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -11,14 +11,14 @@
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
-TApplication::import("common::controller::TItemsList");
+TApplication::import("common::presenter::TItemsList");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * abstract class for holding and managing collections.
  * @see TItemsList
@@ -26,14 +26,14 @@ TApplication::import("common::controller::TItemsList");
  */	
 abstract class TItemsSource extends TItemsList implements IItemsSource {		
 /**
- * gets controller actions list, containing create and delete actions.
- * @return TControllerAction[]
+ * gets presenter actions list, containing create and delete actions.
+ * @return TPresenterAction[]
  * @see IActionsList
  */
 		protected function actionsList(){
 			$result = array(
-				"Create"=>new TControllerAction($this,"CreateItem","CreateItem","New"),
-				"Delete"=>new TControllerAction($this,"Delete","DeleteCurrentItem","Delete")
+				"Create"=>new TPresenterAction($this,"CreateItem","CreateItem","New"),
+				"Delete"=>new TPresenterAction($this,"Delete","DeleteCurrentItem","Delete")
 			);
 			return $result;
 		}
@@ -77,7 +77,7 @@ abstract class TItemsSource extends TItemsList implements IItemsSource {
 		protected abstract function deleteItem($id);
 /**
  * item creation method. Called by create action.
- * Wraps controller Create method. If items creation succeeds invokes TItemCreateEvent.  
+ * Wraps presenter Create method. If items creation succeeds invokes TItemCreateEvent.  
  * @return boolean
  * @see IItemsSource
  * @see TItemCreateEvent
@@ -94,7 +94,7 @@ abstract class TItemsSource extends TItemsList implements IItemsSource {
 		}
 
 /**
- * gets controller current item property value. If current item is not selected returns null.
+ * gets presenter current item property value. If current item is not selected returns null.
  * @param string $name property name
  * @return mixed 
  * @see IItemsSource
@@ -108,7 +108,7 @@ abstract class TItemsSource extends TItemsList implements IItemsSource {
 		} 
 		
 /**
- * Deletes controller current item. If deletion succeeds invokes delete event. Wraps controller DeleteItem method.
+ * Deletes presenter current item. If deletion succeeds invokes delete event. Wraps presenter DeleteItem method.
  * @see IItemsSource
  * @see TItemDeleteEvent  
  */		
@@ -136,7 +136,7 @@ abstract class TItemsSource extends TItemsList implements IItemsSource {
  */		
 		protected abstract function editItem($id,array $attrvalues);
 /**
- * Sets controller current item property value. Wraps controller EditItem method. Invokes edit event on success.
+ * Sets presenter current item property value. Wraps presenter EditItem method. Invokes edit event on success.
  * @see IItemsSource
  * @see TItemEditEvent  
  */		

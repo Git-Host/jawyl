@@ -12,11 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
-/**
- * @ignore
- */
-TApplication::import("common::widget::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
@@ -56,8 +52,8 @@ class TAreasCommandBar extends TAreasWidget {
 	}
 	
 /**
- * gest controller actions
- * @return array of TControllerAction
+ * gest presenter actions
+ * @return array of TPresenterAction
  */
 	public function Actions(){
 		$result = array();

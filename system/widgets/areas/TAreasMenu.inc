@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
-TApplication::import("common::widget::interfaces");
+TApplication::import("common::widget::lists");
 /**
  * @ignore
  */

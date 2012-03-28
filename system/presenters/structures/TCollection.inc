@@ -1,7 +1,7 @@
 <?php
 /**
- * @package Controllers
- * @subpackage Meta
+ * @package Presenters
+ * @subpackage Structures
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TMetaReferedList");
+TApplication::import("presenters::TReferedList");
 
 /**
- * @package Controllers
- * @subpackage Meta
+ * @package Presenters
+ * @subpackage Structures
  * @category System
  * items in collection 
  */
-class TMetaCollection extends TMetaReferedList {
+class TCollection extends TReferedList {
 /**
  * @var string collection name to use
  */	
@@ -35,7 +35,7 @@ class TMetaCollection extends TMetaReferedList {
  * @return boolean
  */	
 	public function ActionAvailable(IAction $action){
-		if ($action->LocalName() == TMetaReferedList::AN_REMOVE)
+		if ($action->LocalName() == TReferedList::AN_REMOVE)
 			return !is_null($this->currentItem);
 		return parent::ActionAvailable($action);
 	}
@@ -48,7 +48,7 @@ class TMetaCollection extends TMetaReferedList {
 	public function AddItem($id){
 		if (is_null($this->Collection)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$item = new TIdentity($id);
-		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
+		if (!$this->CheckPermission($item,TItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -60,14 +60,14 @@ class TMetaCollection extends TMetaReferedList {
 	}
 
 /**
- * Removes controller current item from collection
+ * Removes presenter current item from collection
  * @return boolean
  */	
 	public function RemoveCurrentItem(){
 		if (is_null($this->Collection)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$item = $this->CurrentItem();
 		$id = $this->CurrentItemId();
-		if (!$this->CheckPermission($item,TMetaItemPermission::META_RELATE)){
+		if (!$this->CheckPermission($item,TItemPermission::META_RELATE)){
 			throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 			return $result;
 		}
@@ -79,7 +79,7 @@ class TMetaCollection extends TMetaReferedList {
 	}
 	
 /**
- * @see TMetaList::getItems()
+ * @see TList::getItems()
  * @param int $page
  * @param int $pagesize
  * @return IIterator
@@ -99,8 +99,8 @@ class TMetaCollection extends TMetaReferedList {
 	
 /**
  * creates new item and adds it to collection
- * @see TMetaList::ItemCreation()
- * @return TMetaItem
+ * @see TList::itemCreation()
+ * @return IItem
  */	
 	protected function itemCreation(IClass $c, array $parameters = array()){
 		$result = null;

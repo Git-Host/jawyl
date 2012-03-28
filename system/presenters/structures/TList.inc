@@ -1,7 +1,7 @@
 <?php
 /**
- * @package Controllers
- * @subpackage Meta
+ * @package Presenters
+ * @subpackage Structures
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -12,30 +12,29 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
-TApplication::import("common::controller::TItemsSource");
+TApplication::import("common::presenter::TItemsSource");
 
-TApplication::import("models::TMetaModel");
+TApplication::import("model::structures");
 
 /**
- * @package Controllers
- * @subpackage Meta
+ * @package Presenters
+ * @subpackage Structures
  * @category System
- * Items list interacting with TMetaModel
- * @property TMetaModel $DataSource meta component to interact with, can be set by component name
+ * @property IItemsManager $DataSource component to interact with, can be set by component name
  * @property array $CreationAttributes array of names of attributes used for item creation, can be set as semicolon separated string
  * @property array $FilterAttributes array of names of attributes used for filtering, can be set as semicolon separated string
  * @property array $SortingAttributes array of names of attributes used for sorting, can be set as semicolon separated string
- * @see TMetaModel 
+ * @see IItemsManager 
  */
-class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems, IPagedItems {
+class TList extends TItemsSource implements ISortableItems, IFilterableItems, IPagedItems {
 	const AN_CREATE = "CreateItem";
 	const AN_DELETE = "DeleteItem";
 	const AN_FILTER = "SetFilter";
@@ -55,7 +54,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
  */	
 	protected $create_params = array();
 /**
- * @var TMetaModel
+ * @var IItemsManager
  */	
 	protected $__datasource__;
 	
@@ -63,11 +62,11 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	private $sorting_attributes = array();
 
 /**
- * @var TControllerAction
+ * @var TPresenterAction
  */	
 	private $sorting_action;
 /**
- * @var TControllerAction
+ * @var TPresenterAction
  */	
 	private $filter_action;
 	
@@ -86,9 +85,9 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	
 	protected $page_size = null;
 
-	protected function setupAction(TControllerAction $action){
+	protected function setupAction(TPresenterAction $action){
 		switch ($action->LocalName()){
-			case TMetaList::AN_CREATE:{
+			case TList::AN_CREATE:{
 					if (($this->DataSource) && ($this->BaseClass)){
 						$action->ClearParameters();
 						$c = $this->DataSource->GetClass($this->BaseClass);
@@ -99,7 +98,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 							if ((!$abstractbc) || ($desc->Id() != $c->Id()))
 								$classes[$desc->Name()] = $desc->Name();
 
-						$action->AddParameter(new TActionParameter("metaclass","Class",TActionParameterType::TYPE_SELECT,null,$classes));
+						$action->AddParameter(new TActionParameter("itemclass","Class",TActionParameterType::TYPE_SELECT,null,$classes));
 		
 						if ($this->CreationAttributes){
 								$ca = $this->CreationAttributes;
@@ -118,7 +117,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 						}
 					}
 			}break;
-			case TMetaList::AN_FILTER:{
+			case TList::AN_FILTER:{
 				if ($this->DataSource && $this->BaseClass){
 					$action->ClearParameters();
 					$params = array();
@@ -130,7 +129,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 					}
 				}
 			}break;
-			case TMetaList::AN_SORT:{
+			case TList::AN_SORT:{
 				if ($this->DataSource && $this->BaseClass){
 					$action->ClearParameters();
 					$params = array();
@@ -148,7 +147,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	}
 	
 	protected function checkDataSource($src){
-		return $src instanceof TMetaModel;
+		return $src instanceof IItemsManager;
 	}
 	
 	
@@ -160,8 +159,8 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 			case "DataSource":$this->getIocMember($this->__datasource__, $value, "checkDataSource");break;
 			case "BaseClass":{
 				$this->_baseClass_ = $value;
-				if ($this->BaseClass && $this->DataSource && (key_exists(TMetaList::AN_CREATE,$this->_actions_)))
-					$this->setupAction($this->_actions_[TMetaList::AN_CREATE]);
+				if ($this->BaseClass && $this->DataSource && (key_exists(TList::AN_CREATE,$this->_actions_)))
+					$this->setupAction($this->_actions_[TList::AN_CREATE]);
 			}break;	
 			case "CreationAttributes":{
 				if (is_string($value))
@@ -169,18 +168,18 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 				else if (is_array($value))
 					$this->create_params = $value;
 				else throw new TCoreException(TCoreException::ERR_BAD_VALUE,array());
-				if ($this->BaseClass && $this->DataSource && (key_exists(TMetaList::AN_CREATE,$this->_actions_)))
-					$this->setupAction($this->_actions_[TMetaList::AN_CREATE]);
+				if ($this->BaseClass && $this->DataSource && (key_exists(TList::AN_CREATE,$this->_actions_)))
+					$this->setupAction($this->_actions_[TList::AN_CREATE]);
 			}break;
 			case "FilterAttributes":{
 				$this->filter_attributes = explode(";",$value);
-				if ($this->DataSource && key_exists(TMetaList::AN_FILTER,$this->_actions_))
-					$this->setupAction($this->_actions_[TMetaList::AN_FILTER]);
+				if ($this->DataSource && key_exists(TList::AN_FILTER,$this->_actions_))
+					$this->setupAction($this->_actions_[TList::AN_FILTER]);
 			}break;			
 			case "SortAttributes":{
 				$this->sorting_attributes = explode(";",$value);
-				if ($this->DataSource && key_exists(TMetaList::AN_SORT,$this->_actions_))
-					$this->setupAction($this->_actions_[TMetaList::AN_SORT]);
+				if ($this->DataSource && key_exists(TList::AN_SORT,$this->_actions_))
+					$this->setupAction($this->_actions_[TList::AN_SORT]);
 			}break;			
 			//case "ExcludeClasses":{$this->class_filter = explode(";",$value);TApplicationSession::Set($this->UniqueId()."_items_count",null);}break;
 			case "PageSize":$this->page_size = $value;break;
@@ -225,10 +224,10 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	public function __unset($nm){
 		switch ($nm){
 			case "DataSource":unset($this->__datasource__);break;
-			case "BaseClass":{unset($this->_baseClass_);$this->setupAction(TMetaList::AN_CREATE);}break;
-			case "CreationAttributes":{unset($this->create_params);$this->setupAction(TMetaList::AN_CREATE);}break;
-			case "FilterAttributes":{unset($this->filter_attributes);$this->setupAction(TMetaList::AN_FILTER);}break;			
-			case "SortAttributes":{unset($this->sorting_attributes);$this->setupAction(TMetaList::AN_SORT);}break;
+			case "BaseClass":{unset($this->_baseClass_);$this->setupAction(TList::AN_CREATE);}break;
+			case "CreationAttributes":{unset($this->create_params);$this->setupAction(TList::AN_CREATE);}break;
+			case "FilterAttributes":{unset($this->filter_attributes);$this->setupAction(TList::AN_FILTER);}break;			
+			case "SortAttributes":{unset($this->sorting_attributes);$this->setupAction(TList::AN_SORT);}break;
 			case "PageSize":unset($this->page_size);break;			
 			default:parent::__unset($nm);break;
 		}
@@ -244,10 +243,10 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 		$this->PAGE = $this->loadStateParameter("page");
 		if (is_null($this->PAGE)) $this->PAGE = 0;
 		
-		if (key_exists(TMetaList::AN_FILTER,$this->_actions_))
-			$this->filter_action = $this->_actions_[TMetaList::AN_FILTER];
-		if (key_exists(TMetaList::AN_SORT,$this->_actions_))	
-			$this->sorting_action = $this->_actions_[TMetaList::AN_SORT];
+		if (key_exists(TList::AN_FILTER,$this->_actions_))
+			$this->filter_action = $this->_actions_[TList::AN_FILTER];
+		if (key_exists(TList::AN_SORT,$this->_actions_))	
+			$this->sorting_action = $this->_actions_[TList::AN_SORT];
 		
 		$fs = $this->loadStateParameter("filter");
 		if (!is_null($fs)){
@@ -312,16 +311,16 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	}
 
 /**
- * returns create and delete controller actions. 
- * Create action parameters are created according to controller $CreationAttributes property. 
+ * returns create and delete presenter actions. 
+ * Create action parameters are created according to presenter $CreationAttributes property. 
  * @see IActionList::Actions()
- * @return array array of TControllerAction
+ * @return array array of TPresenterAction
  */	
 	protected function actionsList(){
-		$ucreateaction = new TControllerAction($this,TMetaList::AN_CREATE,"CreateMetaItem","New Item");
-		$deleteaction = new TControllerAction($this,TMetaList::AN_DELETE,"DeleteCurrentItem","Delete");
-		$filteraction = new TControllerAction($this,TMetaList::AN_FILTER,"SetFilter","Filter setup");
-		$sortingaction = new TControllerAction($this,TMetaList::AN_SORT,"SetSorting","Sorting setup");
+		$ucreateaction = new TPresenterAction($this,TMetaList::AN_CREATE,"CreateMetaItem","New Item");
+		$deleteaction = new TPresenterAction($this,TMetaList::AN_DELETE,"DeleteCurrentItem","Delete");
+		$filteraction = new TPresenterAction($this,TMetaList::AN_FILTER,"SetFilter","Filter setup");
+		$sortingaction = new TPresenterAction($this,TMetaList::AN_SORT,"SetSorting","Sorting setup");
 		$result = array(
 			$ucreateaction->LocalName()=>$ucreateaction,
 			$deleteaction->LocalName()=>$deleteaction,
@@ -348,7 +347,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	
 /**
  * @see IFilterable::FilterAction()
- * @return TControllerAction
+ * @return TPresenterAction
  */	
 	public function FilterAction(){
 		if ($this->filter_action)
@@ -359,7 +358,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	
 /**
  * @see ISortable::SortingAction()
- * @return TControllerAction
+ * @return TPresenterAction
  */	
 	public function SortingAction(){
 		if ($this->sorting_action)
@@ -369,7 +368,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	}
 
 /**
- * creates array of TCondition for filtering according to current controller state
+ * creates array of TCondition for filtering according to current presenter state
  * @return array array of TCondition
  * @see TCondition
  */	
@@ -390,7 +389,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	}
 
 /**
- * creates array of TSorting for list sorting according to current controller state
+ * creates array of TSorting for list sorting according to current presenter state
  * @return array array of TSorting
  * @see TSorting
  */	
@@ -497,9 +496,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
  */	
 	public function OpenPage($page){
 		$this->PAGE = $page;
-		//$this->Invoke(
 		new TDataReloadEvent($this);
-		//);
 		$this->saveStateParameter("page",$this->PAGE);
 	}
 
@@ -677,7 +674,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	
 /**
  * @return IPolicyChecker
- * @see TSecuredController::getPolicyChecker()
+ * @see TSecuredPresenter::getPolicyChecker()
  */
 	protected function getPolicyChecker(){
 		if ($this->__datasource__ instanceof IPolicyChecker)
@@ -687,7 +684,7 @@ class TMetaList extends TItemsSource implements ISortableItems, IFilterableItems
 	
 /**
  * @return IPolicyProvider
- * @see TSecuredController::getPolicyManager()
+ * @see TSecuredPresenter::getPolicyManager()
  */
 	protected function getPolicyProvider(){
 		if ($this->__datasource__ instanceof IPolicyProvider)

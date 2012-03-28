@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
@@ -13,11 +13,11 @@
 /**
  * @ignore
  */
-TApplication::import("controllers::TXmlMenuSource");
+TApplication::import("presenters::TXmlMenuSource");
 
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * class of navigation link
@@ -66,7 +66,7 @@ class TXmlStrictLinkMenuItem extends TXmlLinkMenuItem  {
 
 
 /**
- * @package Controllers
+ * @package Presenters
  * @subpackage Xml
  * @category System
  * navigation structure obtained from navigation configuration file  

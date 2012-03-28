@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("common::controller::interfaces");
+TApplication::import("common::presenter::basic");
 /**
  * @ignore
  */
-TApplication::import("common::widget::interfaces");
+TApplication::import("common::widget::lists");
 /**
  * @ignore
  */
-TApplication::import("common::service::interfaces");
+TApplication::import("common::service::navigation");
 /**
  * @ignore
  */
@@ -141,7 +141,7 @@ class TAreasList extends TAreasWidget implements IList {
 
 /**
  * gets list filter action object
- * @return TControllerAction
+ * @return TPresenterAction
  */	
 	public function FilterAction(){
 		if ($this->Source instanceof IFilterableItems)
@@ -150,7 +150,7 @@ class TAreasList extends TAreasWidget implements IList {
 	}
 /**
  * gets list sorting action object
- * @return TControllerAction
+ * @return TPresenterAction
  */	
 	public function SortingAction(){
 		if ($this->Source instanceof ISortableItems)
@@ -158,12 +158,12 @@ class TAreasList extends TAreasWidget implements IList {
 		return null;
 	}
 	
-	private function _on_add_event(TControllerEvent $event){
+	private function _on_add_event(TPresenterEvent $event){
 		$ci = $this->WrapItem($this->Source->Item($event->NodeId));
 		$this->addArea($this->GetArea($ci,"Item",$this->GetArea($this,"Container")));
 	}
 	
-	private function _on_remove_event(TControllerEvent $event){
+	private function _on_remove_event(TPresenterEvent $event){
 		$this->deleteArea($this->WrapId($event->NodeId));
 	}
 	

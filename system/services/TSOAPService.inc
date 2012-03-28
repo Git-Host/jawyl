@@ -13,7 +13,7 @@
  * @ignore
  */
 TApplication::import("core::TService");
-TApplication::import("common::service::interfaces");
+TApplication::import("common::service::navigation");
 TApplication::import("common::soap");
 
 

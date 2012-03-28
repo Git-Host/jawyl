@@ -34,6 +34,8 @@
  */		
 		public $IsAjax = false;
 		
+		public $JsonObject = null;
+		
 		private function _accept_query_params($params,$urldecode,&$member,&$orig){
 			foreach ($params as $key=>$value)
 			  if ($key != "service"){
@@ -51,6 +53,9 @@
 			parent::__construct($service);
 			$this->IsXmlHttpRequest = strtolower($this->Header("HTTP_X_REQUESTED_WITH")) == "xmlhttprequest";
 			$this->IsAjax = $this->IsXmlHttpRequest;
+			
+			if (strtolower($this->Header('Content-Type')) == 'application/json')
+				$this->JsonObject = json_decode(file_get_contents("php://input"));
 			
 			$orig = array();
 			

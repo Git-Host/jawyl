@@ -14,6 +14,7 @@
  */
 TApplication::import("common::iterator");
 TApplication::import("common::data");
+TApplication::import("common::logic");
 
 /**
  * @package Common
@@ -586,16 +587,16 @@ final class TTableFieldValue {
  *
  */
 
-final class TSorting {
-	const SORT_ASC = 0;
-	const SORT_DESC = 1;
+class TSorting {
 /**
  * @var TTableField
  */	
 	private $_field_;
 	private $_sort_;
 	
-	public function __construct(IDataSourceField $field, $sort = TSorting::SORT_ASC){
+	public function __construct(IDataSourceField $field, $sort = TSortingType::SORT_ASC){
+		if (!TSortingType::CheckType($sort))
+			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$this->_field_ = $field;
 		$this->_sort_ = $sort;
 	}
@@ -644,93 +645,13 @@ abstract class TNestedSetElement {
 }
 
 /**
- * 
  * @property int $Type
  * @property array $Operands
  * @author dakrasilnikov
  *
  */
 
-class TOperation {
-	const C_EQUAL = 0;
-	const C_NOT_EQUAL = 1;
-	const C_LESS = 2;
-	const C_MORE = 3;
-	const C_LESS_OR_EQUAL = 4;
-	const C_MORE_OR_EQUAL = 5;
-	const C_IN = 6;
-	const C_NOT_IN = 7;
-	const C_AND = 8;
-	const C_OR = 9;
-	const C_LIKE = 10;
-	const C_NOT_LIKE = 11;
-	const C_REGEXP = 12;
-	const C_IS = 13;
-	const C_NOT = 14;
-	
-   	const O_ADD = 15;
-   	const O_SUBTRACT = 16;
-   	const O_MUL = 17;
-   	const O_DIV = 18;
-   	const O_MOD = 19;
-   	const O_AND = 20;
-   	const O_OR = 21;
-   	const O_IFELSE = 22;
-   	const O_CASE = 23;
-   	const O_STRLEN = 24;
-   	const O_STRPOS = 25;
-   	const O_STRCONCAT = 26;
-   	const O_STRLOWER = 27;
-   	const O_STRUPPER = 28;
-   	const O_SUBSTR = 29;
-   	const O_STRREPLACE = 30;
-   	const O_STRLTRIM = 31;
-   	const O_STRRTRIM = 32;
-   	const O_STRTRIM = 33;
-   	const O_ABS = 34;
-   	const O_ACOS = 35;
-   	const O_ASIN = 36;
-   	const O_ATAN = 37;
-   	const O_COS = 38;
-   	const O_SIN = 39;
-   	const O_TAN = 40;
-   	const O_CEIL = 41;
-   	const O_FLOOR = 42;
-   	const O_ROUND = 43;
-   	const O_POW = 44;
-   	const O_EXP = 45;
-   	const O_LN = 46;
-   	const O_LOG = 47;
-   	const O_SQRT = 48;
-   	const O_RAND = 49;
-   	const O_DATE_CUR = 50;
-   	const O_DATE_ADD = 51;
-   	const O_DATE_SUBT = 52;
-   	const O_DATE_DIFF = 53;
-   	const O_DATE_MAKE = 54;
-   	const O_DATE_DAY = 55;
-   	const O_DATE_MONTH = 56;
-   	const O_DATE_YEAR = 57;
-   	const O_DATE_WEEK = 58;
-   	const O_DATE_WKDAY = 59;
-   	const O_TIME_CUR = 60;
-   	const O_TIME_ADD = 61;
-   	const O_TIME_SUBT = 62;
-   	const O_TIME_DIFF = 63;
-   	const O_TIME_MAKE = 64;
-   	const O_TIME_HOUR = 65;
-   	const O_TIME_MIN = 66;
-   	const O_TIME_SEC = 67;
-   	const O_TIME_MKSEC = 68;
-
-   	/*
-   	const G_SUM = 69;
-   	const G_AVG = 70;
-   	const G_MAX = 71;
-   	const G_MIN = 72;
-   	const G_COUNT = 73;
-   	*/
-   	
+class TOperation {	
 	/**
  * @var int
  */	
@@ -740,10 +661,9 @@ class TOperation {
  */	
 	protected $operands;
 	
-	protected function allowedTypes(){
-		$c = new ReflectionClass(get_class($this));
-		return array_values($c->getConstants());
-	}	
+	protected function checkType($type){
+		return TOperationType::CheckType($type);
+	}
 	
 /**
  * constructor
@@ -751,7 +671,7 @@ class TOperation {
  * @param array $operands condition operands, array which can contain php values, IAttributeDefinition or TSysField
  */	
 	public function __construct($type, array $operands){
-		if (!in_array($type,$this->allowedTypes())) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		if (!$this->checkType($type)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$this->type = $type;
 		foreach ($operands as $o)
 			$this->addOperand($o);
@@ -808,8 +728,8 @@ class TOperation {
  * @property array $Operands
  */
 class TCondition extends TOperation {
-	protected function allowedTypes(){
-		return array_slice(parent::allowedTypes(),0,15);
+	protected function checkType($type){
+		return TConditionType::CheckType($type);
 	}
 }
 

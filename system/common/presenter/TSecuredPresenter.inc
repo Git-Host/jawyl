@@ -1,6 +1,6 @@
 <?php
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
  * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
  * @copyright Copyright (c) 2009, Dan Krasilnikov
@@ -13,22 +13,22 @@ TApplication::import("core::security::policy");
 /**
  * @ignore
  */
-TApplication::import("common::mvc");
+TApplication::import("common::mvp");
 /**
  * @ignore
  */
-TApplication::import("common::controllers::interfaces");
+TApplication::import("common::presenters::interfaces");
 
 /**
- * @package Controllers
+ * @package Presenters
  * @category System
- * class of controller interacting with current service to check permissions. 
+ * class of presenter interacting with current service to check permissions. 
  * Current service must implement ISecuredService interface. 
  * @see ISecuredService
  */
-abstract class TSecuredController extends TController {
+abstract class TSecuredPresenter extends TPresenter {
 /**
- * gets controller policy manager
+ * gets presenter policy manager
  * @return IPolicyChecker
  */
 	protected function getPolicyChecker(){
@@ -38,7 +38,7 @@ abstract class TSecuredController extends TController {
 	}
 	
 /**
- * gets controller policy provider
+ * gets presenter policy provider
  * @return IPolicyProvider
  */
 	protected abstract function getPolicyProvider();

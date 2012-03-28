@@ -1,5 +1,5 @@
 <?php
-TApplication::import("common::service::interfaces");
+TApplication::import("common::service::navigation");
 TApplication::import("common::item");
 /**
  * @package View
@@ -25,7 +25,7 @@ interface ISelectable {
 	public function SelectLink();
 }
 
-interface IList extends IConfigurable {
+interface IList {
 	public function WrapItem(IItem $item);
 	public function WrapId($itemid);
 	public function SelectedItem();	

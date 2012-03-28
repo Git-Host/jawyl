@@ -1,7 +1,7 @@
 <?php
 	TApplication::import("ajax::TAreasEngine");
 	TApplication::import("widgets::TJQueryWidget");
-	TApplication::import("common::theme::interfaces");
+	TApplication::import("common::theme::engine");
 
 	class TWidgetArea implements IArea {
 /**
