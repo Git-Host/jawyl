@@ -801,16 +801,16 @@ class TFieldDefinition {
 	protected $type;
 	protected $primaryKey;
 	protected $unique;
-	protected $autoIncrement;
+	protected $autoAssigned;
 	protected $nullable;
 	protected $default;
 	
-	public function __construct($name, TDataType $type, $nullable = true, $default = null, $pk = false, $unique = false, $autoincrement = false){
+	public function __construct($name, TDataType $type, $nullable = true, $default = null, $pk = false, $unique = false, $autoassigned = false){
 		$this->name = $name;
 		$this->type = $type;
 		$this->primaryKey = $pk;
 		$this->unique = $unique;
-		$this->autoIncrement = $autoincrement;
+		$this->autoAssigned = $autoassigned;
 		$this->nullable = $nullable;
 		$this->default = $default;
 	}
@@ -821,7 +821,7 @@ class TFieldDefinition {
 			case "Type":return $this->type;break;	
 			case "PrimaryKey":return $this->primaryKey;break;	
 			case "Unique":return $this->unique;break;	
-			case "AutoIncrement":return $this->autoIncrement;break;
+			case "AutoAssigned":return $this->autoAssigned;break;
 			case "Nullable":return $this->nullable;break;	
 			case "Default":return $this->default;break;
 		}
@@ -1051,14 +1051,16 @@ interface IDBDriver {
  */	
 	public function NestedSetBranchesMove(TDataSource $branches, TDataSource $destination);	
 /**
+ * string[] $fields
  * @return boolean
  */	
-	public function InsertRecords(TTable $table,array $records, array $fields = array());
+	public function InsertRecords(TTable $table,array $records, array $fields = array(),&$primary_key = null);
 /**
  * @param int
  */	
 	public function DeleteRecords(TDataSource $records);
 /**
+ * @param IDataSourceField[] $fields
  * @return int 
  */	
 	public function UpdateRecords(TDataSource $records, array $fields, array $values);
