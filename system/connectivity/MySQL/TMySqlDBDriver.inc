@@ -652,7 +652,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		else
 			$coltype = self::transformColType($def->Type);
 		$result = array();
-		$result[] = "`".$def->Name."` ".$coltype.($def->Nullable?" NULL":" NOT NULL").(isset($def->Default)?(sprintf(" DEFAULT %s",$this->quote_smart($def->Default))):"").($def->AutoIncrement?" AUTO_INCREMENT":"").($def->PrimaryKey?" PRIMARY KEY":"");
+		$result[] = "`".$def->Name."` ".$coltype.($def->Nullable?" NULL":" NOT NULL").(isset($def->Default)?(sprintf(" DEFAULT %s",$this->quote_smart($def->Default))):"").(($def->AutoAssigned && ($def->Type == TDataType::INTEGER || $def->Type == TDataType::BIGINT))?" AUTO_INCREMENT":"").($def->PrimaryKey?" PRIMARY KEY":"");
 		if ($def->Type instanceof TTableReferenceType){
 			$result[] = "INDEX `i".$def->Name."` (`".$def->Name."`)";
 			$result[] = "CONSTRAINT `fk_".$this->RealTableName($tablename)."_".$def->Name."` FOREIGN KEY `".$def->Name."` (`".$def->Name."`) REFERENCES `".$this->RealTableName($def->Type->MasterField->Table)."` (`".$def->Type->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($def->Type->OnDelete)." ON UPDATE ".self::transformRefIntegrity($def->Type->OnUpdate);
@@ -774,12 +774,12 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		return $record;
 	}
 	
-	public function InsertRecords(TTable $table,array $records, array $fields = array()){
+	public function InsertRecords(TTable $table,array $records, array $fields = array(),&$primary_key = null){
 		$q1 = "insert ".$this->RealTableName($table->Name)." ";
 		if (count($fields))
 			$q1 .= "(".join(",",$fields).") ";
 		array_walk($records,array(&$this,"_prepare_record"));
-	
+		$oldid = $this->lastInsertId();
 		$this->BeginTransaction();
 		try {
 			$i = 0;
@@ -788,13 +788,15 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 				$this->query($q1."values ".join(",",array_slice($records,$i,$this->BulkInsertAmount)));
 				$i = $i + $this->BulkInsertAmount;
 			}
-			$this->CommitTransaction();
-			return true;
 		} catch (Exception $e) {
 			$this->RollbackTransaction();
 			throw $e;
 			return false;
 		}
+		$this->CommitTransaction();
+		$primary_key = $this->lastInsertId();
+		$primary_key = ($primary_key == $oldid)?null:$primary_key;
+		return true;
 	}
 	
 	public function DeleteRecords(TDataSource $records){
