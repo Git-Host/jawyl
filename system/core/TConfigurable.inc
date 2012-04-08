@@ -237,20 +237,38 @@ interface IConfigurable {
 		}
 		return false;		
  	}
+ 	
+ 	private function _check_suffix(&$nm,$suffix){
+		$yamlname = '_'.$suffix.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
+		if ($p = $this->_check_property($yamlname)){
+			$nm = $yamlname;
+			return true;
+		}
+		return false;
+ 	}
 	
  	/**
  	 * @ignore
  	 */
 	public function __set($nm,$value){
-		if ($this->_check_property($nm))
-			$this->$nm = $value;
-		else {	
+		if ($p = $this->_check_property($nm)){
+			if ($p->isPublic() && !$p->isStatic())
+				$this->$nm = $value;
+			else throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);	
+		} else {	
 			if ($this->_check_ioc($nm, $type, $is_ioc_array)){
 				if ($is_ioc_array)
 					$this->setIocArrayMember($this->$nm, $value, $type);
 				else 		
 					$this->setIocMember($this->$nm, $value, $type);
-			} 
+			} else if ($this->_check_suffix($nm,'json')){
+				if (is_object($value))
+					$this->$nm = $value;
+				else if (is_string($value))
+					$this->$nm = json_decode($value);	
+			} else if ($this->_check_suffix($nm,'bool')){
+				$this->$nm = TConvertions::ConvertToBoolean($value);
+			}
 		}
 	}
 	
@@ -264,6 +282,12 @@ interface IConfigurable {
 			if ($is_ioc_array)
 				return $this->getIocArrayMember($this->$nm, $type);
 			return $this->getIocMember($this->$nm, $type);	
+		}
+		if ($this->_check_suffix($nm, 'json')){
+			return $this->$nm;
+		}
+		if ($this->_check_suffix($nm, 'bool')){
+			return $this->$nm;
 		}
 		return null;
 	}

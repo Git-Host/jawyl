@@ -11,6 +11,26 @@ class TClassOrmConfig {
 		$this->_classname_ = $classname;
 	}
 	
+	private function _parse_refprop($propname,$type,$propval,$sorting){
+		preg_match_all('/(\w*)\s*\(([^\)]*)\)/', $propval, $props);
+			$n2 = count($props[1]);
+			for ($j = 0; $j < $n2; $j++){
+				$flds = explode(',',$props[2][j]);
+				foreach ($flds as $fld){
+					$fldnm = explode('.',$fld);
+					$this->_properties_[$propname]['fields'][] = array('name'=>trim($fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[1]):$default_tbl,'property'=>$props[1][j]);
+				}
+			}
+			if ($type == 'collection'){
+				preg_match_all('/(\w*)\s*\(\s*(asc|desc)\s*\)/', $sorting, $sorts);
+				$n2 = count($sorts[1]);
+				$this->_properties_[$propname]['sorting'] = array();
+				for ($j = 0; $j < $n2; $j++)
+					$this->_properties_[$propname]['sorting'][] = array('property'=>$sorts[1][$j],'type'=>$sorts[2][$j] == 'asc'?TSortingType::SORT_ASC:TSortingType::SORT_DESC);
+			}
+		
+	}
+	
 	public function ParseClass(ReflectionClass $rc){
 		$lineend = '(?:\s+[^\r\n]*|\s*)$/m';
 		$doc = $rc->getDocComment();
@@ -44,22 +64,7 @@ class TClassOrmConfig {
 		$n = count($matches[1]);
 		for ($i = 0; $i < $n; $i++){
 			$this->_properties_[$matches[1][$i]] = array('type'=>$matches[3][$i],'classname'=>$matches[2][$i],'fields'=>array());
-			preg_match_all('/(\w*)\s*\(([^\)]*)\)/', $matches[4][$i], $props);
-			$n2 = count($props[1]);
-			for ($j = 0; $j < $n2; $j++){
-				$flds = explode(',',$props[2][j]);
-				foreach ($flds as $fld){
-					$fldnm = explode('.',$fld);
-					$this->_properties_[$matches[1][$i]]['fields'][] = array('name'=>trim($fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[1]):$default_tbl,'property'=>$props[1][j]);
-				}
-			}
-			if ($matches[3][$i] == 'collection'){
-				preg_match_all('/(\w*)\s*\(\s*(asc|desc)\s*\)/', $matches[5][$i], $sorts);
-				$n2 = count($sorts[1]);
-				$this->_properties_[$matches[1][$i]]['sorting'] = array();
-				for ($j = 0; $j < $n2; $j++)
-					$this->_properties_[$matches[1][$i]]['sorting'][] = array('property'=>$sorts[1][$j],'type'=>$sorts[2][$j] == 'asc'?TSortingType::SORT_ASC:TSortingType::SORT_DESC);
-			}
+			$this->_parse_refprop($matches[1][$i],$matches[3][$i],$matches[4][$i],$matches[5][$i]);
 		}
 		
 		$props = $rc->getProperties(ReflectionProperty::IS_PUBLIC && ~ReflectionProperty::IS_STATIC);
@@ -70,22 +75,7 @@ class TClassOrmConfig {
 				$this->_properties_[$p->getName()] = array('type'=>'scalar','field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl));
 			} elseif (preg_match('/@orm.(reference|collection)\s+(\w+)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:\w+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
 				$this->_properties_[$p->getName()] = array('type'=>$matches[1],'classname'=>$matches[2],'fields'=>array());
-				preg_match_all('/(\w*)\s*\(([^\)]*)\)/', $matches[3], $props);
-				$n2 = count($props[1]);
-				for ($j = 0; $j < $n2; $j++){
-					$flds = explode(',',$props[2][j]);
-					foreach ($flds as $fld){
-						$fldnm = explode('.',$fld);
-						$this->_properties_[$p->getName()]['fields'][] = array('name'=>trim($fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[1]):$default_tbl,'property'=>$props[1][j]);
-					}
-				}
-				if ($matches[1] == 'collection'){
-					preg_match_all('/(\w*)\s*\(\s*(asc|desc)\s*\)/', $matches[4], $sorts);
-					$n2 = count($sorts[1]);
-					$this->_properties_[$p->getName()]['sorting'] = array();
-					for ($j = 0; $j < $n2; $j++)
-						$this->_properties_[$p->getName()]['sorting'][] = array('property'=>$sorts[1][$j],'type'=>$sorts[2][$j] == 'asc'?TSortingType::SORT_ASC:TSortingType::SORT_DESC);
-				}
+				$this->_parse_refprop($p->getName(),$matches[1],$matches[3],$matches[4]);
 			}
 		}
 	}
@@ -239,11 +229,15 @@ abstract class TNOrmLoader {
 		$this->adapter = $adapter; 
 		$this->dummy = new $meta['classname']();
 		$keys = array();
+		$props = array();
 		foreach ($meta['fields'] as $field){
 			$keys[] = $row[$field['name']];
-			$property = $field['property'];
-			$this->dummy->$property = $row[$field['name']];
+			if (!isset($props[$field['property']]))
+				$props[$field['property']] = array();
+			$props[$field['property']][] = $row[$field['name']];	
 		}	
+		foreach ($props as $prop=>$value)
+			$this->dummy->$prop = (count($value) == 1)?$value[0]:$value;	
 		$this->key = (count($keys) == 1)?$keys[0]:$keys;
 	}
 	
@@ -281,16 +275,19 @@ class TNOrmObjectLoader extends TNOrmLoader {
 
 class TNOrmCollectionLoader extends TNOrmLoader {
 	protected $sorting;
+	protected $container;
 	
-	public function __construct(&$row, $classname, $property, &$meta, TNOrmAdapter $adapter){
-		parent::__construct($row, $classname, $property, $meta, $adapter);
+	public function __construct(&$row, &$meta, TNOrmAdapter $adapter){
+		$this->container = $container;
+		parent::__construct($row, $meta, $adapter);
+		
 		$this->sorting = array();
 		foreach ($meta['sorting'] as $prop=>$type)
 			$this->sorting[] = new TOrmSorting($prop,$type);
 	}
 	
 	protected function load(){
-		$this->value = $this->adapter->Fetch($dummy,array(),$this->sorting);
+		$this->value = $this->adapter->Fetch($this->dummy,array(),$this->sorting);
 	}
 }
 
@@ -302,7 +299,53 @@ interface INOrmObject {
 	public function WasChanged($property);
 }
 
-
+class TNOrmObject implements INOrmObject {
+	private $_origins_ = array();
+	
+	private $_loaders_ = array();
+	
+	private function _check_orm_property(&$nm){
+		$rc = new ReflectionClass(get_class($this));
+		$ormprop = '_orm'.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
+		if ($p = $rc->getProperty($ormprop))
+			if ($p->IsPrivate() && !$p->IsStatic()){
+				$nm = $ormprop;
+				return $p;			
+			}
+		return false;
+	}
+	
+	public function __set($nm,$value){
+		if ($this->_check_orm_property($nm)){
+			if ($value instanceof TNOrmCollectionLoader || $value instanceof TNOrmCollectionLoader){
+				$this->_loaders_[$nm] = $value;
+				$this->$nm = null;
+			}
+			if (!isset($this->_origins_[$nm]))
+				$this->_origins_[$nm] = ($value instanceof TNOrmCollectionLoader || $value instanceof TNOrmCollectionLoader)?$value->Key():$value;
+			
+			$this->$nm = $value;
+		}
+	}
+	
+	public function __get($nm){
+		if ($this->_check_orm_property($nm)){
+			if (is_null($this->$nm)){
+				if (isset($this->_loaders_[$nm]))
+					$this->$nm = $this->_loaders_[$nm]->Value();
+			}
+			return $this->$nm;
+		}
+	}
+	
+	public function WasChanged($property){
+		if ($this->_check_orm_property($property)){
+			if (isset($this->_origins_[$property]))
+				return $this->$property != $this->_origins_[$property];
+		}
+		return false;
+	}
+} 
 
 class TNOrmAdapter extends TConfigurable implements IORMStorage {
 	const CONF_SCRIPT = 0;
@@ -318,7 +361,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 	private $_xml_config_path_;
 	private $_script_config_path_;
 	
+	private $_bool_unique_objects_;
+	
 	private $_loaded_orms_ = array();
+	
+	private $_loaded_objects_ = array();
 
 	private function _form_ds(&$orm,&$join,&$tables,&$fields){
 		$prevkeys = null;
@@ -378,11 +425,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 			}
 			$temp = array();
 			foreach ($propvalues as $propname => $fields){
-				$this->_ref_prop_value($v->$propname, count($fields),$temp);
+				$this->_ref_prop_value($value->$propname, count($fields),$temp);
 			}	
-			$v = $temp;
+			$value = $temp;
 		}
-		return is_array($v)?$v:array($v);
+		return is_array($value)?$value:array($value);
 	}
 	
 	private function _get_object_key_values($object){
@@ -394,16 +441,17 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 				case 'reference':{
 					$v = $this->_reference_value($object->$propname, $orm['properties'][$propname]);
 					foreach ($v as $val)
-						$result[] = $val;
+						if (!is_null($val))
+							$result[] = $val;
 				}break;
 				case 'scalar':
-				default:$result[] = $object->$propname;break;
+				default:if (!is_null($object->$propname)) $result[] = $object->$propname;break;
 			}
 		}
-		return $result();
+		return $result;
 	}
 	
-	private function _filter_from_object($orm,$object){
+	private function _filter_from_object($orm,$object,&$tables){
 		$filter = array();
 		foreach ($orm['properties'] as $prop=>$meta)
 			if (isset($object->$prop)){
@@ -433,13 +481,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
  * @return object
  */	
 	public function Load($object){
-		$orm = $this->_get_orm_config($dummy);
+		$orm = $this->_get_orm_config($object);
 		$join = array(); 
 		$tables = array();
 		$fields = array();
 		
 		$ds = $this->_form_ds($orm, $join, $tables, $fields);
-		$filter = $this->_filter_from_object($orm, $object);
+		$filter = $this->_filter_from_object($orm, $object,$tables);
 		
 		$ds = new TTable($ds, $fields, $filter, $join, array(),true);
 		$result = $this->_ioc_driver_->FetchRecords($ds);
@@ -537,8 +585,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		$tables = array();
 		$fields = array();
 		
+/* 
+ * @todo Probably implement removing object from loaded objects
+ */		
+		
 		$ds = $this->_form_ds($orm, $join, $tables, $fields);
-		$filter = $this->_filter_from_object($orm, $object);
+		$filter = $this->_filter_from_object($orm, $object,$tables);
 		$ds = new TTable($ds, $field, $filter, $join, array(),true);
 		return $this->_ioc_driver_->DeleteRecords($ds);
 	}	
@@ -557,8 +609,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		$fields = array();
 		
 		$ds = $this->_form_ds($orm, $join, $tables, $fields);
+		if (is_object($dummy))
+			$filter = $this->_filter_from_object($orm, $dummy, $tables);
 		
-		$filter = array();
 		foreach ($conditions as $condition){
 			$operands = array();
 			foreach ($condition->Operands as $o)
@@ -597,6 +650,22 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this);
 	} 
 	
+	private function _check_loaded($dummy,&$orm){
+		if ($this->_bool_unique_objects_){
+			if (!isset($this->_loaded_objects_[$orm['classname']]))
+				$this->_loaded_objects_[$orm['classname']] = array();
+			$id = $this->_get_object_key_values($dummy);
+			if (empty($id))
+				return $dummy;	
+			$id = join('|',$id);	
+			if (isset($this->_loaded_objects_[$orm['classname']][$id]))
+				$dummy = $this->_loaded_objects_[$orm['classname']][$id];
+			else	
+				$this->_loaded_objects_[$orm['classname']][$id] = $dummy;
+		}
+		return $dummy;
+	}
+	
 /**
  * Instantiates or loads an object
  * @param array $row
@@ -606,12 +675,24 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		$orm = $this->_get_orm_config($dummy);
 		if (!is_object($dummy))
 			$dummy = new $orm['classname']();
+			
+		$dummy = $this->_check_loaded($dummy, $orm);	
 
 		foreach ($orm['properties'] as $name=>$prop){
 			switch ($prop['type']){
 				case 'scalar':$dummy->$name = $row[$prop['field']['name']];break;
-				case 'reference':$dummy->$name = new TNOrmObjectLoader($row,$prop,$this);break;
-				case 'collection':$dummy->$name = new TNOrmCollectionLoader($row,$prop,$this);break;
+				case 'reference':{
+					$assign = true;
+					if (is_object($dummy->$name) && !($dummy->$name instanceof TNOrmLoader)){
+						$new_val = array();
+						foreach ($prop['fields'] as $field)
+							$new_val[] = $row[$field['name']];
+						$assign = $new_val != $this->_get_object_key_values($dummy->$name);	
+					}
+					if ($assign)
+						$dummy->$name = new TNOrmObjectLoader($row,$prop,$this);
+				}break;
+				case 'collection': if (!isset($dummy->$name)) $dummy->$name = new TNOrmCollectionLoader($row,$prop,$this);break;
 			}
 		}		
 
