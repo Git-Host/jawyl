@@ -31,6 +31,24 @@ class TClassOrmConfig {
 		
 	}
 	
+	private function _override_scalar_property($name,array $settings){
+			if (!isset($this->_properties_[$name]))
+				$this->_properties_[$name] = array();
+			$this->_properties_[$name]['type'] = 'scalar';
+			$this->_properties_[$name]['datatype'] = $settings['datatype']; 
+			$this->_properties_[$name]['field'] = $settings['field'];
+	}
+	
+	private function _override_ref_property($name,array $settings){
+			if (!isset($this->_properties_[$name]))
+				$this->_properties_[$name] = array('fields'=>array());
+			$this->_properties_[$name]['type'] = $settings['type'];
+			$this->_properties_[$name]['classname'] = $settings['classname'];
+			$this->_parse_refprop($name,$settings['type'],$settings['fields'],@$settings['sorting']);
+				
+				
+	}
+	
 	public function ParseClass(ReflectionClass $rc){
 		$lineend = '(?:\s+[^\r\n]*|\s*)$/m';
 		$doc = $rc->getDocComment();
@@ -53,29 +71,31 @@ class TClassOrmConfig {
 				$this->_keys_[] = $key;
 		}
 		
-		preg_match_all('/@property\s+\w+\s+\$(\w*)\s*\{@orm.scalar\s+(\w[\w\.]*)\s*\}'.$lineend,$doc,$matches);
-		$n = count($matches[1]);
+		preg_match_all('/@property\s+(\w+)\s+\$(\w*)\s*\{@orm.scalar\s+(\w[\w\.]*)\s*\}'.$lineend,$doc,$matches);
+		$n = count($matches[2]);
 		for ($i = 0; $i < $n; $i++){
-			$fld = explode('.',$matches[2][$i]);
-			$this->_properties_[$matches[1][$i]] = array('type'=>'scalar','field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl));
+			$fld = explode('.',$matches[3][$i]);
+			$this->_override_scalar_property($matches[2][$i], array('datatype'=>$matches[1][$i],'field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl)));
 		}
 		
-		preg_match_all('//@property\s+\w+\s+\$(\w*)\s*\{@orm.(reference|collection)\s+(\w+)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+([^\}]*)|\s*)\}'.$lineend,$doc,$matches);
-		$n = count($matches[1]);
+		preg_match_all('//@property\s+(\w+)\s+\$(\w*)\s*\{@orm.(reference|collection)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+([^\}]*)|\s*)\}'.$lineend,$doc,$matches);
+		$n = count($matches[2]);
 		for ($i = 0; $i < $n; $i++){
-			$this->_properties_[$matches[1][$i]] = array('type'=>$matches[3][$i],'classname'=>$matches[2][$i],'fields'=>array());
-			$this->_parse_refprop($matches[1][$i],$matches[3][$i],$matches[4][$i],$matches[5][$i]);
+			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'fields'=>$matches[4][$i],'sorting'=>$matches[5][$i]));
 		}
 		
 		$props = $rc->getProperties(ReflectionProperty::IS_PUBLIC && ~ReflectionProperty::IS_STATIC);
 		foreach ($props as $p){
 			$doc = $p->getDocComment();
+			$datatype = null;
+			if (preg_match('/@var\s+(\w+)/',$doc,$matches2))
+				$datatype = $matches2[1];
+			
 			if (preg_match('/@orm.scalar\s+(\w[\w\.]*)\s*$/m', $doc,$matches)){
 				$fld = explode('.',$matches[1]);
-				$this->_properties_[$p->getName()] = array('type'=>'scalar','field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl));
-			} elseif (preg_match('/@orm.(reference|collection)\s+(\w+)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:\w+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
-				$this->_properties_[$p->getName()] = array('type'=>$matches[1],'classname'=>$matches[2],'fields'=>array());
-				$this->_parse_refprop($p->getName(),$matches[1],$matches[3],$matches[4]);
+				$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl)));
+			} elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:\w+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
+				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'fields'=>$matches[2],'sorting'=>$matches[3]));
 			}
 		}
 	}
@@ -106,12 +126,15 @@ class TClassOrmConfig {
 		
 		$scalars = $xpath->query('/class/scalar');
 		foreach ($scalars as $node){
-			$this->_properties_[$node->getAttribute("name")] = array("type"=>"scalar","field"=>array("name"=>$node->getAttribute("name"),"table"=>$node->getAttribute("table")?$node->getAttribute("table"):$default_tbl));
+			$this->_override_scalar_property($node->getAttribute("name"), array('datatype'=>$node->getAttribute("type"),'field'=>array("name"=>$node->getAttribute("field"),"table"=>$node->getAttribute("table")?$node->getAttribute("table"):$default_tbl)));
 		}
 		
 		$links = $xpath->query('/class/reference|/class/collection');
 		foreach ($links as $node){
-			$this->_properties_[$node->getAttribute("name")] = array("type"=>$node->tagName,"classname"=>$node->getAttribute("classname"),"fields"=>array());
+			if (!isset($this->_properties_[$node->getAttribute("name")]))
+				$this->_properties_[$node->getAttribute("name")] = array('fields'=>array());
+			$this->_properties_[$node->getAttribute("name")]["type"] = $node->tagName;
+			$this->_properties_[$node->getAttribute("name")]["classname"] = $node->getAttribute("classname");
 			$properties = $xpath->query('property',$node);
 			foreach ($properties as $propnode){
 				$fields  = $xpath->query('field',$propnode);
@@ -360,6 +383,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 	
 	private $_xml_config_path_;
 	private $_script_config_path_;
+	private $_date_format_;
 	
 	private $_bool_unique_objects_;
 	
@@ -410,7 +434,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		} else if (is_object($value)){
 			$this->_ref_prop_value($this->_get_object_key_values($value), $fc, $refvalues);
 		} else
-			$refvalues[] = $value;	
+			$refvalues[] = (string)$value;	
 	}
 	
 	private function _reference_value($value,$meta){
@@ -432,6 +456,18 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		return is_array($value)?$value:array($value);
 	}
 	
+	private function _get_scalar_prop($object,$prop,$datatype){
+		switch ($datatype){
+			case 'date':
+			case 'TDate':if ($object->$prop instanceof TDate){
+				if ($this->_date_format_)
+					return $object->$prop->ToString($this->_date_format_);
+				return $object->$prop;
+			}break;
+		}
+		return $object->$prop;
+	}
+	
 	private function _get_object_key_values($object){
 		$orm = $this->_get_orm_config($value);
 		$result = array();
@@ -445,7 +481,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 							$result[] = $val;
 				}break;
 				case 'scalar':
-				default:if (!is_null($object->$propname)) $result[] = $object->$propname;break;
+				default:if (!is_null($object->$propname)) $result[] = $this->_get_scalar_prop($object,$propname,$orm['properties'][$propname]['datatype']);break;
 			}
 		}
 		return $result;
@@ -467,7 +503,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 					case 'collection':break;
 					case 'scalar':
 					default:{
-						$operands = array(new TTableField($meta['field']['name'],null,$tables[$meta['field']['table']]),$object->$prop);
+						$operands = array(new TTableField($meta['field']['name'],null,$tables[$meta['field']['table']]),$this->_get_scalar_prop($object,$prop,$meta['datatype']));
 						$filter[] = new TCondition(TConditionType::C_EQUAL, $operands);
 					}break;
 				}
@@ -494,7 +530,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		foreach ($result as $item){
 			return $this->Create($item,$object);
 		}
-		throw new TNOrmException(TNOrmException::ERR_OBJECT_NOT_FOUND);
+		//throw new TNOrmException(TNOrmException::ERR_OBJECT_NOT_FOUND);
+		return null;
 	}
 	
 	
@@ -525,7 +562,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 				if (count($orm['keys']) == 1)
 					$emptyid = true;
 				else throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_INCOMPLETE);	
-			} else $keyvalues[] = $object->$keyprop;
+			} else $keyvalues[] = $this->_get_scalar_prop($object,$keyprop,$orm['properties'][$keyprop]['datatype']);
 		}
 		
 		foreach ($orm['properties'] as $prop => $meta)
@@ -543,7 +580,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 					case 'scalar':
 					default:{
 						$this->_check_save_tables($object, $meta['field']['table'], $orm, $tables,$keyvalues);
-						$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $object->$prop;
+						$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
 					}break; 
 				}	
 			}
@@ -680,7 +717,23 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 
 		foreach ($orm['properties'] as $name=>$prop){
 			switch ($prop['type']){
-				case 'scalar':$dummy->$name = $row[$prop['field']['name']];break;
+				case 'scalar':{
+					$v = $row[$prop['field']['name']];
+					switch ($prop['dadatype']){
+						case 'bool':$v = TConvertions::ConvertToBoolean($v);break;
+						case 'date':
+						case 'TDate':{
+							if ($this->_date_format_){
+								$v = date_create_from_format($this->_date_format_,$v);
+								$v = $v->getTimestamp();
+							}
+							$v = new TDate($v);
+						}break;
+						case 'int':$v = (int)$v;break;
+						case 'float':$v = (float)$v;break;	
+					}
+					$dummy->$name = $v;
+				}break;
 				case 'reference':{
 					$assign = true;
 					if (is_object($dummy->$name) && !($dummy->$name instanceof TNOrmLoader)){
@@ -721,6 +774,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 			}break;
 			case 'XmlConfigPath':$this->_xml_config_path_ = TApplication::$Application->AdjustPath($value);break;
 			case 'ScriptConfigPath':$this->_script_config_path_ = TApplication::$Application->AdjustPath($value);break;
+			case 'DateFormat':$this->_date_format_ = $value;break;
 			default:parent::__set($nm,$value);break;
 		}
 	}
@@ -739,7 +793,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage {
 		if ($object instanceof ReflectionClass){
 			$cn = $object->getName();
 			$rc = $object;
-		} else if (is_string($object)) 
+		} else if (is_object($object)) 
 			$cn = get_class($object);
 		else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 

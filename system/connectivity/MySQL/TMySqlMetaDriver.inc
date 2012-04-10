@@ -605,7 +605,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 		$v = $a->getValue();
 		switch ($a->Definition()->Type()->TypeCode){ 
 			case TDataType::BOOLEAN:$v = ($v)?1:0;break;
-			case TDataType::DATETIME:$v = $v?$v->toString("Y-m-d"):null;break;
+			case TDataType::DATETIME:$v = $v?$v->ToString("Y-m-d"):null;break;
 			case TDataType::FILE:
 			case TDataType::FILELINK:
 			case TDataType::IMAGE:
@@ -692,17 +692,17 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 	
 	private function _set_snapshot_values($tablename, TDate $date, $idfield, $id, array $values){
 		if (!empty($values)){
-			$interval = $this->Fetch("select * from ".$tablename." where (".$idfield." = :ss_id) and (`date_since` <= :d) and ((`date_till` > :d) or (`date_till` is null))",array("ss_id"=>$id,"d"=>$date->toString("Y-m-d")));
+			$interval = $this->Fetch("select * from ".$tablename." where (".$idfield." = :ss_id) and (`date_since` <= :d) and ((`date_till` > :d) or (`date_till` is null))",array("ss_id"=>$id,"d"=>$date->ToString("Y-m-d")));
 			foreach ($interval as $int){
 				$date_since = new TDate($int["date_since"]);
 				$record = $this->_prepare_snapshot_record($int, $values);
 				$record["values"]["date_since"] = $date->ToString("Y-m-d");		
-				$this->Execute("update ".$tablename." set `date_till` = :ds where (".$idfield." = :ss_id) and (`date_since` = :ods)",array("ss_id"=>$id,"ds"=>$date->toString("Y-m-d"),"ods"=>$date_since->toString("Y-m-d")));
+				$this->Execute("update ".$tablename." set `date_till` = :ds where (".$idfield." = :ss_id) and (`date_since` = :ods)",array("ss_id"=>$id,"ds"=>$date->ToString("Y-m-d"),"ods"=>$date_since->ToString("Y-m-d")));
 				return $this->Execute("insert ".$tablename." (".join(",",$record["flds"]).") values (".join(",",$record["params"]).")",$record["values"]);
 			} 
 			
 			$min_date = $this->Scalar("select min(`date_since`) from ".$tablename." where (".$idfield." = :ss_id)",array("ss_id"=>$id));
-			$record = $this->_prepare_snapshot_record(array($idfield=>$id,"date_since"=>$date->toString("Y-m-d"),"date_till"=>$min_date), $values);
+			$record = $this->_prepare_snapshot_record(array($idfield=>$id,"date_since"=>$date->ToString("Y-m-d"),"date_till"=>$min_date), $values);
 			return $this->Execute("insert ".$tablename." (".join(",",array_keys($record["flds"])).") values (".join(",",$record["params"]).")",$record["values"]);
 		}
 		return 0;
@@ -713,8 +713,8 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 			$field = explode(",", $field);
 		if (is_array($field) && (!empty($field))){
 			if (count($field) == 1)
-				return $this->Scalar("select ".$field[0]." from ".$tablename." where ".$idfield." = :ss_id and (`date_since` <= :dt) and ((`date_till` > :dt) or (`date_till` is NULL))",array(":ss_id"=>$id,"dt"=>$date->toString("Y-m-d")));
-			$result =  $this->Fetch("select ".join(", ", $field)." from ".$tablename." where ".$idfield." = :ss_id and (`date_since` <= :dt) and ((`date_till` > :dt) or (`date_till` is NULL))",array(":ss_id"=>$id,"dt"=>$date->toString("Y-m-d")));
+				return $this->Scalar("select ".$field[0]." from ".$tablename." where ".$idfield." = :ss_id and (`date_since` <= :dt) and ((`date_till` > :dt) or (`date_till` is NULL))",array(":ss_id"=>$id,"dt"=>$date->ToString("Y-m-d")));
+			$result =  $this->Fetch("select ".join(", ", $field)." from ".$tablename." where ".$idfield." = :ss_id and (`date_since` <= :dt) and ((`date_till` > :dt) or (`date_till` is NULL))",array(":ss_id"=>$id,"dt"=>$date->ToString("Y-m-d")));
 			foreach ($result as $r)
 				return $r;	 
 		}	
@@ -779,7 +779,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 		$params = array();
 		$vls = array("id"=>$id);
 		$pflds = array();
-		$pvls = array("id"=>$id,"date_since"=>$date->toString("Y-m-d"));
+		$pvls = array("id"=>$id,"date_since"=>$date->ToString("Y-m-d"));
 		$pparams = array();
 		
 		foreach ($ads as $ad){
@@ -950,7 +950,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 		$inner .= " inner join ".$this->RealTableName(self::ENTITIES_TABLE)." e on e.".self::ENTITY_PK_FIELD." = e_".$d->Id().".".self::ENTITY_PK_FIELD;
 		$inner .= " inner join ".$this->RealTableName(self::CLASSES_TABLE)." c on c.".self::CLASS_PK_FIELD." = e.".self::CLASS_PK_FIELD;
 		
-		$result = $this->Fetch("select ".join(",",$flds)." from ".$from.$inner.$left." wnere e_".$instance->InstanceClass()->Id().".".self::ENTITY_PK_FIELD." = :id", array("id"=>$instance->Id(),"dt"=>$date->toString("Y-m-d")));
+		$result = $this->Fetch("select ".join(",",$flds)." from ".$from.$inner.$left." wnere e_".$instance->InstanceClass()->Id().".".self::ENTITY_PK_FIELD." = :id", array("id"=>$instance->Id(),"dt"=>$date->ToString("Y-m-d")));
 		foreach ($result as $row){
 			foreach ($row as $key=>$value)
 			 if (!is_numeric($key))
@@ -992,9 +992,9 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 		$q = "select e.`date_since` as snapshot_date,".join(",",$flds)." from (".join(" union distinct ",$base).") e".$j." order by e.`date_since` asc";
 		$parameters = array("id"=>$instance->Id());
 		if (!is_null($since))
-			$parameters = array("since"=>$since->toString("Y-m-d"));
+			$parameters = array("since"=>$since->ToString("Y-m-d"));
 		if (!is_null($till))
-			$parameters = array("till"=>$till->toString("Y-m-d"));
+			$parameters = array("till"=>$till->ToString("Y-m-d"));
 			
 		$result = new TMySqlDBSnapshotIterator($this->Fetch($q, $parameters),$this,$instance,$since);
 		return $result;

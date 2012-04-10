@@ -474,7 +474,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		if (is_bool($value)) return $value?"1":"0";
 		if (is_int($value) || is_float($value)) return $value;
 		if ($value instanceof TDate)
-			$value = $value->toString("Y-m-d");	  
+			$value = $value->ToString("Y-m-d");	  
 		if (is_string($value)){
 			if ($value == "")
 		  		return "Null";

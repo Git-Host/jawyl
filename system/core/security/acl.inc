@@ -23,6 +23,9 @@ interface ISecuritySubject{
 }
 
 interface ISecurityContext extends ISecuritySubject {
+/** 
+ * @return ISecuritySubject[]
+ */	
 	public function Cooperators();
 }
 

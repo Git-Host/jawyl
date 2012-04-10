@@ -23,8 +23,13 @@
  * @property-read int $WeekDay number of day of the week represented by date, returns 0 for Sunday through 6 for Saturday
  * @property-read int $YearDay number of day of the year represented by date
  * @property-read TDate $LastMonthDate last day of date month
+ * 
  */
 	class TDate {
+/*
+ * @todo wrap DateTime class by TDate
+ * 
+ * */		
 		private $_timestamp_;
 		
 		const DP_DAY = 0;
@@ -222,7 +227,7 @@
  * @param string $format format supported by php date() function
  * @return string 
  */		
-		public function toString($format){
+		public function ToString($format){
 			if (is_null($format)) 
 				return TI18n::Locale()->FormatDateTime($this->_timestamp_);	
 			return date($format,$this->_timestamp_);
