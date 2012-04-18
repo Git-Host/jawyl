@@ -53,6 +53,14 @@
 					</xsd:complexType>
 				</xsd:element>
 				<xsd:element name="key" minOccurs="1" maxOccurs="unbounded" type="xsd:string" />
+				<xsd:element name="nestedset" minOccurs="0" maxOccurs="1">
+					<xsd:complexType>
+						<xsd:all>
+							<xsd:element name="parentfield" type="xsd:string" />
+							<xsd:element name="childrenfield" type="xsd:string" />
+						</xsd:all>
+					</xsd:complexType>					
+				</xsd:element>
 				<xsd:choice minOccurs="1" maxOccurs="unbounded">
 					<xsd:element name="scalar">
 						<xsd:complexType>

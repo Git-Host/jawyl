@@ -34,6 +34,8 @@ TApplication::import("core::utils::THttpMeta");
  */
 TApplication::import("common::theme::engine");
 
+TApplication::import("common::enum");
+
 /**
  * @package Common
  * @subpackage Mvp
@@ -1041,8 +1043,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  * @category System
  * class representing presenter action parameter types.
  */
-final class TActionParameterType {
-	private $_code_;
+final class TActionParameterType extends TEnumeration {
 	const TYPE_BOOLEAN = "bool";
 	const TYPE_INTEGER = "int";
 	const TYPE_REAL = "real";
@@ -1056,30 +1057,9 @@ final class TActionParameterType {
 	const TYPE_TEXT = "text";
 	const TYPE_HTML = "html";
 	const TYPE_UNSUPPORTED = "unknown";
-/**
- * checks if specified type is equal to one of class constants
- * @param string $type
- * @return boolean 
- */	
-	public static function CheckType($type){
-		$checker = array(self::TYPE_BOOLEAN,self::TYPE_DATE,self::TYPE_FILE,self::TYPE_INTEGER,self::TYPE_PASSWORD,self::TYPE_PICTURE,self::TYPE_REAL,self::TYPE_SELECT,self::TYPE_SET,self::TYPE_STRING,self::TYPE_TEXT,self::TYPE_HTML);
-		if (in_array($type,$checker))
-			return $type;
-		return self::TYPE_UNSUPPORTED;
-	}
-	
-	public function __construct($code){
-		if (!self::CheckType($code))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-		$this->_code_ = $code;	
-	}
 	
 	public static function GetType($code){
 		return new TActionParameterType($code);
-	}
-	
-	public function __toString(){
-		return $this->_code_;
 	}
 }
 	

@@ -52,7 +52,7 @@ interface IConfigurable {
  		if (!isset(self::$_ioc_types_[get_class($this)])){
 			$filename = TApplication::$Application->IocTypesCompileDir.'/'.get_class($this).'.ioc.php'; 			
  			if (self::$CompileIocTypes)
- 				self::$CompileIocTypes(get_class($this),$filename,true);
+ 				self::CompileIocTypes(get_class($this),$filename,true);
  			if (file_exists($filename)){
  				require_once($filename);
  				self::$_ioc_types_[get_class($this)] = $ioctypes;
@@ -221,7 +221,7 @@ interface IConfigurable {
 		return false;
 	}
  	
- 	private function _check_ioc(&$nm,&$type,&$is_ioc_array){
+ 	private function _check_ioc($nm,&$type,&$is_ioc_array){
  		$type = null;
  		$is_ioc_array = false;
 		$iocname = '_ioc'.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
@@ -232,18 +232,15 @@ interface IConfigurable {
 					$type = self::$_ioc_types_[get_class($this)][$iocname]['type'];
 					$is_ioc_array = self::$_ioc_types_[get_class($this)][$iocname]['is_array'];
 				}
-			$nm = $iocname;
-			return true;
+			return $iocname;
 		}
 		return false;		
  	}
  	
- 	private function _check_suffix(&$nm,$suffix){
-		$yamlname = '_'.$suffix.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
-		if ($p = $this->_check_property($yamlname)){
-			$nm = $yamlname;
-			return true;
-		}
+ 	private function _check_suffix($nm,$suffix){
+		$name = '_'.$suffix.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
+		if ($p = $this->_check_property($name))
+			return $name;
 		return false;
  	}
 	
@@ -251,24 +248,18 @@ interface IConfigurable {
  	 * @ignore
  	 */
 	public function __set($nm,$value){
-		if ($p = $this->_check_property($nm)){
-			if ($p->isPublic() && !$p->isStatic())
-				$this->$nm = $value;
-			else throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);	
-		} else {	
-			if ($this->_check_ioc($nm, $type, $is_ioc_array)){
-				if ($is_ioc_array)
-					$this->setIocArrayMember($this->$nm, $value, $type);
-				else 		
-					$this->setIocMember($this->$nm, $value, $type);
-			} else if ($this->_check_suffix($nm,'json')){
-				if (is_object($value))
-					$this->$nm = $value;
-				else if (is_string($value))
-					$this->$nm = json_decode($value);	
-			} else if ($this->_check_suffix($nm,'bool')){
-				$this->$nm = TConvertions::ConvertToBoolean($value);
-			}
+		if ($n = $this->_check_ioc($nm, $type, $is_ioc_array)){
+			if ($is_ioc_array)
+				$this->setIocArrayMember($this->$n, $value, $type);
+			else 		
+				$this->setIocMember($this->$n, $value, $type);
+		} else if ($n = $this->_check_suffix($nm,'json')){
+			if (is_object($value))
+				$this->$n = $value;
+			else if (is_string($value))
+				$this->$n = json_decode($value);	
+		} else if ($n = $this->_check_suffix($nm,'bool')){
+			$this->$n = TConvertions::ConvertToBoolean($value);
 		}
 	}
 	
@@ -276,18 +267,16 @@ interface IConfigurable {
  	 * @ignore
  	 */
 	public function __get($nm){
-		if ($this->_check_property($nm))
-			return $this->$nm;
-		if ($this->_check_ioc($nm, $type, $is_ioc_array)){
+		if ($n = $this->_check_ioc($nm, $type, $is_ioc_array)){
 			if ($is_ioc_array)
-				return $this->getIocArrayMember($this->$nm, $type);
-			return $this->getIocMember($this->$nm, $type);	
+				return $this->getIocArrayMember($this->$n, $type);
+			return $this->getIocMember($this->$n, $type);	
 		}
-		if ($this->_check_suffix($nm, 'json')){
-			return $this->$nm;
+		if ($n = $this->_check_suffix($nm, 'json')){
+			return $this->$n;
 		}
-		if ($this->_check_suffix($nm, 'bool')){
-			return $this->$nm;
+		if ($n = $this->_check_suffix($nm, 'bool')){
+			return $this->$n;
 		}
 		return null;
 	}
@@ -296,10 +285,12 @@ interface IConfigurable {
  	 * @ignore
  	 */
 	public function __isset($nm){
-		if ($this->_check_property($nm))
-			return isset($this->$nm);
-		if ($this->_check_ioc($nm, $type, $is_ioc_array))
-			return isset($this->$nm);
+		if ($n = $this->_check_ioc($nm, $type, $is_ioc_array))
+			return isset($this->$n);
+		if ($n = $this->_check_suffix($nm, 'json'))
+			return isset($this->$n);
+		if ($n = $this->_check_suffix($nm, 'bool'))
+			return isset($this->$n);
 		return false;
 	}
 	
@@ -307,11 +298,14 @@ interface IConfigurable {
  	 * @ignore
  	 */
 	public function __unset($nm){
-		if ($this->_check_property($nm))
-			unset($this->$nm);
-		else	
-			if ($this->_check_ioc($nm, $type, $is_ioc_array))
-				unset($this->$nm);
+		if ($n = $this->_check_ioc($nm, $type, $is_ioc_array))
+				unset($this->$n);
+		else 
+			if ($n = $this->_check_suffix($nm, 'json'))
+				unset($this->$n);
+		else
+			if ($n = $this->_check_suffix($nm, 'bool'))
+				unset($this->$n);
 	}	
  }
 ?>

@@ -6,9 +6,7 @@
  * @category System
  * item property types class.	 
  */	
-	final class TItemPropertyType {
-		private $_code_;
-		
+	final class TItemPropertyType extends TEnumeration {
 		const PT_STRING = "str";
 		const PT_INT = "int";
 		const PT_DEC = "dec";
@@ -21,36 +19,7 @@
 		const PT_PASSWORD = "pwd";
 		const PT_REFERENCE = "ref";
 		const PT_SET = "set";
-/**
- * gets list of property types
- * @return array
- */		
-		public static function TypeList(){
-			return array(
-				self::PT_STRING,
-				self::PT_INT,
-				self::PT_DEC,
-				self::PT_DATE,
-				self::PT_MULTILINE,
-				self::PT_HTML,
-				self::PT_FILE,
-				self::PT_IMAGE,
-				self::PT_BOOL,
-				self::PT_PASSWORD,
-				self::PT_REFERENCE,
-				self::PT_SET
-			);
-		}
-
-		public function __construct($code){
-			if (!in_array($code,self::TypeList()))
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-			$this->_code_ = $code;
-		}
-		
-		public static function GetType($code){return new TItemPropertyType($code);}
-		
-		public function __toString(){return $this->_code_;}
+		const PT_COLLECTION = "collection";
 	}
 	
 	interface IPropertyMeta {
@@ -112,11 +81,7 @@
  * gets reference class name
  * @return string
  */		
-		public function ClassName();
-/**
- * gets instance property refers to
- * @return IInstance
- */		
+		public function ClassName();	
 	}	
 	
 /**
@@ -128,7 +93,7 @@
 	interface IReferenceProperty extends IProperty {		
 /**
  * gets instance property refers to
- * @return IInstance
+ * @return IIdentity
  */		
 		public function ReferedInstance();
 	}
@@ -203,8 +168,7 @@
 		public function __construct($name,$caption,$type,array $selection = array(),$nullable = true,$readonly = false){
 			$this->name = $name;
 			$this->caption = $caption;
-			if (!$this->type = TItemPropertyType::GetType($type))
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+			$this->type = new TItemPropertyType($type);
 			$this->selection = $selection;
 			$this->nullable = $nullable;
 			$this->readonly = $readonly;			

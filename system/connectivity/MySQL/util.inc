@@ -41,9 +41,14 @@ class TMySqlDBRawDataIterator extends TIterator {
 	protected $currentRow;
 	protected $fields = array();
 	protected $pointer;
+/**
+ * @var TMySqlDBDriver
+ */	
+	protected $driver;
 	
-	public function __construct($resultset){
+	public function __construct($resultset, TMySqlDBDriver $driver){
 		$this->resultSet = $resultset;
+		$this->driver = $driver;
 		$fn = mysql_num_fields($this->resultSet);
 		for ($i = 0; $i < $fn; $i++){
 			$nm = mysql_field_name($this->resultSet,$i);
@@ -94,27 +99,56 @@ class TMySqlDBRawDataIterator extends TIterator {
 }
 
 class TMySqlNestedSetElement extends TNestedSetElement {
-	public function IsLeaf(){
-		return ($this->row[TMySqlDBDriver::NS_RKEY_FIELD] - $this->row[TMySqlDBDriver::NS_LKEY_FIELD]) == 1?true:false; 
-	}
+	
 }
 
 class TMySqlNestingsIterator extends TIteratorAdapter {
 	private $_item_;
+	private $_current_parent_;
+	private $_parents_stack_ = array();
+	private $_prev_item_ = null;
+	
+	public function __construct(IIterator $base,$lkeyname,$rkeyname){
+		parent::__construct($base);
+	}	
 	
 	public function Next(){
+		$this->_prev_item_ = $this->_item_; 
 		unset($this->_item_);
-		return parent::Next();
+		return parent::Next(); 
 	}
 
 	public function Seek($count){
-		unset($this->_item_);
-		return parent::Next();
+		$this->Next();
 	}
 	
 	public function Item(){
-		if (!isset($this->_item_))
-			$this->_item_ = new TMySqlNestedSetElement($this->iterator->Item());
+		if (!isset($this->_item_)){
+			$row = $this->iterator->Item();
+			
+			$lkey = TMySqlDBDriver::NS_LKEY_FIELD;
+			$rkey = TMySqlDBDriver::NS_RKEY_FIELD;
+			
+			if (!empty($this->_prev_item_)){
+				if ($this->_prev_item_->$rkey > $row[$rkey])
+					array_push($this->_parents_stack_, $this->_prev_item_);
+			}
+			
+			$hindex = count($this->_parents_stack_) - 1;
+			$parent = null;
+			if (!empty($this->_parents_stack_))
+				$parent = $this->_parents_stack_[$hindex];
+				
+			while ($parent && $row[$lkey] > $parent->$rkey) {
+				array_pop($this->_parents_stack_);
+				$hindex--;
+				$parent = null;
+				if (!empty($this->_parents_stack_))
+					$parent = $this->_parents_stack_[$hindex];
+			} 
+			
+			$this->_item_ = new TMySqlNestedSetElement($row,$parent);
+		}
 		return $this->_item_;
 	}
 
@@ -380,12 +414,6 @@ class TMySqlDBSnapshotIterator extends TIteratorAdapter {
  */
 final class TMySqlDBClassIterator extends TMySqlDBRawDataIterator {
 	private $_item_ = null;
-	private $_driver_;
-	
-	public function __construct($resultset, TMySqlDBDriver $driver){
-		$this->_driver_ = $driver;
-		parent::__construct($resultset);
-	}
 	
 	public function Next(){
 		unset($this->_item_);
@@ -393,32 +421,23 @@ final class TMySqlDBClassIterator extends TMySqlDBRawDataIterator {
 	}	
 	public function Item(){
 		if (!isset($this->_item_))
-			$this->_item_ = TMySqlRowConverter::ToClass($this->currentRow,$this->_driver_); 
+			$this->_item_ = TMySqlRowConverter::ToClass($this->currentRow,$this->driver); 
 		return $this->_item_;
 	}
 	public function DataType(){return IIterator::DT_CLASS;}
 }
 
 final class TMySqlDBMixedIterator extends TMySqlDBRawDataIterator {
-	private $_driver_;
-	
-	public function __construct($resultset, TMySqlDBDriver $driver){
-		$this->_driver_ = $driver;
-		parent::__construct($resultset);
-	}
-	
 	public function Item(){
 		$_ITEM = array();
-		$_ITEM["instance"] = TMySqlRowConverter::ToInstance($this->currentRow,$this->_driver_);
-		$_ITEM["class"] = TMySqlRowConverter::ToClass($this->currentRow,$this->_driver_);
-		$_ITEM["attrdef"] = TMySqlRowConverter::ToAttrDefinition($this->currentRow,$this->_driver_);
+		$_ITEM["instance"] = TMySqlRowConverter::ToInstance($this->currentRow,$this->driver);
+		$_ITEM["class"] = TMySqlRowConverter::ToClass($this->currentRow,$this->driver);
+		$_ITEM["attrdef"] = TMySqlRowConverter::ToAttrDefinition($this->currentRow,$this->driver);
 		$_ITEM["row"] = $this->currentRow;
 		return $_ITEM;
 	}
 	public function DataType(){return IIterator::DT_MIXED;}	
 }
-
-
 
 /**
  * @package Connectivity
@@ -427,12 +446,6 @@ final class TMySqlDBMixedIterator extends TMySqlDBRawDataIterator {
  */
 final class TMySqlDBClassAttrIterator extends TMySqlDBRawDataIterator {
 	private $_item_ = null;
-	private $_driver_;
-	
-	public function __construct($resultset, TMySqlDBDriver $driver){
-		$this->_driver_ = $driver;
-		parent::__construct($resultset);
-	}
 			
 	public function Next(){
 		unset($this->_item_);
@@ -446,7 +459,7 @@ final class TMySqlDBClassAttrIterator extends TMySqlDBRawDataIterator {
 	
 	public function Item(){
 		if (!isset($this->_item_))
-			$this->_item_ = TMySqlRowConverter::ToAttrDefinition($this->currentRow,$this->_driver_);
+			$this->_item_ = TMySqlRowConverter::ToAttrDefinition($this->currentRow,$this->driver);
 		return $this->_item_;
 	}
 	
@@ -460,12 +473,6 @@ final class TMySqlDBClassAttrIterator extends TMySqlDBRawDataIterator {
  */
 final class TMySqlDBInstanceIterator extends TMySqlDBRawDataIterator {
 	private $_instance_ = null;
-	private $_driver_;
-	
-	public function __construct($resultset, TMySqlDBDriver $driver){
-		$this->_driver_ = $driver;
-		parent::__construct($resultset);
-	}
 			
 	public function Next(){
 		unset($this->_instance_);
@@ -479,7 +486,7 @@ final class TMySqlDBInstanceIterator extends TMySqlDBRawDataIterator {
 	
 	public function Item(){
 		if (!isset($this->_instance_))
-			$this->_instance_ = TMySqlRowConverter::ToInstance($this->currentRow,$this->_driver_);
+			$this->_instance_ = TMySqlRowConverter::ToInstance($this->currentRow,$this->driver);
 		return $this->_instance_;
 	}
 	public function DataType(){return IIterator::DT_INSTANCE;}
