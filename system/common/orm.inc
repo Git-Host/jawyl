@@ -13,13 +13,10 @@ class TOrmSorting {
  * @param string $attr
  * @param int $type
  */	
-	public function __construct($attr,$type = null){
+	public function __construct($attr,TSortingType $type = null){
 		$this->Attribute = $attr;
-		if (!is_null($type)){
-			if (!TSortingType::CheckType($type))
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		if (!is_null($type))
 			$this->_type_ = $type;
-		}
 	}
 	
 	public function __get($nm){
@@ -32,9 +29,7 @@ class TOrmCondition {
 	private $_type_;
 	private $_operands_;
 
-	public function __construct($type,array $operands = array()){
-		if (!TConditionType::CheckType($type))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+	public function __construct(TConditionType $type,array $operands = array()){
 		$this->_type_ = $type;
 		$this->_operands_ = $operands;
 	}
@@ -69,11 +64,11 @@ interface IORMStorage {
 	public function Delete($object);
 	
 /**
- * 
  * Fetches a collection of objects from storage
  * @param object|ReflectionClass|string $dummy
+ * @param string[] $greedy
  * @param TOrmCondition[] $conditions
  * @param TOrmSorting[] $sorting
  */	
-	public function Fetch($dummy,array $conditions = array(),array $sorting = array(),$offset = null, $count = null); 
+	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null); 
 } 

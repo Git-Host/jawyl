@@ -1,19 +1,7 @@
 <?php
-final class TTypeChecker {
-	private $_types_;
-	
-	public function __construct($class){
-		$rc = new ReflectionClass($class);
-		$this->_types_ = array_values($rc->getConstants());
-	}
-	
-	public function CheckType($type){
-		return in_array($type,$this->_types_);
-	}
-}
+TApplication::Import('common::enum');
 
-
-class TOperationType {
+final class TOperationType extends TEnumeration {
    	const O_ADD = 15;
    	const O_SUBTRACT = 16;
    	const O_MUL = 17;
@@ -68,16 +56,9 @@ class TOperationType {
    	const O_TIME_MIN = 66;
    	const O_TIME_SEC = 67;
    	const O_TIME_MKSEC = 68;
-   	
-   	private static $_checker_;
-   	
-   	public static function CheckType($type){
-   		if (!self::$_checker_ instanceof TTypeChecker) self::$_checker_ = new TTypeChecker('TOperationType');
-   		return self::$_checker_->CheckType($type);
-   	} 
 }
 
-class TConditionType {
+final class TConditionType extends TEnumeration {
 	const C_EQUAL = 0;
 	const C_NOT_EQUAL = 1;
 	const C_LESS = 2;
@@ -93,20 +74,9 @@ class TConditionType {
 	const C_REGEXP = 12;
 	const C_IS = 13;
 	const C_NOT = 14;
-	
-   	private static $_checker_;
-   	
-   	public static function CheckType($type){
-   		if (!self::$_checker_ instanceof TTypeChecker) self::$_checker_ = new TTypeChecker('TConditionType');
-   		return self::$_checker_->CheckType($type);
-   	} 
 }
 
-final class TSortingType {
+final class TSortingType extends TEnumeration {
 	const SORT_ASC = 0;
 	const SORT_DESC = 1;
-	
-	public static function CheckType($type){
-		return ($type == self::SORT_ASC) || ($type == self::SORT_DESC);
-	}
 }

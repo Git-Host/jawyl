@@ -102,78 +102,78 @@ class TMySqlDataSetProcessor {
 			$oper = "";
 			$unarseparator = ", ";
 			switch ($o->Type){
-    			case TOperation::C_AND:$oper = "and";break;
-    			case TOperation::C_OR:$oper = "or";break;
-    			case TOperation::C_NOT:{$oper = "not ";$type="unar";$unarseparator=" and ";}break;
-    			case TOperation::C_IS:$oper = "is";break;
-    			case TOperation::C_REGEXP:{$oper="regexp";$type="unar";}break;
-    			case TOperation::C_LIKE:$oper="like";break;
-    			case TOperation::C_NOT_LIKE:$oper="not like";break;
-    			case TOperation::C_EQUAL:$oper = "<=>";break;
-    			case TOperation::C_NOT_EQUAL:$oper = "<>";break;
-    			case TOperation::C_MORE:$oper = ">";break;
-    			case TOperation::C_LESS:$oper = "<";break;
-    			case TOperation::C_MORE_OR_EQUAL:$oper = ">=";break;
-    			case TOperation::C_LESS_OR_EQUAL:$oper = "<=";break;
-   				case TOperation::O_ADD:$oper = "+";break;
-   				case TOperation::O_SUBTRACT:$oper = "-";break;
-   				case TOperation::O_MUL:$oper = "*";break;
-   				case TOperation::O_DIV:$oper = "/";break;
-   				case TOperation::O_AND:$oper = "&";break;
-   				case TOperation::O_OR:$oper = "|";break;
-   				case TOperation::C_IN:{$oper = "in";}break;
+    			case TConditionType::C_AND:$oper = "and";break;
+    			case TConditionType::C_OR:$oper = "or";break;
+    			case TConditionType::C_NOT:{$oper = "not ";$type="unar";$unarseparator=" and ";}break;
+    			case TConditionType::C_IS:$oper = "is";break;
+    			case TConditionType::C_REGEXP:{$oper="regexp";$type="unar";}break;
+    			case TConditionType::C_LIKE:$oper="like";break;
+    			case TConditionType::C_NOT_LIKE:$oper="not like";break;
+    			case TConditionType::C_EQUAL:$oper = "<=>";break;
+    			case TConditionType::C_NOT_EQUAL:$oper = "<>";break;
+    			case TConditionType::C_MORE:$oper = ">";break;
+    			case TConditionType::C_LESS:$oper = "<";break;
+    			case TConditionType::C_MORE_OR_EQUAL:$oper = ">=";break;
+    			case TConditionType::C_LESS_OR_EQUAL:$oper = "<=";break;
+   				case TOperationType::O_ADD:$oper = "+";break;
+   				case TOperationType::O_SUBTRACT:$oper = "-";break;
+   				case TOperationType::O_MUL:$oper = "*";break;
+   				case TOperationType::O_DIV:$oper = "/";break;
+   				case TOperationType::O_AND:$oper = "&";break;
+   				case TOperationType::O_OR:$oper = "|";break;
+   				case TConditionType::C_IN:{$oper = "in";}break;
 /*   				case "gsum":{$oper = "sum";$type="unar";}break;
    				case "gavg":{$oper = "avg";$type="unar";}break;
    				case "gcount":{$oper = "count";$type="unar";}break;
 */   				
-   				case TOperation::O_IFELSE:{$oper = "if";$type="unar";}break;
-   				case TOperation::O_CASE:$oper = "case";break;
-   				case TOperation::O_STRLEN:{$oper = "length";$type="unar";}break;
-   				case TOperation::O_STRPOS:{$oper = "locate";$type="unar";}break;
-   				case TOperation::O_STRCONCAT:{$oper = "concat";$type="unar";}break;
-   				case TOperation::O_STRLOWER:{$oper = "lower";$type="unar";}break;
-   				case TOperation::O_STRUPPER:{$oper = "upper";$type="unar";}break;
-   				case TOperation::O_SUBSTR:{$oper = "substr";$type="unar";}break;
-   				case TOperation::O_STRREPLACE:{$oper = "replace";$type="unar";}break;
-   				case TOperation::O_STRLTRIM:{$oper = "ltrim";$type="unar";}break;
-   				case TOperation::O_STRRTRIM:{$oper = "rtrim";$type="unar";}break;
-   				case TOperation::O_STRTRIM:{$oper = "trim";$type="unar";}break;
-   				case TOperation::O_MOD:$oper = "%";break;
-   				case TOperation::O_ABS:{$oper = "abs";$type="unar";}break;
-   				case TOperation::O_ACOS:{$oper = "acos";$type="unar";}break;
-   				case TOperation::O_ASIN:{$oper = "asin";$type="unar";}break;
-   				case TOperation::O_ATAN:{$oper = "atan";$type="unar";}break;
-   				case TOperation::O_COS:{$oper = "cos";$type="unar";}break;
-   				case TOperation::O_SIN:{$oper = "sin";$type="unar";}break;
-   				case TOperation::O_TAN:{$oper = "tan";$type="unar";}break;
-   				case TOperation::O_CEIL:{$oper = "ceil";$type="unar";}break;
-   				case TOperation::O_FLOOR:{$oper = "floor";$type="unar";}break;
-   				case TOperation::O_ROUND:{$oper = "round";$type="unar";}break;
-   				case TOperation::O_POW:{$oper = "pow";$type="unar";}break;
-   				case TOperation::O_EXP:{$oper = "exp";$type="unar";}break;
-   				case TOperation::O_LN:{$oper = "ln";$type="unar";}break;
-   				case TOperation::O_LOG:{$oper = "log";$type="unar";}break;
-   				case TOperation::O_SQRT:{$oper = "sqrt";$type="unar";}break;
-   				case TOperation::O_RAND:{$oper = "rand";$type="unar";}break;
-   				case TOperation::O_DATE_CUR:{$oper = "curdate";$type="unar";}break;
-   				case TOperation::O_DATE_ADD:{$oper = "adddate";$type="unar";}break;
-   				case TOperation::O_DATE_SUBT:{$oper = "subdate";$type="unar";}break;
-   				case TOperation::O_DATE_DIFF:{$oper = "datediff";$type="unar";}break;
-   				case TOperation::O_DATE_MAKE:{$oper = "makedate";$type="unar";}break;
-   				case TOperation::O_DATE_DAY:{$oper = "day";$type="unar";}break;
-   				case TOperation::O_DATE_MONTH:{$oper = "month";$type="unar";}break;
-   				case TOperation::O_DATE_YEAR:{$oper = "year";$type="unar";}break;
-   				case TOperation::O_DATE_WEEK:{$oper = "week";$type="unar";}break;
-   				case TOperation::O_DATE_WKDAY:{$oper = "dayofweek";$type="unar";}break;
-   				case TOperation::O_TIME_CUR:{$oper = "curtime";$type="unar";}break;
-   				case TOperation::O_TIME_ADD:{$oper = "subdate";$type="unar";}break;
-   				case TOperation::O_TIME_SUBT:{$oper = "subtime";$type="unar";}break;
-   				case TOperation::O_TIME_DIFF:{$oper = "timediff";$type="unar";}break;
-   				case TOperation::O_TIME_MAKE:{$oper = "maketime";$type="unar";}break;
-   				case TOperation::O_TIME_HOUR:{$oper = "hour";$type="unar";}break;
-   				case TOperation::O_TIME_MIN:{$oper = "minute";$type="unar";}break;
-   				case TOperation::O_TIME_SEC:{$oper = "second";$type="unar";}break;
-   				case TOperation::O_TIME_MKSEC:{$oper = "microsecond";$type="unar";}break;			
+   				case TOperationType::O_IFELSE:{$oper = "if";$type="unar";}break;
+   				case TOperationType::O_CASE:$oper = "case";break;
+   				case TOperationType::O_STRLEN:{$oper = "length";$type="unar";}break;
+   				case TOperationType::O_STRPOS:{$oper = "locate";$type="unar";}break;
+   				case TOperationType::O_STRCONCAT:{$oper = "concat";$type="unar";}break;
+   				case TOperationType::O_STRLOWER:{$oper = "lower";$type="unar";}break;
+   				case TOperationType::O_STRUPPER:{$oper = "upper";$type="unar";}break;
+   				case TOperationType::O_SUBSTR:{$oper = "substr";$type="unar";}break;
+   				case TOperationType::O_STRREPLACE:{$oper = "replace";$type="unar";}break;
+   				case TOperationType::O_STRLTRIM:{$oper = "ltrim";$type="unar";}break;
+   				case TOperationType::O_STRRTRIM:{$oper = "rtrim";$type="unar";}break;
+   				case TOperationType::O_STRTRIM:{$oper = "trim";$type="unar";}break;
+   				case TOperationType::O_MOD:$oper = "%";break;
+   				case TOperationType::O_ABS:{$oper = "abs";$type="unar";}break;
+   				case TOperationType::O_ACOS:{$oper = "acos";$type="unar";}break;
+   				case TOperationType::O_ASIN:{$oper = "asin";$type="unar";}break;
+   				case TOperationType::O_ATAN:{$oper = "atan";$type="unar";}break;
+   				case TOperationType::O_COS:{$oper = "cos";$type="unar";}break;
+   				case TOperationType::O_SIN:{$oper = "sin";$type="unar";}break;
+   				case TOperationType::O_TAN:{$oper = "tan";$type="unar";}break;
+   				case TOperationType::O_CEIL:{$oper = "ceil";$type="unar";}break;
+   				case TOperationType::O_FLOOR:{$oper = "floor";$type="unar";}break;
+   				case TOperationType::O_ROUND:{$oper = "round";$type="unar";}break;
+   				case TOperationType::O_POW:{$oper = "pow";$type="unar";}break;
+   				case TOperationType::O_EXP:{$oper = "exp";$type="unar";}break;
+   				case TOperationType::O_LN:{$oper = "ln";$type="unar";}break;
+   				case TOperationType::O_LOG:{$oper = "log";$type="unar";}break;
+   				case TOperationType::O_SQRT:{$oper = "sqrt";$type="unar";}break;
+   				case TOperationType::O_RAND:{$oper = "rand";$type="unar";}break;
+   				case TOperationType::O_DATE_CUR:{$oper = "curdate";$type="unar";}break;
+   				case TOperationType::O_DATE_ADD:{$oper = "adddate";$type="unar";}break;
+   				case TOperationType::O_DATE_SUBT:{$oper = "subdate";$type="unar";}break;
+   				case TOperationType::O_DATE_DIFF:{$oper = "datediff";$type="unar";}break;
+   				case TOperationType::O_DATE_MAKE:{$oper = "makedate";$type="unar";}break;
+   				case TOperationType::O_DATE_DAY:{$oper = "day";$type="unar";}break;
+   				case TOperationType::O_DATE_MONTH:{$oper = "month";$type="unar";}break;
+   				case TOperationType::O_DATE_YEAR:{$oper = "year";$type="unar";}break;
+   				case TOperationType::O_DATE_WEEK:{$oper = "week";$type="unar";}break;
+   				case TOperationType::O_DATE_WKDAY:{$oper = "dayofweek";$type="unar";}break;
+   				case TOperationType::O_TIME_CUR:{$oper = "curtime";$type="unar";}break;
+   				case TOperationType::O_TIME_ADD:{$oper = "subdate";$type="unar";}break;
+   				case TOperationType::O_TIME_SUBT:{$oper = "subtime";$type="unar";}break;
+   				case TOperationType::O_TIME_DIFF:{$oper = "timediff";$type="unar";}break;
+   				case TOperationType::O_TIME_MAKE:{$oper = "maketime";$type="unar";}break;
+   				case TOperationType::O_TIME_HOUR:{$oper = "hour";$type="unar";}break;
+   				case TOperationType::O_TIME_MIN:{$oper = "minute";$type="unar";}break;
+   				case TOperationType::O_TIME_SEC:{$oper = "second";$type="unar";}break;
+   				case TOperationType::O_TIME_MKSEC:{$oper = "microsecond";$type="unar";}break;			
 			}
 			
 			if (in_array($oper,array("adddate","subdate"))){
@@ -263,21 +263,21 @@ class TMySqlDataSetProcessor {
 				$d = $ds->IncludeBases?"=":"";
 				switch ($ds->Direction){
 					case TNestedSets::DIR_DOWN:{
-						$result .= "(".$src.".".$this->driver->NestedSetsSysField('NS_LKEY_FIELD')." >".$d." ".$base.".".$this->driver->NestedSetsSysField('NS_LKEY_FIELD').") and (".$src.".".$this->driver->NestedSetsSysField('NS_RKEY_FIELD')." <".$d." ".$base.".".$this->driver->NestedSetsSysField('NS_RKEY_FIELD').")";
+						$result .= "(".$src.".".TMySqlDBDriver::NS_LKEY_FIELD." >".$d." ".$base.".".TMySqlDBDriver::NS_LKEY_FIELD.") and (".$src.".".TMySqlDBDriver::NS_RKEY_FIELD." <".$d." ".$base.".".TMySqlDBDriver::NS_RKEY_FIELD.")";
 						if (!is_null($ds->Depth))
-							$result .= " and (".$src.".".$this->driver->NestedSetsSysField('NS_LEVEL_FIELD')." <= ".$base.".".$this->driver->NestedSetsSysField('NS_LEVEL_FIELD')." + ".($ds->Depth + 1).")";
+							$result .= " and (".$src.".".TMySqlDBDriver::NS_LEVEL_FIELD." <= ".$base.".".TMySqlDBDriver::NS_LEVEL_FIELD." + ".($ds->Depth + 1).")";
 					}break;
 					case TNestedSets::DIR_UP:{
-						$result .= "(".$src.".".$this->driver->NestedSetsSysField('NS_LKEY_FIELD')." <".$d." ".$base.".".$this->driver->NestedSetsSysField('NS_LKEY_FIELD').") and (".$src.".".$this->driver->NestedSetsSysField('NS_RKEY_FIELD')." >".$d." ".$base.".".$this->driver->NestedSetsSysField('NS_RKEY_FIELD').")";
+						$result .= "(".$src.".".TMySqlDBDriver::NS_LKEY_FIELD." <".$d." ".$base.".".TMySqlDBDriver::NS_LKEY_FIELD.") and (".$src.".".TMySqlDBDriver::NS_RKEY_FIELD." >".$d." ".$base.".".TMySqlDBDriver::NS_RKEY_FIELD.")";
 						if (!is_null($ds->Depth))
-							$result .= " and (".$base.".".$this->driver->NestedSetsSysField('NS_LEVEL_FIELD')." <= ".$src.".".$this->driver->NestedSetsSysField('NS_LEVEL_FIELD')." + ".($ds->Depth + 1).")";
+							$result .= " and (".$base.".".TMySqlDBDriver::NS_LEVEL_FIELD." <= ".$src.".".TMySqlDBDriver::NS_LEVEL_FIELD." + ".($ds->Depth + 1).")";
 					}break;
 				}
 			} else if (!is_null($ds->Depth))
-				$this->_where_[] = "(".$src.".".$this->driver->NestedSetsSysField('NS_LEVEL_FIELD')." <= ".$ds->Depth.")";
+				$this->_where_[] = "(".$src.".".TMySqlDBDriver::NS_LEVEL_FIELD." <= ".$ds->Depth.")";
 			if ($ds->IsTarget)	
 				if (empty($this->_order_))
-					$this->_order_ = array($src.".".$this->driver->NestedSetsSysField('NS_LKEY_FIELD')." asc"); 	
+					$this->_order_ = array($src.".".TMySqlDBDriver::NS_LKEY_FIELD." asc"); 	
 			return $result;
 		} else if ($ds instanceof TTable){
 			return "[".$ds->Name."]".($ds->Alias?" as ".$ds->Alias:"").$on;
@@ -557,7 +557,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 	
 	protected function iQuery($q){
-		return new TMySqlDBRawDataIterator($this->query($q));
+		return new TMySqlDBRawDataIterator($this->query($q),$this);
 	}
 		
 	public function ConnectionParameters(){
@@ -673,14 +673,14 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		
 	public function DefineNestedSets($name, array $definitions, array $options = array()){
 		return $this->DefineTable($name,array_merge($definitions,array(
-			new TFieldDefinition($this->NestedSetsSysField('NS_LKEY_FIELD'), new TIntegerType(20)),
-			new TFieldDefinition($this->NestedSetsSysField('NS_RKEY_FIELD'), new TIntegerType(20)),
-			new TFieldDefinition($this->NestedSetsSysField('NS_LEVEL_FIELD'), new TIntegerType()),
-			new TFieldDefinition($this->NestedSetsSysField('NS_DELETED_FIELD'), new TBooleanType()),
-			new TIndexDefinition($this->NestedSetsSysField('NS_LKEY_FIELD'), array($this->NestedSetsSysField('NS_LKEY_FIELD'))),
-			new TIndexDefinition($this->NestedSetsSysField('NS_RKEY_FIELD'), array($this->NestedSetsSysField('NS_RKEY_FIELD'))),
-			new TIndexDefinition($this->NestedSetsSysField('NS_LEVEL_FIELD'), array($this->NestedSetsSysField('NS_LEVEL_FIELD'))),
-			new TIndexDefinition("nscomplexkey", array($this->NestedSetsSysField('NS_LKEY_FIELD'),$this->NestedSetsSysField('NS_RKEY_FIELD'),$this->NestedSetsSysField('NS_LEVEL_FIELD')))
+			new TFieldDefinition(TMySqlDBDriver::NS_LKEY_FIELD, new TIntegerType(20)),
+			new TFieldDefinition(TMySqlDBDriver::NS_RKEY_FIELD, new TIntegerType(20)),
+			new TFieldDefinition(TMySqlDBDriver::NS_LEVEL_FIELD, new TIntegerType()),
+			new TFieldDefinition(TMySqlDBDriver::NS_DELETED_FIELD, new TBooleanType()),
+			new TIndexDefinition(TMySqlDBDriver::NS_LKEY_FIELD, array(TMySqlDBDriver::NS_LKEY_FIELD)),
+			new TIndexDefinition(TMySqlDBDriver::NS_RKEY_FIELD, array(TMySqlDBDriver::NS_RKEY_FIELD)),
+			new TIndexDefinition(TMySqlDBDriver::NS_LEVEL_FIELD, array(TMySqlDBDriver::NS_LEVEL_FIELD)),
+			new TIndexDefinition("nscomplexkey", array(TMySqlDBDriver::NS_LKEY_FIELD,TMySqlDBDriver::NS_RKEY_FIELD,TMySqlDBDriver::NS_LEVEL_FIELD))
 		)),$options);
 	}
 		
@@ -827,18 +827,19 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$result = array(null,null,-1);
 		
 		if (!empty($parents->Filter) || !empty($parents->Join)){
-			$target->Fetch(array(new TNestedSetsField($this->NestedSetsSysField('NS_LKEY_FIELD')),new TNestedSetsField($this->NestedSetsSysField('NS_RKEY_FIELD')),new TNestedSetsField($this->NestedSetsSysField('NS_LEVEL_FIELD'))));
+			$target->Fetch(array(new TNestedSetsField(TMySqlDBDriver::NS_LKEY_FIELD),new TNestedSetsField(TMySqlDBDriver::NS_RKEY_FIELD),new TNestedSetsField(TMySqlDBDriver::NS_LEVEL_FIELD)));
 			$p = new TMySqlDataSetProcessor($parents, $this);
+			
 			if ($res = $this->Fetch($p->SelectQuery(),$p->Parameters))
 				foreach ($res as $item){
-					$result[0] = $item[$this->NestedSetsSysField('NS_LKEY_FIELD')];
-					$result[1] = $item[$this->NestedSetsSysField('NS_RKEY_FIELD')];
-					$result[2] = $item[$this->NestedSetsSysField('NS_LEVEL_FIELD')];
+					$result[0] = $item[TMySqlDBDriver::NS_LKEY_FIELD];
+					$result[1] = $item[TMySqlDBDriver::NS_RKEY_FIELD];
+					$result[2] = $item[TMySqlDBDriver::NS_LEVEL_FIELD];
 					break;
 				}
 		}
 		if (is_null($result[1])) {
-			$q = "select max(".$this->NestedSetsSysField('NS_RKEY_FIELD').") + 1 as prk from ".$this->RealTableName($target->Name);
+			$q = "select max(".TMySqlDBDriver::NS_RKEY_FIELD.") + 1 as prk from ".$this->RealTableName($target->Name);
 			$result[1] = $this->scalarValue($q);				
 			if (is_null($result[1])) $result[1] = 1;
 		}
@@ -888,12 +889,12 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 
 		$this->BeginTransaction();
 		try {
-			$this->Execute("update ".$tname." set ".$this->NestedSetsSysField('NS_RKEY_FIELD')." = :rk + ".$delta.", ".$this->NestedSetsSysField('NS_LKEY_FIELD')." = if(".$this->NestedSetsSysField('NS_LKEY_FIELD')." >= :rk,".$this->NestedSetsSysField('NS_LKEY_FIELD')." + ".$delta.",".$this->NestedSetsSysField('NS_LKEY_FIELD').") where ".$this->NestedSetsSysField('NS_RKEY_FIELD')." >= :rk",array("rk"=>$prk));
+			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = :rk + ".$delta.", ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." >= :rk,".TMySqlDBDriver::NS_LKEY_FIELD." + ".$delta.",".TMySqlDBDriver::NS_LKEY_FIELD.") where ".TMySqlDBDriver::NS_RKEY_FIELD." >= :rk",array("rk"=>$prk));
 			
 			$i = 0;
 			$n = count($rows);
 			while ($i < $n){
-				$q = "insert ".$tname." (".join(",",$fields).",".$this->NestedSetsSysField('NS_LKEY_FIELD').",".$this->NestedSetsSysField('NS_RKEY_FIELD').",".$this->NestedSetsSysField('NS_LEVEL_FIELD').") values ".join(",",array_slice($rows,$i,$this->BulkInsertAmount));
+				$q = "insert ".$tname." (".join(",",$fields).",".TMySqlDBDriver::NS_LKEY_FIELD.",".TMySqlDBDriver::NS_RKEY_FIELD.",".TMySqlDBDriver::NS_LEVEL_FIELD.") values ".join(",",array_slice($rows,$i,$this->BulkInsertAmount));
 				$this->query($q);
 				$i = $i+$this->BulkInsertAmount;
 			}
@@ -925,13 +926,13 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	
 	public function NestedSetsSysField($name,$field){
 		if ($this->_json_ns_names_)
-			if (isset($this->_json_ns_names_->$nsname))
-				if (isset($this->_json_ns_names_->$nsname->$field))
-					return $this->_json_ns_names_->$nsname->$field;
+			if (isset($this->_json_ns_names_->$name))
+				if (isset($this->_json_ns_names_->$name->$field))
+					return $this->_json_ns_names_->$name->$field;
 		return constant('TMySqlDBDriver::'.$field); 			
 	}
 		
-	public function NestedSetAddRecord(TDataSource $parents, array $record){
+	public function NestedSetAddRecord(TDataSource $parents, array $record,&$primary_key = null){
 		$target = $this->_get_nstarget($parents);
 		$tname = $this->RealTableName($target->Name);
 		$this->query("lock tables ".$tname." write");
@@ -939,8 +940,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$result = false;
 		$this->BeginTransaction();
 		try {
-		$this->Execute("update ".$tname." set ".$this->NestedSetsSysField('NS_RKEY_FIELD')." = ".$this->NestedSetsSysField('NS_RKEY_FIELD')." + 2, ".$this->NestedSetsSysField('NS_LKEY_FIELD')." = if(".$this->NestedSetsSysField('NS_LKEY_FIELD')." >= :rk,".$this->NestedSetsSysField('NS_LKEY_FIELD')." + 2,".$this->NestedSetsSysField('NS_LKEY_FIELD').") where ".$this->NestedSetsSysField('NS_RKEY_FIELD')." >= :rk", array("rk"=>$prk));
-		$this->Execute("insert ".$tname." (".join(",",array_keys($record)).",".$this->NestedSetsSysField('NS_LKEY_FIELD').",".$this->NestedSetsSysField('NS_RKEY_FIELD').",".$this->NestedSetsSysField('NS_PARENTLKEY_FIELD').") values (".join(",",$this->prepare_record_result(array_values($record))).",:lk,:rk,:pl)",array("lk"=>$prk,"rk"=>$prk+1,"plk"=>$plk,"pl"=>$plevel+1));
+		$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + 2, ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." >= :rk,".TMySqlDBDriver::NS_LKEY_FIELD." + 2,".TMySqlDBDriver::NS_LKEY_FIELD.") where ".TMySqlDBDriver::NS_RKEY_FIELD." >= :rk", array("rk"=>$prk));
+		$oldid = $this->lastInsertId();
+		$this->Execute("insert ".$tname." (".join(",",array_keys($record)).",".TMySqlDBDriver::NS_LKEY_FIELD.",".TMySqlDBDriver::NS_RKEY_FIELD.",".TMySqlDBDriver::NS_PARENTLKEY_FIELD.") values (".join(",",$this->prepare_record_result(array_values($record))).",:lk,:rk,:pl)",array("lk"=>$prk,"rk"=>$prk+1,"plk"=>$plk,"pl"=>$plevel+1));
+		$primary_key = $this->lastInsertId();
+		if ($primary_key == $oldid) $primary_key = null; 
 		$this->CommitTransaction();
 		$this->query("unlock tables");
 		$result = true;
@@ -954,26 +958,26 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 	
 	private function _ns_eject_branches($target, TDataSource $branches){
-			$p = new TMySqlDataSetUpdateProcessor($branches, $this,array($this->NestedSetsSysField('NS_DELETED_FIELD')),array(1));
+			$p = new TMySqlDataSetUpdateProcessor($branches, $this,array(TMySqlDBDriver::NS_DELETED_FIELD),array(1));
 			$this->Execute($p->UpdateQuery(),$p->Parameters);
 			
-			$roots = $this->Fetch("select b.".$this->NestedSetsSysField('NS_LKEY_FIELD').",b.".$this->NestedSetsSysField('NS_RKEY_FIELD').",b.".$this->NestedSetsSysField('NS_LEVEL_FIELD')." from ".$target." b left join ".$target." b1 on (b1.".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 1) and (b.".$this->NestedSetsSysField('NS_LKEY_FIELD')." > b1.".$this->NestedSetsSysField('NS_LKEY_FIELD').") and (b.".$this->NestedSetsSysField('NS_RKEY_FIELD')." < b1.".$this->NestedSetsSysField('NS_RKEY_FIELD').")  where (b.".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 1) and (b1.".$this->NestedSetsSysField('NS_LKEY_FIELD')." is null) order by b.".$this->NestedSetsSysField('NS_RKEY_FIELD')." desc");
+			$roots = $this->Fetch("select b.".TMySqlDBDriver::NS_LKEY_FIELD.",b.".TMySqlDBDriver::NS_RKEY_FIELD.",b.".TMySqlDBDriver::NS_LEVEL_FIELD." from ".$target." b left join ".$target." b1 on (b1.".TMySqlDBDriver::NS_DELETED_FIELD." = 1) and (b.".TMySqlDBDriver::NS_LKEY_FIELD." > b1.".TMySqlDBDriver::NS_LKEY_FIELD.") and (b.".TMySqlDBDriver::NS_RKEY_FIELD." < b1.".TMySqlDBDriver::NS_RKEY_FIELD.")  where (b.".TMySqlDBDriver::NS_DELETED_FIELD." = 1) and (b1.".TMySqlDBDriver::NS_LKEY_FIELD." is null) order by b.".TMySqlDBDriver::NS_RKEY_FIELD." desc");
 			$ranges = array();
 			$prev_range = -1;
 			foreach ($roots as $root){
 				if ($prev_range > -1){
-					if ($root[$this->NestedSetsSysField('NS_RKEY_FIELD')] == $ranges[$prev_range][0] - 1){
-						$ranges[$prev_range][0] = $root[$this->NestedSetsSysField('NS_LKEY_FIELD')];
+					if ($root[TMySqlDBDriver::NS_RKEY_FIELD] == $ranges[$prev_range][0] - 1){
+						$ranges[$prev_range][0] = $root[TMySqlDBDriver::NS_LKEY_FIELD];
 						continue;	
 					}
 				} 
-				$ranges[] = array($root[$this->NestedSetsSysField('NS_LKEY_FIELD')],$root[$this->NestedSetsSysField('NS_RKEY_FIELD')],$root[$this->NestedSetsSysField('NS_LEVEL_FIELD')]);
+				$ranges[] = array($root[TMySqlDBDriver::NS_LKEY_FIELD],$root[TMySqlDBDriver::NS_RKEY_FIELD],$root[TMySqlDBDriver::NS_LEVEL_FIELD]);
 				$prev_range++;
 			}
 			
 			foreach ($ranges as $range){
-				$this->Execute("update ".$target." set ".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 1 where (".$this->NestedSetsSysField('NS_LKEY_FIELD')." >= :lk) and (".$this->NestedSetsSysField('NS_RKEY_FIELD')." <= :rk)", array("lk"=>$range[0],"rk"=>$range[1]));
-				$this->Execute("update ".$target." set ".$this->NestedSetsSysField('NS_LKEY_FIELD')." = if(".$this->NestedSetsSysField('NS_LKEY_FIELD')." > :rk,".$this->NestedSetsSysField('NS_LKEY_FIELD')." - :rk + :lk - 1,".$this->NestedSetsSysField('NS_LKEY_FIELD')."),".$this->NestedSetsSysField('NS_RKEY_FIELD')." = ".$this->NestedSetsSysField('NS_RKEY_FIELD')." - :rk + :lk - 1 where (".$this->NestedSetsSysField('NS_RKEY_FIELD')." > :rk) and (".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 0)", array("lk"=>$range[0],"rk"=>$range[1]));
+				$this->Execute("update ".$target." set ".TMySqlDBDriver::NS_DELETED_FIELD." = 1 where (".TMySqlDBDriver::NS_LKEY_FIELD." >= :lk) and (".TMySqlDBDriver::NS_RKEY_FIELD." <= :rk)", array("lk"=>$range[0],"rk"=>$range[1]));
+				$this->Execute("update ".$target." set ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." > :rk,".TMySqlDBDriver::NS_LKEY_FIELD." - :rk + :lk - 1,".TMySqlDBDriver::NS_LKEY_FIELD."),".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." - :rk + :lk - 1 where (".TMySqlDBDriver::NS_RKEY_FIELD." > :rk) and (".TMySqlDBDriver::NS_DELETED_FIELD." = 0)", array("lk"=>$range[0],"rk"=>$range[1]));
 			}
 			return $ranges;
 	}
@@ -986,7 +990,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->BeginTransaction();
 		try {
 			$this->_ns_eject_branches($tname, $branches);
-			$result = $this->Execute("delete ".$target." where ".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 1");
+			$result = $this->Execute("delete ".$target." where ".TMySqlDBDriver::NS_DELETED_FIELD." = 1");
 			$this->CommitTransaction();
 			$this->query("unlock tables");
 			$result = true;
@@ -1011,7 +1015,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->BeginTransaction();
 		try {
 			$ranges = $this->_ns_eject_branches($tname, $branches);
-			$destination->Filter(new TCondition(TCondition::C_EQUAL, array(new TNestedSetsField($this->NestedSetsSysField('NS_DELETED_FIELD'),TNestedSetsField::BASE_FIELD,null,$dest_target),1)));
+			$destination->Filter(new TCondition(TCondition::C_EQUAL, array(new TNestedSetsField(TMySqlDBDriver::NS_DELETED_FIELD,TNestedSetsField::BASE_FIELD,null,$dest_target),1)));
 			list($plk,$prk,$plevel) = $this->_ns_findparent($dest_target, $destination);
 			
 			if (is_null($plk)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
@@ -1020,12 +1024,12 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			$n = count($ranges);
 			for ($i = $n - 1; $i >= 0; $i--){
 				$r = $ranges[$i];
-				$this->Execute("update ".$tname." set ".$this->NestedSetsSysField('NS_LKEY_FIELD')." = ".$this->NestedSetsSysField('NS_LKEY_FIELD')." - :lk + :delta + 1, ".$this->NestedSetsSysField('NS_RKEY_FIELD')." = ".$this->NestedSetsSysField('NS_RKEY_FIELD')." - :lk + :delta + 1, ".$this->NestedSetsSysField('NS_LEVEL_FIELD')." = ".$this->NestedSetsSysField('NS_LEVEL_FIELD')." - :level + 1 where (".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 1) and (".$this->NestedSetsSysField('NS_LKEY_FIELD')." >= :lk) and (".$this->NestedSetsSysField('NS_RKEY_FIELD')." <= :rk)", array("lk"=>$r[0],"rk"=>$r[1],"level"=>$r[2],"delta"=>$delta)); 
+				$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_LKEY_FIELD." = ".TMySqlDBDriver::NS_LKEY_FIELD." - :lk + :delta + 1, ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." - :lk + :delta + 1, ".TMySqlDBDriver::NS_LEVEL_FIELD." = ".TMySqlDBDriver::NS_LEVEL_FIELD." - :level + 1 where (".TMySqlDBDriver::NS_DELETED_FIELD." = 1) and (".TMySqlDBDriver::NS_LKEY_FIELD." >= :lk) and (".TMySqlDBDriver::NS_RKEY_FIELD." <= :rk)", array("lk"=>$r[0],"rk"=>$r[1],"level"=>$r[2],"delta"=>$delta)); 
 				$delta += $r[1] - $r[0] + 1;
 			}
 			
-			$this->Execute("update ".$tname." set ".$this->NestedSetsSysField('NS_RKEY_FIELD')." = ".$this->NestedSetsSysField('NS_RKEY_FIELD')." + :delta, ".$this->NestedSetsSysField('NS_LKEY_FIELD')." = if(".$this->NestedSetsSysField('NS_LKEY_FIELD')." >= :lk,".$this->NestedSetsSysField('NS_LKEY_FIELD')." + :delta,".$this->NestedSetsSysField('NS_LKEY_FIELD').") where (".$this->NestedSetsSysField('NS_RKEY_FIELD')." >= :lk) and (".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 0)", array("lk"=>$plk,"delta"=>$delta));
-			$this->Execute("update ".$tname." set ".$this->NestedSetsSysField('NS_RKEY_FIELD')." = ".$this->NestedSetsSysField('NS_RKEY_FIELD')." + :lk, ".$this->NestedSetsSysField('NS_LKEY_FIELD')." = ".$this->NestedSetsSysField('NS_LKEY_FIELD')." + :lk, ".$this->NestedSetsSysField('NS_LEVEL_FIELD')." = ".$this->NestedSetsSysField('NS_LEVEL_FIELD')." + :level, ".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 0 where (".$this->NestedSetsSysField('NS_DELETED_FIELD')." = 1)", array("lk"=>$plk,"level"=>$plevel));
+			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + :delta, ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." >= :lk,".TMySqlDBDriver::NS_LKEY_FIELD." + :delta,".TMySqlDBDriver::NS_LKEY_FIELD.") where (".TMySqlDBDriver::NS_RKEY_FIELD." >= :lk) and (".TMySqlDBDriver::NS_DELETED_FIELD." = 0)", array("lk"=>$plk,"delta"=>$delta));
+			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + :lk, ".TMySqlDBDriver::NS_LKEY_FIELD." = ".TMySqlDBDriver::NS_LKEY_FIELD." + :lk, ".TMySqlDBDriver::NS_LEVEL_FIELD." = ".TMySqlDBDriver::NS_LEVEL_FIELD." + :level, ".TMySqlDBDriver::NS_DELETED_FIELD." = 0 where (".TMySqlDBDriver::NS_DELETED_FIELD." = 1)", array("lk"=>$plk,"level"=>$plevel));
 			
 			$this->CommitTransaction();
 			$this->query("unlock tables");

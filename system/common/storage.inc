@@ -595,10 +595,8 @@ class TSorting {
 	private $_sort_;
 	
 	public function __construct(IDataSourceField $field, $sort = TSortingType::SORT_ASC){
-		if (!TSortingType::CheckType($sort))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$this->_field_ = $field;
-		$this->_sort_ = $sort;
+		$this->_sort_ = new TSortingType($sort);
 	}
 	
 	public function __get($nm){
@@ -626,9 +624,11 @@ final class TDBActionParameter {
 
 abstract class TNestedSetElement {
 	protected $row;
+	protected $parent;
 	
-	public function __construct(array $row){
+	public function __construct(array $row, TNestedSetElement $parent = null){
 		$this->row = $row;
+		$this->parent = $parent;
 	}	
 	
 	public function __get($nm){
@@ -637,11 +637,9 @@ abstract class TNestedSetElement {
 		return null;
 	}
 	
-	public function IsNestedSet(){
-		return !$this->IsLeaf();
+	public function NestingParent(){
+		return $this->parent;
 	}
-	
-	public abstract function IsLeaf();
 }
 
 /**
@@ -662,7 +660,7 @@ class TOperation {
 	protected $operands;
 	
 	protected function checkType($type){
-		return TOperationType::CheckType($type);
+		return new TOperationType($type);
 	}
 	
 /**
@@ -671,8 +669,7 @@ class TOperation {
  * @param array $operands condition operands, array which can contain php values, IAttributeDefinition or TSysField
  */	
 	public function __construct($type, array $operands){
-		if (!$this->checkType($type)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-		$this->type = $type;
+		$this->type = $this->checkType($type);
 		foreach ($operands as $o)
 			$this->addOperand($o);
 	}
@@ -729,7 +726,7 @@ class TOperation {
  */
 class TCondition extends TOperation {
 	protected function checkType($type){
-		return TConditionType::CheckType($type);
+		return new TConditionType($type);
 	}
 }
 
@@ -1037,7 +1034,7 @@ interface IDBDriver {
 /**
  * @return boolean
  */		
-	public function NestedSetAddRecord(TDataSource $parents, array $record);
+	public function NestedSetAddRecord(TDataSource $parents, array $record,&$primary_key = null);
 /**
  * @return boolean
  */		

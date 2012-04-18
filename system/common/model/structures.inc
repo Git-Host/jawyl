@@ -99,9 +99,7 @@ class TItemFilter {
 	public function __construct(IPropertyMeta $property, $value, $oper = TConditionType::C_EQUAL){
 		$this->_property_ = $property;
 		$this->_value_ = $value;
-		if (!TConditionType::CheckType($oper))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-		$this->_oper_ = $oper;
+		$this->_oper_ = new TConditionType($oper);
 	}
 	
 	public function __get($nm){
@@ -123,9 +121,7 @@ class TItemSorting {
 	
 	public function __construct(IPropertyMeta $property, $sorttype = TSorting::SORT_ASC){
 		$this->_property_ = $property;
-		if (!TSortingType::CheckType($sorttype))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-		$this->_sort_type_ = $sorttype;
+		$this->_sort_type_ = TSortingType($sorttype);
 	}
 	
 	public function __get($nm){
