@@ -1,5 +1,6 @@
 <?php
 TApplication::Import('common::storage');
+TApplication::Import('common::item');
 
 class TOrmSorting {
 /**
@@ -42,6 +43,41 @@ class TOrmCondition {
 	}
 }
 
+/**
+ * @author dkrasilnikov@gmail.com
+ * @property bool $Nullable
+ * @property bool $ReadOnly
+ * @property int $Type
+ */
+class TOrmPropertyMeta extends TPropertyMeta {
+	public function __set($nm,$value){
+		switch ($nm){
+			case 'Nullable':$this->nullable = $value;break;
+			case 'ReadOnly':$this->readonly = $value;break;
+			case 'Type':$this->type = new TItemPropertyType($value);break;
+		}
+	}
+}
+
+class TOrmReferencePropertyMeta extends TOrmPropertyMeta implements IReferencePropertyMeta {
+	protected $className;
+	
+	public function __construct($name,$caption,$classname,$nullable = true,$readonly = false){
+		parent::__construct($name, $caption, TItemPropertyType::PT_REFERENCE, array(),$nullable,$readonly);
+		$this->className = $classname;
+	}
+	
+	public function ClassName(){
+		return $this->className;
+	}
+}
+
+class TOrmCollectionPropertyMeta extends TPropertyMeta {
+	public function __construct($name,$caption,$readonly = false){
+		parent::__construct($name, $caption, TItemPropertyType::PT_COLLECTION, array(),true,$readonly);
+	}
+} 
+
 interface IORMStorage {
 /**
  * Fills an object with missing data
@@ -70,5 +106,16 @@ interface IORMStorage {
  * @param TOrmCondition[] $conditions
  * @param TOrmSorting[] $sorting
  */	
-	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null); 
-} 
+	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null);
+/**
+ * @param object|ReflectionClass|string $object
+ * @return TOrmPropertyMeta[]
+ */
+	public function Properties($object);
+}
+
+interface IORMHierarchyStorage {
+	public function Container($object);
+	public function Contents();
+	public function FetchContents($dummy,$direct = true, array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null);
+}
