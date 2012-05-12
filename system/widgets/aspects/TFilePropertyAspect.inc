@@ -27,7 +27,7 @@
 			if ($file instanceof TDBStoredFile)
 				self::outputDBFile($file);
 			header("Content-Type:".$file->MimeType);
-			echo $file->getContents();
+			echo $file->GetContents();
 			die;
 		}
 	}

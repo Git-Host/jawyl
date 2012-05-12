@@ -83,14 +83,16 @@ interface IConfigurable {
 							preg_match('/@var\s+(\w*)(\[\s*\])?/',$dc,$matches);
 							if (isset($matches[1])){
 								$needsave = true;
-								$types[] = '"'.$iocname.'"=>array("type"=>"'.$matches[1].'","is_array"=>'.(isset($matches[2])?'true':'false').')';
+								$types[$iocname] = '"'.$iocname.'"=>array("type"=>"'.$matches[1].'","is_array"=>'.(isset($matches[2])?'true':'false').')';
 							}
 						}	
  					}
  				}
  			}
- 			if ($needsave)	
-				file_put_contents($filename, '<?php $ioctypes = array('.join(',', $types).'); ?>');
+ 			if ($needsave){
+ 				TFileSystem::ForceDir(dirname($filename));	
+				file_put_contents($filename, '<?php $ioctypes = array('.join(',', array_values($types)).'); ?>');
+ 			}
 		} 		
  	}
  	
@@ -145,7 +147,7 @@ interface IConfigurable {
   			if (!empty($member))
   				return $member[count($member) - 1];
   			else return null;	
-  		return $this->$nm;
+  		return $member;
   	}
   	
   	private function _check_ioc_type($value,$type){
@@ -254,12 +256,17 @@ interface IConfigurable {
 			else 		
 				$this->setIocMember($this->$n, $value, $type);
 		} else if ($n = $this->_check_suffix($nm,'json')){
-			if (is_object($value))
-				$this->$n = $value;
-			else if (is_string($value))
-				$this->$n = json_decode($value);	
+			$this->$n = is_object($value)?$value:json_decode($value);	
 		} else if ($n = $this->_check_suffix($nm,'bool')){
 			$this->$n = TConvertions::ConvertToBoolean($value);
+		} else if ($n = $this->_check_suffix($nm,'array')){
+			$this->$n = TConvertions::ConvertToArray($value);
+		} else if ($n = $this->_check_suffix($nm,'int')){
+			$this->$n = (int)$value;
+		} else if ($n = $this->_check_suffix($nm,'float')){
+			$this->$n = (float)$value;
+		} else if ($n = $this->_check_suffix($nm,'conf')){
+			$this->$n = $value;
 		}
 	}
 	
@@ -272,12 +279,13 @@ interface IConfigurable {
 				return $this->getIocArrayMember($this->$n, $type);
 			return $this->getIocMember($this->$n, $type);	
 		}
-		if ($n = $this->_check_suffix($nm, 'json')){
+		if (($n = $this->_check_suffix($nm, 'json'))
+			|| ($n = $this->_check_suffix($nm, 'bool'))
+			|| ($n = $this->_check_suffix($nm, 'array'))
+			|| ($n = $this->_check_suffix($nm, 'float'))
+			|| ($n = $this->_check_suffix($nm, 'int'))
+			|| ($n = $this->_check_suffix($nm, 'conf')))
 			return $this->$n;
-		}
-		if ($n = $this->_check_suffix($nm, 'bool')){
-			return $this->$n;
-		}
 		return null;
 	}
 	

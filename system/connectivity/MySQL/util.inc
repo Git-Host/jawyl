@@ -59,6 +59,7 @@ class TMySqlDBRawDataIterator extends TIterator {
 	}
 	
 	public function Next(){
+		$this->currentRow = null;
 		if ($row = mysql_fetch_array($this->resultSet,MYSQL_NUM)){
 			$this->currentRow = array_merge($row,array_combine($this->fields,$row));
 			$this->pointer++;
@@ -68,6 +69,8 @@ class TMySqlDBRawDataIterator extends TIterator {
 	}	
 	
 	public function Seek($position){
+		if ($position == 0 && mysql_num_rows($this->resultSet) == 0)
+			return true;
 		if (mysql_data_seek($this->resultSet, $position)){
 			if ($row = mysql_fetch_array($this->resultSet,MYSQL_NUM)){
 				$this->currentRow = array_merge($row,array_combine($this->fields,$row));
@@ -108,7 +111,7 @@ class TMySqlNestingsIterator extends TIteratorAdapter {
 	private $_parents_stack_ = array();
 	private $_prev_item_ = null;
 	
-	public function __construct(IIterator $base,$lkeyname,$rkeyname){
+	public function __construct(IIterator $base){
 		parent::__construct($base);
 	}	
 	

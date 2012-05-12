@@ -211,11 +211,11 @@ class TIntrinsicLocale extends TLocale {
 			$timestamp = $date;
 			
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
-		return date("C",$timestamp);
+			return @date("C",$timestamp);
 			
 		$format = $this->formats["date"];
 		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
-		return date($format,$timestamp);
+		return @date($format,$timestamp);
 	}
 
 	/**
@@ -225,11 +225,11 @@ class TIntrinsicLocale extends TLocale {
 	 */
 	public function FormatTime($timestamp){
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
-		return date("C",$timestamp);
+		return @date("C",$timestamp);
 			
 		$format = $this->formats["time"];
 		$format = preg_replace('/\\{ts\\}/',$this->symbols["timeseparator"],$format);
-		return date($format,$timestamp);
+		return @date($format,$timestamp);
 	}
 
 	/**
@@ -239,12 +239,12 @@ class TIntrinsicLocale extends TLocale {
 	 */
 	public function FormatDateTime($timestamp){
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
-		return date("C",$timestamp);
+		return @date("C",$timestamp);
 			
 		$format = $this->formats["datetime"];
 		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
 		$format = preg_replace('/\\{ts\\}/',$this->symbols["timeseparator"],$format);
-		return date($format,$timestamp);
+		return @date($format,$timestamp);
 	}
 
 	/**

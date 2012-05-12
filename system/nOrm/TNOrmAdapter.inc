@@ -7,23 +7,26 @@ class TClassOrmConfig {
 	private $_nested_sets_ = array();
 	private $_keys_ = array();
 	private $_properties_ = array();
+	private $_identity_;
+	private $_table_classes_ = array();
+	
 	
 	public function __construct($classname){
 		$this->_classname_ = $classname;
 	}
 	
-	private function _parse_refprop($propname,$type,$propval,$sorting){
-		preg_match_all('/(\w*)\s*\(([^\)]*)\)/', $propval, $props);
+	private function _parse_refprop($propname,$type,$propval,$sorting,$default_tbl){
+		preg_match_all('/([_\w\.]+)\s*\(([^\)]*)\)/', $propval, $props);
 			$n2 = count($props[1]);
 			for ($j = 0; $j < $n2; $j++){
-				$flds = explode(',',$props[2][j]);
+				$flds = explode(',',$props[1][$j]);
 				foreach ($flds as $fld){
 					$fldnm = explode('.',$fld);
-					$this->_properties_[$propname]['fields'][] = array('name'=>trim($fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[1]):$default_tbl,'property'=>$props[1][j]);
+					$this->_properties_[$propname]['fields'][] = array('name'=>trim(count($fldnm) > 1?$fldnm[1]:$fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[0]):$default_tbl,'property'=>$props[2][$j]);
 				}
 			}
 			if ($type == 'collection'){
-				preg_match_all('/(\w*)\s*\(\s*(asc|desc)\s*\)/', $sorting, $sorts);
+				preg_match_all('/([_\w]+)\s*\(\s*(asc|desc)\s*\)/', $sorting, $sorts);
 				$n2 = count($sorts[1]);
 				$this->_properties_[$propname]['sorting'] = array();
 				for ($j = 0; $j < $n2; $j++)
@@ -32,97 +35,120 @@ class TClassOrmConfig {
 		
 	}
 	
-	private function _override_scalar_property($name,array $settings){
+	private function _override_scalar_property($name,array $settings, $class){
 			if (!isset($this->_properties_[$name]))
 				$this->_properties_[$name] = array();
 			$this->_properties_[$name]['type'] = 'scalar';
 			$this->_properties_[$name]['datatype'] = $settings['datatype']; 
 			$this->_properties_[$name]['field'] = $settings['field'];
+			$this->_properties_[$name]['defclass'] = $class;
 	}
 	
-	private function _override_ref_property($name,array $settings){
+	private function _override_ref_property($name,array $settings,$default_tbl,$class){
 			if (!isset($this->_properties_[$name]))
 				$this->_properties_[$name] = array('fields'=>array());
 			$this->_properties_[$name]['type'] = $settings['type'];
 			$this->_properties_[$name]['classname'] = $settings['classname'];
-			$this->_parse_refprop($name,$settings['type'],$settings['fields'],@$settings['sorting']);
-				
-				
+			$this->_properties_[$name]['defclass'] = $class;
+			$this->_parse_refprop($name,$settings['type'],$settings['fields'],@$settings['sorting'],$default_tbl);
 	}
 	
 	public function ParseClass(ReflectionClass $rc){
-		$lineend = '(?:\s+[^\r\n]*|\s*)$/m';
 		$doc = $rc->getDocComment();
-		preg_match_all('/@orm.table\s+(\w+)\s*\(((?:\s*\w+\s*,?)+)\)/'.$lineend,$doc,$matches);
+		$lineend = '(?:\s+[^\r\n]*|\s*)$/m';
+		preg_match_all('/@orm.table\s+([_\w]+)\s*\(((?:\s*[_\w]+\s*,?)+)\)'.$lineend,$doc,$matches);
 		$n = count($matches[1]);
 		for ($i = 0; $i < $n; $i++){
 			$this->_tables_[$matches[1][$i]] = array();
+			$this->_table_classes_[$matches[1][$i]] = $rc->getName();
 			$keyfields = explode(',', $matches[2][$i]);
 			foreach ($keyfields as $fld)
 				$this->_tables_[$matches[1][$i]][] = trim($fld);
 		}
 		
 		$tbls = array_keys($this->_tables_);
-		$default_tbl = $tbls[0];
+		if (!empty($this->_tables_)){
+			$default_tbl = array_keys($this->_tables_);
+			$default_tbl = $default_tbl[0];
+		}
 		
-		preg_match_all('/@orm.key\s+(\w+)/'.$lineend,$doc,$matches);
+		preg_match_all('/@orm.key\s+([_\w]+)'.$lineend,$doc,$matches);
 		if (!empty($matches[1])){
 			$this->_keys_ = array();
 			foreach ($matches[1] as $key)
 				$this->_keys_[] = $key;
 		}
 		
-		preg_match_all('/@orm.nestedset\s+(\w+)\s+(\w+)/'.$lineend,$doc,$matches);
-		$this->_nested_sets_ = array();
+		$this->_identity_ = (count($this->_keys_) > 1)?1:0;
+		
+		preg_match_all('/@orm.identity\s+(explicit|implicit)'.$lineend,$doc,$matches);
 		if (!empty($matches[1])){
-			$this->_nested_sets_ = array('parent'=>$matches[1],'children'=>$matches[2]);
+			$this->_identity_ = 0;
+			foreach ($matches[1] as $idtype)
+				$this->_identity_ = ($idtype == 'explicit')?1:0;
 		}
 		
-		preg_match_all('/@property\s+(\w+)\s+\$(\w*)\s*\{@orm.scalar\s+(\w[\w\.]*)\s*\}/'.$lineend,$doc,$matches);
+		preg_match_all('/@orm.nestedset\s+([_\w]+)\s+([_\w]+)'.$lineend,$doc,$matches);
+		$this->_nested_sets_ = array();
+		if (!empty($matches[1])){
+			$this->_nested_sets_ = array('parent'=>$matches[1][0],'children'=>$matches[2][0]);
+		}
+		
+		$props = $rc->getProperties(ReflectionProperty::IS_PUBLIC & ~ReflectionProperty::IS_STATIC);
+		foreach ($props as $p)
+			if ($p->getDeclaringClass()->getName() == $rc->getName()){
+			$pdoc = $p->getDocComment();
+			$datatype = null;
+			if (preg_match('/@var\s+([_\w]+)/',$pdoc,$matches2))
+				$datatype = $matches2[1];
+		
+			if (preg_match('/@orm.scalar\s+(\w[_\w\.]*)\s*$/m', $pdoc,$matches)){
+				$fld = explode('.',$matches[1]);
+				$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>(count($fld) > 1)?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
+			} elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:(?:[_\w\.]+)\s*\((?:(?:\s*\w[_\w]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
+				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'fields'=>$matches[2],'sorting'=>$matches[3]),$default_tbl,$rc->getName());
+			}
+		}
+		
+		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.scalar\s+(\w[_\w\.]*)\s*\}'.$lineend,$doc,$matches);
 		$n = count($matches[2]);
 		for ($i = 0; $i < $n; $i++){
 			$fld = explode('.',$matches[3][$i]);
-			$this->_override_scalar_property($matches[2][$i], array('datatype'=>$matches[1][$i],'field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl)));
+			$this->_override_scalar_property($matches[2][$i], array('datatype'=>$matches[1][$i],'field'=>array('name'=>count($fld) > 1?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
 		}
 		
-		preg_match_all('/@property\s+(\w+)\s+\$(\w*)\s*\{@orm.(reference|collection)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+([^\}]*)|\s*)\}/'.$lineend,$doc,$matches);
+		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.(reference|collection)\s+((?:(?:[_\w\.]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+([^\}]*)|\s*)\}'.$lineend,$doc,$matches);
 		$n = count($matches[2]);
 		for ($i = 0; $i < $n; $i++){
-			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'fields'=>$matches[4][$i],'sorting'=>$matches[5][$i]));
-		}
-		
-		$props = $rc->getProperties(ReflectionProperty::IS_PUBLIC && ~ReflectionProperty::IS_STATIC);
-		foreach ($props as $p){
-			$doc = $p->getDocComment();
-			$datatype = null;
-			if (preg_match('/@var\s+(\w+)/',$doc,$matches2))
-				$datatype = $matches2[1];
-			
-			if (preg_match('/@orm.scalar\s+(\w[\w\.]*)\s*$/m', $doc,$matches)){
-				$fld = explode('.',$matches[1]);
-				$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>$fld[0],'table'=>count($fld) > 1?$fld[1]:$default_tbl)));
-			} elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:(?:\w+)\s*\((?:(?:\s*\w[\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:\w+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
-				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'fields'=>$matches[2],'sorting'=>$matches[3]));
-			}
+			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'fields'=>$matches[4][$i],'sorting'=>$matches[5][$i]),$default_tbl,$rc->getName());
 		}
 	}
-	
+
 	public function ParseXml($filename){
+		$cname = basename($filename,'.orm.xml');
 		$xml = new DOMDocument();
 		$xml->preserveWhiteSpace = false;
 		$xml->Load($filename);
-		if (!$xml->schemaValidate(self::$SystemPath."/schemas/norm.xsd"))
+		if (!$xml->schemaValidate(TApplication::$SystemPath."/schemas/norm.xsd"))
 			throw new TNOrmException(TNOrmException::ERR_INVALID_ORM_CONFIG);
 		$xpath = new DOMXPath($xml);
+		
 		$keys = $xpath->query('/class/key');
 		if ($keys->length > 0){
 			$this->_keys_ = array();
 			foreach ($keys as $node)
 				$this->_keys_[] = $node->nodeValue;	
 		}
+		
+		$this->_identity_ = (count($this->_keys_) > 1)?1:0;
+		
+		if ($xml->firstChild->getAttribute('identity') != 'auto')
+			$this->_identity_ = ($xml->firstChild->getAttribute('identity') == 'explicit')?1:0;
+		
 		$tables = $xpath->query('/class/table');
 		foreach ($tables as $node){
 			$this->_tables_[$node->getAttribute("name")] = array();
+			$this->_table_classes_[$matches[1][$i]] = $cname;
 			$keyfields = $xpath->query('keyfield',$node);
 			foreach ($keyfields as $fld)
 				$this->_tables_[$node->getAttribute("name")][] = $fld;
@@ -140,7 +166,7 @@ class TClassOrmConfig {
 		
 		$scalars = $xpath->query('/class/scalar');
 		foreach ($scalars as $node){
-			$this->_override_scalar_property($node->getAttribute("name"), array('datatype'=>$node->getAttribute("type"),'field'=>array("name"=>$node->getAttribute("field"),"table"=>$node->getAttribute("table")?$node->getAttribute("table"):$default_tbl)));
+			$this->_override_scalar_property($node->getAttribute("name"), array('datatype'=>$node->getAttribute("type"),'field'=>array("name"=>$node->getAttribute("field"),"table"=>$node->getAttribute("table")?$node->getAttribute("table"):$default_tbl)),$cname);
 		}
 		
 		$links = $xpath->query('/class/reference|/class/collection');
@@ -149,6 +175,7 @@ class TClassOrmConfig {
 				$this->_properties_[$node->getAttribute("name")] = array('fields'=>array());
 			$this->_properties_[$node->getAttribute("name")]["type"] = $node->tagName;
 			$this->_properties_[$node->getAttribute("name")]["classname"] = $node->getAttribute("classname");
+			$this->_properties_[$node->getAttribute("name")]["defclass"] = $cname;
 			$properties = $xpath->query('property',$node);
 			foreach ($properties as $propnode){
 				$fields  = $xpath->query('field',$propnode);
@@ -164,47 +191,58 @@ class TClassOrmConfig {
 		} 
 	}
 	
+	public function IsOrmClass(){
+		return !empty($this->_tables_);
+	}
+	
 	public function __toString(){
 		$text ='<?php $ormconfig=array(';
 		$text .= '"classname"=>"'.$this->_classname_.'",';
+		$text .= '"identity"=>'.$this->_identity_.',';
 		$text .= '"tables"=>array(';
-		$first = true;
+		$temp = array();
 		foreach ($this->_tables_ as $table=>$keys){
-			if ($first) $first = false; else $text .= ','; 
-			$text .= '"'.$table.'"=>array("'.join('","',$keys).'")';
+			$temp[] = '"'.$table.'"=>array("'.join('","',$keys).'")';
 		}
-		$text .= '),"keys"=>array("'.join('","',$this->_keys_).'"),"nestedsets"=>array('.(!empty($this->_nested_sets_))?'"parent"=>"'.$this->_nested_sets_['parent'].'","children"=>"'.$this->_nested_sets_['children'].'"':''.'),"properties"=>array(';
+		$text .= join(',',$temp).')';
+		$text .= ',"tdefclasses"=>array(';
+		$temp = array();
+		foreach ($this->_table_classes_ as $table=>$class){
+			$temp[] = '"'.$table.'"=>"'.$class.'"';
+		}
+		$text .= join(',',$temp).')';
+		$text .= ',"keys"=>array("'.join('","',$this->_keys_).'")';
+		$text .= ',"nestedsets"=>array('.((!empty($this->_nested_sets_))?('"parent"=>"'.$this->_nested_sets_['parent'].'","children"=>"'.$this->_nested_sets_['children'].'"'):'').')';
+		$text .= ',"properties"=>array(';
 		
-		$first = true;
+		$temp = array();
 		foreach ($this->_properties_ as $prop=>$data){
-			if ($first) $first = false; else $text .= ',';
-			$text .= '"'.$prop.'"=>array("type"=>"'.$data['type'].'",';
+			$pt = '"'.$prop.'"=>array("type"=>"'.$data['type'].'","defclass"=>"'.$data['defclass'].'",';
 			switch ($data['type']){
-				case 'scalar':$text .= '"datatype"=>"'.$data['datatype'].'","field"=>array("name"=>"'.$data['field']['name'].'","table"=>"'.$data['field']['table'].'")';break;
+				case 'scalar':$pt .= '"datatype"=>"'.$data['datatype'].'","field"=>array("name"=>"'.$data['field']['name'].'","table"=>"'.$data['field']['table'].'")';break;
 				case 'reference':
 				case 'collection':{
-					$text .= '"fields"=>array(';
-					$ffirst = true;
+					$pt .= '"classname"=>"'.$data['classname'].'",';
+					$pt .= '"fields"=>array(';
+					$temp2 = array();
 					foreach ($data['fields'] as $field){
-						if ($ffirst) $ffirst = false; else $text .= ',';
-						$text .= 'array("name"=>"'.$field['name'].'","table"=>"'.$field['table'].'","property"=>"'.$field['property'].'")';
+						$temp2[] = 'array("name"=>"'.$field['name'].'","table"=>"'.$field['table'].'","property"=>"'.$field['property'].'")';
 					}
-					$text .= ')'; 
+					$pt .= join(',',$temp2).')'; 
 					if ($data['type'] == 'collection'){
-						$text .= ',"sorting"=>array(';
-						$sfirst = true;
+						$pt .= ',"sorting"=>array(';
+						$temp2 = array();
 						foreach ($data['sorting'] as $sort){
-							if ($sfirst) $sfirst = false; else $text .= ',';
-							$text .= 'array("property"=>"'.$sort['property'].'","type"=>"'.$sort['type'].'")';
+							$temp2[] = 'array("property"=>"'.$sort['property'].'","type"=>"'.$sort['type'].'")';
 						}
-						$text .= ')';
+						$pt .= ')';
 					}
 				}break;
 			}
-			$text .= ')';
+			$pt .= ')';
+			$temp[] = $pt;
 		}
-		$text .= ')';
-		$text .= '); ?>';
+		$text .= join(',',$temp).'));';
 		return $text;
 	}
 }
@@ -216,14 +254,21 @@ class TNOrmIterator extends TIteratorAdapter {
  */	
 	private $_adapter_;
 	
-	public function __construct(IIterator $base, $classname, $adapter){
+	private $_assumed_classes_ = array();
+	
+	public function __construct(IIterator $base, $classname, $adapter, array $assumed_classes = array()){
 		parent::__construct($base);
 		$this->_classname_ = $classname;
 		$this->_adapter_ = $adapter;
+		if (!empty($assumed_classes))
+			$this->_assumed_classes_ = $assumed_classes;
 	}
 	
 	public function Item() {
-		return $this->_adapter_->Create(parent::Item(), $this->_classname_);
+		$row = parent::Item();
+		if (!is_null($row))
+			return $this->_adapter_->Create(parent::Item(), $this->_classname_, $this->_assumed_classes_);
+		return null;
 	}
 }
 
@@ -252,17 +297,19 @@ class TNOrmException extends TStorageException {
 class TNOrmBranchLoader {
 	protected $object;
 	protected $adapter;
+	protected $assumedDescendants = array();
 	
 	protected $value = false;
 	
-	public function __construct($object,TNOrmAdapter $adapter){
+	public function __construct($object,TNOrmAdapter $adapter, array $assumed_descendants = array()){
 		$this->object = $object;
 		$this->adapter = $adapter;
+		$this->assumedDescendants = $assumed_descendants;
 	}
 	
 	public function Value(){
 		if ($this->value === false)
-			$this->value = $this->adapter->FetchContainers($this->object);
+			$this->value = $this->adapter->FetchContainers($this->object,$this->assumedDescendants);
 		return $this->value;
 	}
 }
@@ -281,16 +328,21 @@ abstract class TNOrmLoader {
 	protected $key;
 	protected $value;
 	protected $dummy;
+	private $_empty_key_ = false;
+	protected $assumeDescendants = array();
 	
 	
-	public function __construct(&$row, &$meta, TNOrmAdapter $adapter){
-		$this->adapter = $adapter; 
+	public function __construct(&$row, &$meta, TNOrmAdapter $adapter, array $assume_descendants = array()){
+		$this->adapter = $adapter;
+		$this->assumeDescendants = $assume_descendants; 
 		$this->dummy = new $meta['classname']();
 		$keys = array();
 		$props = array();
 		foreach ($meta['fields'] as $field){
 			$nm = $field['name'];
 			$keys[] = $row->$nm;
+			if (is_null($row->$nm))
+				$this->_empty_key_ = true;
 			if (!isset($props[$field['property']]))
 				$props[$field['property']] = array();
 			$props[$field['property']][] = $row->$nm;	
@@ -311,8 +363,10 @@ abstract class TNOrmLoader {
  * @return mixed
  */	
 	public function Value(){
-		if (!isset($this->value))
-			$this->load();
+		if (!isset($this->value)){
+			if (!$this->_empty_key_)
+				$this->load();
+		}
 		return $this->value;
 	}
 	
@@ -328,7 +382,7 @@ abstract class TNOrmLoader {
 
 class TNOrmObjectLoader extends TNOrmLoader {
 	protected function load(){
-		$this->value = $this->adapter->Load($this->dummy);
+		$this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants);
 	}
 }
 
@@ -336,29 +390,20 @@ class TNOrmObjectLoader extends TNOrmLoader {
 
 class TNOrmCollectionLoader extends TNOrmLoader {
 	protected $sorting;
-	protected $container;
 	
 	public function __construct(&$row, &$meta, TNOrmAdapter $adapter){
-		$this->container = $container;
 		parent::__construct($row, $meta, $adapter);
-		
 		$this->sorting = array();
 		foreach ($meta['sorting'] as $prop=>$type)
 			$this->sorting[] = new TOrmSorting($prop,new TSortingType($type));
 	}
 	
 	protected function load(){
-		$this->value = $this->adapter->Fetch($this->dummy,array(),$this->sorting);
+		$this->value = $this->adapter->Fetch($this->dummy,array(),$this->sorting,$this->assumeDescendants);
 	}
 }
 
 interface INOrmObject {
-/**
- * @param string $property
- * @return boolean
- */	
-	public function WasChanged($property);
-	
 /**
  * @return bool
  */	
@@ -366,30 +411,32 @@ interface INOrmObject {
 }
 
 class TNOrmObject implements INOrmObject {
-	private $_origins_ = array();
+	//private $_origins_ = array();
 	
 	private $_loaders_ = array();
 	
 	private $_was_moved_ = false;
 	
-	private function _check_prefixed_property(&$nm,$prefix){
+	private function _check_prefixed_property($nm,$prefix){
 		$rc = new ReflectionClass(get_class($this));
 		$prop = '_'.$prefix.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
-		if ($p = $rc->getProperty($prop))
-			if ($p->IsPrivate() && !$p->IsStatic())
-				return $prop;			
+		if ($rc->hasProperty($prop)){
+			$p = $rc->getProperty($prop);
+			if (!$p->IsPublic() && !$p->IsStatic())
+				return $prop;
+		}			
 		return false;
 	}
 		
 	public function __set($nm,$value){
 		if ($n = $this->_check_prefixed_property($nm,'orm')){
+			$this->$n = $value;
 			if ($value instanceof TNOrmLoader){
 				$this->_loaders_[$n] = $value;
 				$this->$n = null;
 			}
-			if (!isset($this->_origins_[$n]))
-				$this->_origins_[$n] = ($value instanceof TNOrmLoader)?$value->Key():$value;
-			$this->$n = $value;
+			/*if (!isset($this->_origins_[$n]))
+				$this->_origins_[$n] = ($value instanceof TNOrmLoader)?$value->Key():$value;*/
 		} else if ($n = $this->_check_prefixed_property($nm,'ns')){
 			if ($value instanceof TNOrmBranchLoader){
 				$this->_loaders_[$n] = $value;
@@ -399,7 +446,7 @@ class TNOrmObject implements INOrmObject {
 					$this->_was_moved_ = $this->$n != $value;
 				$this->$n = $value;
 			} else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-		}
+		} 
 	}
 	
 	public function __get($nm){
@@ -410,18 +457,11 @@ class TNOrmObject implements INOrmObject {
 			}
 			return $this->$n;
 		}
+		return null;
 	}
 	
 	public function WasMoved(){
 		return $this->_was_moved_;	
-	}
-	
-	public function WasChanged($property){
-		if ($this->_check_orm_property($property)){
-			if (isset($this->_origins_[$property]))
-				return $this->$property != $this->_origins_[$property];
-		}
-		return false;
 	}
 } 
 
@@ -453,7 +493,49 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	private $_loaded_objects_ = array();
 
-	private function _form_ds(&$orm,&$join,&$tables,&$fields){
+	
+	private function _form_ds_field($orm,$meta,$tables,&$fields){
+		switch ($meta['type']){ 
+			case 'reference':{
+				foreach ($meta['fields'] as $field)
+					$fields[$field['table'].'.'.$field['name']] = $this->_create_field($field['name'], $tables[$field['table']], empty($orm['nestedsets'])?0:1);
+			}break;
+			case 'scalar':$fields[$meta['field']['table'].'.'.$meta['field']['name']] = $this->_create_field($meta['field']['name'], $tables[$meta['field']['table']], empty($orm['nestedsets'])?0:1);break;
+		}
+	}
+	
+	private function _form_ds_join($type,$ds,$prevkeys,$keys,$table,&$tables,&$join){
+		$conditions = array();
+		$n = count($keys);
+		$tables[$table] = new TTable($table);
+		for ($i = 0; $i < $n; $i++)
+			$conditions[] = new TCondition(TConditionType::C_EQUAL, array(new TTableField($keys[$i],null,$tables[$table]),new TTableField($prevkeys[$i],null,$ds)));
+		$join[] = new TJoin($tables[$table], $type, $conditions); 
+	}
+	
+	private function _form_assumed_descender($ds,$baseorm,$classname,$basekeys,&$join,&$tables,&$fields,&$keyfields){
+		$orm = $this->_get_orm_config($classname);
+		$keys_set = false;
+		$keyfields = array();
+		foreach ($orm['tables'] as $table=>$keys)
+			if (!isset($tables[$table])){
+				$this->_form_ds_join(TJoin::JOIN_LEFT, $ds, $prevkeys, $keys, $table, $tables, $join);
+				if (!$keys_set && ($classname == $orm['tdefclasses'][$table])){
+					foreach ($keys as $keyfield){
+						$alias = strtolower($classname).'_'.$keyfield;
+						$keyfields[] = $keyfield;
+						$fields[$table.'.'.$keyfield] = new TTableField($keyfield,$alias,$tables[$table]);
+					}
+					$keys_set = true;	
+				}
+			}
+				
+		foreach ($orm['properties'] as $name=>$meta)
+			if ($meta['defclass'] == $orm['classname'])
+				$this->_form_ds_field($orm,$meta,$tables,$fields);
+	}
+	
+	private function _form_ds($orm,&$join,&$tables,&$fields,&$assumed_descendants){
 		$prevkeys = null;
 		foreach ($orm['tables'] as $table=>$keys){
 			if (!isset($ds)){
@@ -463,28 +545,24 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$tables[$table] = new TNestedSets($table,null,null,null,null,array(),array(),array(),array(), true);
 				$ds = $tables[$table];	
 				$prevkeys = $keys;
-			} else {
-				$conditions = array();
-				$n = count($keys);
-				$tables[$table] = new TTable($table);
-				for ($i = 0; $i < $n; $i++)
-					$conditions[] = new TCondition(TConditionType::C_EQUAL, array(new TTableField($keys[$i],null,$tables[$table]),new TTableField($prevkeys[$i])));
-				$join[] = new TJoin($tables[$table], TJoin::JOIN_INNER, $conditions); 
-			}	
+			} else 
+				$this->_form_ds_join(TJoin::JOIN_INNER, $ds, $prevkeys, $keys, $table, $tables, $join);
 		}
 		
 		foreach ($orm['properties'] as $name=>$meta){
-			switch ($meta['type']){
-				case 'reference':
-				case 'collection':{
-					foreach ($meta['fields'] as $field)
-						$fields[] = $this->_create_field($field['name'], $tables[$field['table']], empty($orm['nestedsets'])?0:1);
-				}break;
-				case 'scalar':
-				default:$fields[] = $this->_create_field($field['name'], $tables[$field['table']], empty($orm['nestedsets'])?0:1);break;
-			}
+			$this->_form_ds_field($orm,$meta,$tables,$fields);
 		}
-			
+		
+		if (!empty($assumed_descendants)){
+			usort($assumed_descendants, create_function('$a,$b','return (is_subclass_of($a,$b))?1:0;'));
+			$assumed_keys = array();
+			foreach ($assumed_descendants as $cname)
+				if (is_subclass_of($cname, $orm['classname'])){
+					$this->_form_assumed_descender($ds,$orm, $cname,  $prevkeys, $join, $tables, $fields,$kv);
+					$assumed_keys[] = $kv;
+				}
+			$assumed_descendants = array_combine(array_reverse($assumed_descendants),array_reverse($assumed_keys));		
+		}	
 		return $ds;	
 	}
 	
@@ -534,19 +612,20 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	}
 	
 	private function _get_object_key_values($object){
-		$orm = $this->_get_orm_config($value);
 		$result = array();
-		foreach ($orm['keys'] as $propname){
-			switch ($orm['properties'][$propname]['type']){
-				case 'collection':break;
-				case 'reference':{
-					$v = $this->_reference_value($object->$propname, $orm['properties'][$propname]);
-					foreach ($v as $val)
-						if (!is_null($val))
-							$result[] = $val;
-				}break;
-				case 'scalar':
-				default:if (!is_null($object->$propname)) $result[] = $this->_get_scalar_prop($object,$propname,$orm['properties'][$propname]['datatype']);break;
+		if ($orm = $this->_get_orm_config($object)){
+			foreach ($orm['keys'] as $propname){
+				switch ($orm['properties'][$propname]['type']){
+					case 'collection':break;
+					case 'reference':{
+						$v = $this->_reference_value($object->$propname, $orm['properties'][$propname]);
+						foreach ($v as $val)
+							if (!is_null($val))
+								$result[] = $val;
+					}break;
+					case 'scalar':
+					default:if (!is_null($object->$propname)) $result[] = $this->_get_scalar_prop($object,$propname,$orm['properties'][$propname]['datatype']);break;
+				}
 			}
 		}
 		return $result;
@@ -563,7 +642,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private function _filter_from_object($orm,$object,&$tables,$fieldtype = 1){
 		$filter = array();
 		foreach ($orm['properties'] as $prop=>$meta)
-			if (isset($object->$prop)){
+			if (!is_null($object->$prop)){
 				switch ($meta['type']){
 					case 'reference':{
 						$v = $this->_reference_value($object->$prop,$meta);
@@ -589,33 +668,34 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param object $object
  * @return object
  */	
-	public function Load($object){
-		$orm = $this->_get_orm_config($object);
-		$join = array(); 
-		$tables = array();
-		$fields = array();
-		$ds = $this->_form_ds($orm, $join, $tables, $fields);
-		$ds->Fields = $fields;
-		$ds->Join = $join;
-		$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
-		$result = $this->_ioc_driver_->FetchRecords($ds);
-		foreach ($result as $item){
-			return $this->Create($item,$object);
+	public function Load($object, array $assume_descendants = array()){
+		if ($orm = $this->_get_orm_config($object)){
+			$join = array(); 
+			$tables = array();
+			$fields = array();
+			$ds = $this->_form_ds($orm, $join, $tables, $fields,$assume_descendants);
+			$ds->Fields = $fields;
+			$ds->Join = $join;
+			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
+			$result = $this->_ioc_driver_->FetchRecords($ds);
+			foreach ($result as $item){
+				return $this->Create($item,$object);
+			}
 		}
-		//throw new TNOrmException(TNOrmException::ERR_OBJECT_NOT_FOUND);
 		return null;
 	}
 	
 	
-	private function _check_save_tables($object,$table,$orm,&$tables,&$keyvalues){
+	private function _check_save_tables($table,$orm,&$tables,$keyvalues){
 		if (!isset($tables[$table])){
 			$tables[$table] = array(
 				'keys' => array(),
 				'values' => array()
 			);
 			$n = count($orm['tables'][$table]);
-			for ($i = 0; $i < $n; $i++)
-				$tables[$table]['keys'][$orm['tables'][$table][$i]] = $keyvalues[$i];
+			if (!empty($keyvalues))
+				for ($i = 0; $i < $n; $i++)
+					$tables[$table]['keys'][$orm['tables'][$table][$i]] = @$keyvalues[$i];
 		}
 	}
 	
@@ -624,11 +704,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		$keyvalues = $this->_get_object_key_values($object);
 		$emptyid = false;
 		$n = count($orm['keys']);
-		if (count($keyvalues) != $n){
-			if ($n == 1)
-				$emptyid = true;
-			else throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_INCOMPLETE);	
-		}
+		if (count($keyvalues) != $n)
+			$emptyid = true;
 		return $keyvalues;
 	}
 	
@@ -637,148 +714,184 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param object $object
  * @return object
  */	
-	public function Save($object){
-		$orm = $this->_get_orm_config($object);
-		$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
-		$tables = array();
+	public function Save($object, array $propeties_mask = array()){
+		if ($orm = $this->_get_orm_config($object)){
+			$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
+			$tables = array();
 		
-		foreach ($orm['properties'] as $prop => $meta)
-			if (($meta['type'] != 'collection') && (!($object instanceof INOrmObject) || (($object instanceof INOrmObject) && ($object->WasChanged($prop)))))
-			{
-				switch ($meta['type']){
-					case 'reference':{
-						$v = $this->_reference_value($object->$prop,$meta);
-						$n = count($meta['fields']);
-						for ($i = 0; $i < $n; $i++){
-							$this->_check_save_tables($object, $meta['fields'][$i]['table'], $orm, $tables,$keyvalues);
-							$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
-						}
-					}break;
-					case 'scalar':
-					default:{
-						$this->_check_save_tables($object, $meta['field']['table'], $orm, $tables,$keyvalues);
-						$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
-					}break; 
-				}	
-			}
-		
-		$this->_ioc_driver_->BeginTransaction();
-		try {
-			$maintable = true;
-			foreach ($orm['tables'] as $t=>$keyfields){
-				$table = $tables[$t];
-				$filter = array();
-				foreach ($data['keys'] as $fld=>$value)
-					$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TTableField($fld),$value));
-				$fields = array();
-				$values = array();
-				foreach ($data['values'] as $fld=>$value){
-					$fields[] = new TTableField($fld);
-					$values[] = $value;
+			foreach ($orm['properties'] as $prop => $meta){
+				if (($meta['type'] != 'collection') && (empty($propeties_mask) || isset($properties_mask[$prop])))
+				{
+					switch ($meta['type']){
+						case 'reference':{
+							$v = $this->_reference_value($object->$prop,$meta);
+							$n = count($meta['fields']);
+							for ($i = 0; $i < $n; $i++){
+								$this->_check_save_tables($meta['fields'][$i]['table'], $orm, $tables,$keyvalues);
+								if (!isset($tables[$meta['fields'][$i]['table']]['keys'][$meta['fields'][$i]['name']]))
+									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
+							}
+						}break;
+						case 'scalar':
+						default:{
+							$this->_check_save_tables($meta['field']['table'], $orm, $tables,$keyvalues);
+							if (!isset($tables[$meta['field']['table']]['keys'][$meta['field']['name']]))
+								$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
+						}break; 
+					}	
 				}
-				
-				$ds = new TTable($table, array(), $filter, array(), array());
-				
-				if ($emptyid || ($this->_ioc_driver_->UpdateRecords($ds, $fields, $values) == 0)){
-					$merged = $data['keys'] + $data['values'];
-
-					if ($maintable && !empty($orm['nestedsets'])){
-						$parentprop = $orm['nestedsets']['parent'];
-						$filter = array();
-						if (is_object($object->$parentprop))
-							$filter = $this->_filter_from_object($orm, $object->$parentprop, $tables);
-						$ds = new TNestedSets($table, array(), $filter, array(), array());
-						$this->_ioc_driver_->NestedSetAddRecord($ds, $merged);
-					} else
-						$this->_ioc_driver_->InsertRecords($ds, array_values($merged), array_keys($merged),$pk);
-					
-					if ($emptyid)
-						foreach ($orm['keys'] as $key) 
-							$object->$key = $pk;
-				} else if ($object instanceof INOrmObject){
-					if (!empty($orm['nestedsets']) && $object->WasMoved() && $maintable){
-						$src = new TNestedSets($table, array(), $filter, array(), array());
-						$parentprop = $orm['nestedsets']['parent'];
-						$filter = array();
-						if (is_object($object->$parentprop))
-							$filter = $this->_filter_from_object($orm, $object->$parentprop, $tables);
-						$dest = new TNestedSets($table, array(), $filter, array(), array());
-						$this->_ioc_driver_->NestedSetBranchesMove($src,$dest);
+			}	
+		
+			$this->_ioc_driver_->BeginTransaction();
+			try {
+				$maintable = true;
+				foreach ($orm['tables'] as $t=>$keyfields){
+					$table = $tables[$t];
+					$filter = array();
+					foreach ($table['keys'] as $fld=>$value)
+						$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TTableField($fld),$value));
+					$fields = array();
+					$values = array();
+					foreach ($table['values'] as $fld=>$value){
+						$fields[] = new TTableField($fld);
+						$values[] = $value;
 					}
+				
+					$apcent = false;
+					if (!$emptyid){
+						if ($orm['identity'] == 1){
+							$apcent = true;
+							$kn = array_keys($table['keys']);
+							$check_exists = new TTable($t,null,array(new TTableField($kn[0])), $filter);
+							$check = $this->_ioc_driver_->FetchRecords($check_exists);
+							foreach ($check as $chk){
+								$apcent = false;
+								break;
+							}
+						}
+					}
+				
+					$ds = new TTable($t, null, array(), $filter, array(), array());
+					
+					if ($emptyid || $apcent){
+						$merged = $table['keys'] + $table['values'];
+						if ($maintable && !empty($orm['nestedsets'])){
+							$parentprop = $orm['nestedsets']['parent'];
+							$filter = array();
+							if (is_object($object->$parentprop)){
+								$pkeyvalues = $this->_entity_keys($object->$parentprop, $orm,$pemptyid);
+								foreach ($keyfields as $i => $fld)
+									$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TNestedSetsField($fld),@$pkeyvalues[$i]));
+							}
+							$ds = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
+							$this->_ioc_driver_->NestedSetAddRecord($ds, $merged,$pk);
+						} else
+							$this->_ioc_driver_->InsertRecords($ds, array(array_values($merged)), array_keys($merged),$pk);
+						
+						if ($emptyid && $orm['identity'] == 0 && $maintable){
+							foreach ($tables as $tn=>&$tbl)
+								if ($tn != $t)
+									$tbl['keys'][$orm['tables'][$tn][0]] = $pk;
+							
+							$c = get_class($object);
+							$object = new $c(); 
+							foreach ($orm['keys'] as $key) 
+								$object->$key = $pk;
+						}
+					} else if (!empty($fields)){
+						$this->_ioc_driver_->UpdateRecords($ds, $fields, $values);
+						if ($object instanceof INOrmObject){
+							if (!empty($orm['nestedsets']) && $object->WasMoved() && $maintable){
+								$src = new TNestedSets($table, array(), $filter, array(), array());
+								$parentprop = $orm['nestedsets']['parent'];
+								$filter = array();
+								if (is_object($object->$parentprop))
+									$filter = $this->_filter_from_object($orm, $object->$parentprop, $tables);
+								$dest = new TNestedSets($table, array(), $filter, array(), array());
+								$this->_ioc_driver_->NestedSetBranchesMove($src,$dest);
+							}
+						}
+					}
+					$maintable = false;
 				}
-				$maintable = false;
+				$this->_ioc_driver_->CommitTransaction();
+			} catch (Excetion $e){
+				$this->_ioc_driver_->RollbackTransaction();
+				throw $e;
+				return false;
 			}
-			$this->_ioc_driver_->CommitTransaction();
-		} catch (Excetion $e){
-			$this->_ioc_driver_->RollbackTransaction();
-			throw $e;
-			return false;
-		}
-		return $this->Load($object);
+			return $this->Load($object);
+		} 
+		return null;
 	}
 	
 	public function Delete($object){
-		$orm = $this->_get_orm_config($object);
-		$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
-		if ($emptyid)
-			throw new TNOrmException(TNOrmException::ERR_MISSING_KEY);
+		if ($orm = $this->_get_orm_config($object)){
+			$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
+			if ($emptyid)
+				throw new TNOrmException(TNOrmException::ERR_MISSING_KEY);
 		
 /* 
  * @todo Probably implement removing object from loaded objects
  */			
-		$this->_ioc_driver_->BeginTransaction();
-		try {
-			$maintable = true;
-			$result = true;
-			foreach ($orm['tables'] as $table=>$keys){
-				$n = count($keys);
-				$filter = array();
-				for ($i = 0; $i < $n; $i++)
-					$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TTableField($keys[$i]),$keyvalues[$i]));
-
-				if ($maintable && !empty($orm['nestedsets'])){
-					$ds = new TNestedSets($table, array(), $filter, array(), array());
-					$result = $result && $this->_ioc_driver_->NestedSetBranchesDelete($ds);
-				} else {	
-					$ds = new TTable($table, array(), $filter, array(), array(),true);
-					$result = $result && $this->_ioc_driver_->DeleteRecords($ds);
-				}
-				$maintable = false;
-				if (!$this->_bool_emulate_integrity_) break;
-			}			
-		} catch (Exception $e){
-			$this->_ioc_driver_->RollbackTransaction();
-			throw $e;
-			return false;
+			$this->_ioc_driver_->BeginTransaction();
+			try {
+				$maintable = true;
+				$result = true;
+				foreach ($orm['tables'] as $table=>$keys){
+					$n = count($keys);
+					$filter = array();
+					if ($maintable && !empty($orm['nestedsets'])){
+						for ($i = 0; $i < $n; $i++)
+							$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TNestedSetsField($keys[$i]),$keyvalues[$i]));	
+						$ds = new TNestedSets($table, null, null, null, null, array(), $filter, array(), array());
+						$result = $result && $this->_ioc_driver_->NestedSetBranchesDelete($ds);
+					} else {
+						for ($i = 0; $i < $n; $i++)
+							$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TTableField($keys[$i]),$keyvalues[$i]));	
+						$ds = new TTable($table, null, array(), $filter, array(), array(),true);
+						$result = $result && $this->_ioc_driver_->DeleteRecords($ds);
+					}
+					$maintable = false;
+					if (!$this->_bool_emulate_integrity_) break;
+				}			
+			} catch (Exception $e){
+				$this->_ioc_driver_->RollbackTransaction();
+				throw $e;
+				return false;
+			}
+			$this->_ioc_driver_->CommitTransaction();
+			return $result;
 		}
-		$this->_ioc_driver_->CommitTransaction();
-		return $result;
+		return false;
 	}
 
-	public function FetchContainers($object){
-		$orm = $this->_get_orm_config($object);
-		$join = array(); 
-		$tables = array();
-		$fields = array();
+	public function FetchContainers($object, array $assume_descendants = array()){
+		if ($orm = $this->_get_orm_config($object)){
+			$join = array(); 
+			$tables = array();
+			$fields = array();
 		
-		$ds = $this->_form_ds($orm, $join, $tables, $fields);
-		$ds->Filter = $this->_filter_from_object($orm, $object, $tables, 2);
-		$ds->Direction = TNestedSets::DIR_UP;
-		$ds->IncludeBases = false;
-		$ds->Fields = $fields;
-		$ds->Join = $join;
-		$ns = $this->_ioc_driver_->NestedSetFetch($ds);
-		$parentprop = $orm['nestedsets']['parent'];
-		$item = false;
-		foreach ($ns as $nse){
-			$item = $this->Create($nse,$orm['classname']);
-			if (isset($p))
-				$item->$parentprop = $p;
-			else 
-				$item->$parentprop = false;
-			$p = $item;	
+			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
+			$ds->Filter = $this->_filter_from_object($orm, $object, $tables, 2);
+			$ds->Direction = TNestedSets::DIR_UP;
+			$ds->IncludeBases = false;
+			$ds->Fields = $fields;
+			$ds->Join = $join;
+			$ns = $this->_ioc_driver_->NestedSetFetch($ds);
+			$parentprop = $orm['nestedsets']['parent'];
+			$item = false;
+			foreach ($ns as $nse){
+				$item = $this->Create($nse,$orm['classname']);
+				if (isset($p))
+					$item->$parentprop = $p;
+				else 
+					$item->$parentprop = false;
+				$p = $item;	
+			}
+			return $item;
 		}
-		return $item;
+		return null;
 	}
 	
 	private function _filter_from_conditions(array &$filter,$orm,$tables,$conditions){
@@ -811,10 +924,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				switch ($orm['properties'][$s->Attribute]['type']){
 					case 'collection':break;
 					case 'reference':{
-						foreach ($orm['properties'][$s->Attribute]['fields'] as $field)
-							$sort[] = new TSorting($this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0), $s->Type);break;
+						foreach ($orm['properties'][$s->Attribute]['fields'] as $field){
+							$sort[] = new TSorting(($s->Type == TSortingType::SORT_SHUFFLE)?new TTableField(''):$this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0), $s->Type);
+						}
 					}break;
-					default:$sort[] = new TSorting($this->_create_field($orm['properties'][$s->Attribute]['field']['name'], $tables[$orm['properties'][$s->Attribute]['field']['table']], ($tables[$orm['properties'][$s->Attribute]['field']['table']] instanceof TNestedSets)?1:0), $s->Type);break;	
+					default:$sort[] = new TSorting(($s->Type == TSortingType::SORT_SHUFFLE)?new TTableField(''):$this->_create_field($orm['properties'][$s->Attribute]['field']['name'], $tables[$orm['properties'][$s->Attribute]['field']['table']], ($tables[$orm['properties'][$s->Attribute]['field']['table']] instanceof TNestedSets)?1:0), $s->Type);break;	
 				}
 		}
 		return $sort;
@@ -829,26 +943,39 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param int $offset
  * @param int $count
  */	
-	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), $offset = null, $count = null){
-		$orm = $this->_get_orm_config($dummy);
-		$join = array(); 
-		$tables = array();
-		$fields = array();	
+	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){
+		if ($orm = $this->_get_orm_config($dummy)){
+			$join = array(); 
+			$tables = array();
+			$fields = array();	
 		
-		$ds = $this->_form_ds($orm, $join, $tables, $fields);
-		$ds->Fields = $fields;
-		$ds->Join = $join;
+			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
+			$ds->Join = $join;
 		
-		if (is_object($dummy))
-			$filter = $this->_filter_from_object($orm, $dummy, $tables);
+			if (is_object($dummy))
+				$filter = $this->_filter_from_object($orm, $dummy, $tables);
 
-		$this->_filter_from_conditions($filter, $orm, $tables, $conditions);	
+			$this->_filter_from_conditions($filter, $orm, $tables, $conditions);	
 		
-		$ds->Filter = $filter;
-		$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
-		$ds->Offset = $offset;
-		$ds->Count = $count;
-		return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this);
+			$ds->Filter = $filter;
+			if (!is_null($total)){
+				$cds = clone $ds;
+				$cds->Fields = new TExpressionField('cnt', new TOperation(TOperationType::O_COUNT, array()));
+				$cntr = $this->_ioc_driver_->FetchRecords($cds);
+				foreach ($cntr as $cnt){
+					$total = $cnt['cnt'];
+					break;
+				}
+			}
+		
+			$ds->Fields = $fields;
+			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
+			$ds->Offset = $offset;
+			$ds->Count = $count;
+		
+			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants);
+		}
+		return false;
 	} 
 	
 	private function _check_loaded($dummy,&$orm){
@@ -867,20 +994,22 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $dummy;
 	}
 	
-	private function _assign_property($dummy,$property,$meta,$row){
+	private function _assign_property($dummy,$property,$meta,$row, array $assume_descendants = array()){
 		switch ($meta['type']){
 			case 'scalar':{
 				$nm = $meta['field']['name'];
 				$v = $row->$nm;
-				switch ($prop['datatype']){
+				switch ($meta['datatype']){
 					case 'bool':$v = TConvertions::ConvertToBoolean($v);break;
 					case 'date':
 					case 'TDate':{
-						if ($this->_date_format_){
-							$v = date_create_from_format($this->_date_format_,$v);
-							$v = $v->getTimestamp();
+						if (!is_null($v)){
+							if ($this->_date_format_){
+								$v = date_create_from_format($this->_date_format_,$v);
+								$v = $v->getTimestamp();
+							}
+							$v = new TDate($v);
 						}
-						$v = new TDate($v);
 					}break;
 					case 'int':$v = (int)$v;break;
 					case 'float':$v = (float)$v;break;	
@@ -898,44 +1027,54 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$assign = $new_val != $this->_get_object_key_values($dummy->$property);	
 				}
 				if ($assign)
-					$dummy->$property = new TNOrmObjectLoader($row,$meta,$this);
+					$dummy->$property = new TNOrmObjectLoader($row,$meta,$this,$assume_descendants);
 			}break;
-			case 'collection': if (!isset($dummy->$property)) $dummy->$property = new TNOrmCollectionLoader($row,$meta,$this);break;
+			case 'collection': if (!isset($dummy->$property)) $dummy->$property = new TNOrmCollectionLoader($row,$meta,$this,$assume_descendants);break;
 		}
 	}
 
 	public function Properties($dummy){
-		$orm = $this->_get_orm_config($dummy);
-		$result = array();
-		foreach ($orm['properties'] as $key=>$prop){
-			if ($prop['type'] == 'scalar'){
-				$type = TItemPropertyType::PT_STRING;
-				switch ($prop['datatype']){
-					case 'string':break;
-					case 'int':$type = TItemPropertyType::PT_INT;break;
-					case 'float':$type = TItemPropertyType::PT_DEC;break;	
-					case 'date': 
-					case 'TDate':$type = TItemPropertyType::PT_DATE;break;
-					case 'bool':$type = TItemPropertyType::PT_BOOL;break;
+		if ($orm = $this->_get_orm_config($dummy)){
+			$result = array();
+			foreach ($orm['properties'] as $key=>$prop){
+				if ($prop['type'] == 'scalar'){
+					$type = TItemPropertyType::PT_STRING;
+					switch ($prop['datatype']){
+						case 'string':break;
+						case 'int':$type = TItemPropertyType::PT_INT;break;
+						case 'float':$type = TItemPropertyType::PT_DEC;break;	
+						case 'date': 
+						case 'TDate':$type = TItemPropertyType::PT_DATE;break;
+						case 'bool':$type = TItemPropertyType::PT_BOOL;break;
+					}
+					$result[$key] = new TOrmPropertyMeta($key, $key, $type); 
+				} else {
+					switch ($prop['type']){
+						case 'collection':$result[$key] = new TOrmCollectionPropertyMeta($key, $key, $prop['classname']);break;
+						case 'reference':$result[$key] = new TOrmReferencePropertyMeta($key, $key, $prop['classname']);break; 
+					} 
 				}
-				$result[] = new TOrmPropertyMeta($key, $key, $type); 
-			} else {
-				switch ($prop['type']){
-					case 'collection':$result[] = new TOrmCollectionPropertyMeta($key, $key);break;
-					case 'reference':$result[] = new TOrmReferencePropertyMeta($key, $key, $prop['classname']);break; 
-				} 
 			}
+			return $result;
 		}
-		return $result;
+		return false;
+	}
+	
+	private function _get_ns_property_name($object,$nm){
+		if ($orm = $this->_get_orm_config($object))
+			if (!empty($orm['nestedsets']))
+				return $orm['nestedsets'][$nm];
+		throw new TCoreException(TCoreException::ERR_BAD_TYPE);
 	}
 	
 	private function _get_ns_property($object,$nm){
-		$orm = $this->_get_orm_config($object);
-		if (!empty($orm['nestedsets'])){
-			$p = $orm['nestedsets'][$nm];
-			return $object->$p;
-		}
-		throw new TCoreException(TCoreException::ERR_BAD_TYPE);
+		$p = $this->_get_ns_property_name($object, $nm);
+		return $object->$p;
+	}
+	
+	public function Put($object,$container){
+		$p = $this->_get_ns_property_name($object, 'parent');
+		$object->$p = $container;
 	}
 	
 	public function Container($object){
@@ -946,46 +1085,76 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $this->_get_ns_property($object, 'children');
 	}
 	
-	public function FetchChildren($dummy,$direct = true, array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null){
-		$orm = $this->_get_orm_config($dummy);
-		if (empty($orm['nestedsets']))
-			throw new TCoreException(TCoreException::ERR_BAD_TYPE);
-		$join = array(); 
-		$tables = array();
-		$fields = array();
+	private function _sort_nested_sets(array &$items,$childprop,$f){
+		usort($items, $f);	
+		foreach ($items as $item)
+			$this->_sort_nested_sets($item->$childprop, $childprop,$f);
+	}
+	
+	public function FetchContents($dummy,$direct = true, array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null,  &$total = null){
+		if ($orm = $this->_get_orm_config($dummy)){
+			if (empty($orm['nestedsets']))
+				throw new TCoreException(TCoreException::ERR_BAD_TYPE);
+			$join = array(); 
+			$tables = array();
+			$fields = array();
 		
-		$ds = $this->_form_ds($orm, $join, $tables, $fields);
-		if (is_object($dummy))
-			$filter = $this->_filter_from_object($orm, $dummy, $tables, 2);
+			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
+			if (is_object($dummy))
+				$filter = $this->_filter_from_object($orm, $dummy, $tables, 2);
 		
-		$this->_filter_from_conditions($filter, $orm, $tables, $conditions);
-		$ds->Fields = $fields;
-		$ds->Join = $join;
-		$ds->Filter = $filter;
-		$ds->Direction = TNestedSets::DIR_DOWN;
-		$ds->IncludeBases = false;
-		$ds->Offset = $offset;
-		$ds->Count = $count;
-		$ds->Direct = $direct;
-		if ($direct){
-			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
-			return new TNOrmIterator($this->_ioc_driver_->NestedSetFetch($ds), $orm['classname'], $this);
-		} 
-		
-		$ns = $this->_ioc_driver_->NestedSetFetch($ds);
-		$result = array();
-		$childprop = $orm['nestedsets']['children'];
-		foreach ($ns as $nse){
-			$item = $this->Create($nse,$orm['classname']);
-			$item->$children = array();
-			if (is_null($nse->NestingParent())){
-				$result[] = $item;
-			} else {
-				$p = $this->Create($nse->NestingParent(), $orm['classname']);					
-				$p->$children[] = $item; 
+			$this->_filter_from_conditions($filter, $orm, $tables, $conditions);
+			$ds->Fields = $fields;
+			$ds->Join = $join;
+			$ds->Filter = $filter;
+			$ds->Direction = TNestedSets::DIR_DOWN;
+			$ds->IncludeBases = false;
+			$ds->Offset = $offset;
+			$ds->Count = $count;
+			if ($direct){
+				$ds->Depth = 0;
+				$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
+				return new TNOrmIterator($this->_ioc_driver_->NestedSetFetch($ds), $orm['classname'], $this, $assume_descendants);
+			} 
+			$ns = $this->_ioc_driver_->NestedSetFetch($ds);
+			$result = array();
+			$items = array();
+			$childprop = $orm['nestedsets']['children'];
+			foreach ($ns as $nse){
+				$item = $this->Create($nse,$orm['classname'],$assume_descendants);
+				$item->$childprop = array();
+				$items[join('|',$this->_entity_keys($item, $orm, $remptyid))] = $item;
+				if (is_null($nse->NestingParent())){
+					$result[] = $item;
+				} else {
+					$p = $this->Create($nse->NestingParent(), $orm['classname']);
+					$p = $items[join('|',$this->_entity_keys($p,$orm, $remptyid))];					
+					array_push($p->$childprop,$item); 
+				}
 			}
+			if (!empty($sorting)){
+				$f = '$r = 0;';
+				foreach ($sorting as $s){
+					if ($orm['properties'][$s->Attribute]['type'] == 'scalar'){
+						switch ($orm['properties'][$s->Attribute]['datatype']){
+							case 'date':
+							case 'TDate':$f .= '$r = $a->'.$s->Attribute.'->TimeStamp() - $b->'.$s->Attribute.'->TimeStamp();';break;
+							case 'int':$f .= '$r = $a->'.$s->Attribute.' - $b->'.$s->Attribute.';';break;
+							case 'float':$f .= '$r = $a->'.$s->Attribute.' - $b->'.$s->Attribute.';$r = ($r <> 0)?($r/abs($r)):$r;';break;
+							case 'bool':$f .= '$r = (int)$a->'.$s->Attribute.' - (int)$b->'.$s->Attribute.';';break;
+							default:$f .= '$r = strcmp($a->'.$s->Attribute.',$b->'.$s->Attribute.');';break;
+						}
+					}
+					if ($s->Type == TSortingType::SORT_DESC)
+						$f .= '$r = -$r;';
+					$f .= 'if ($r <> 0) return $r;';
+				} 	
+				$f .= 'return 0;';	
+				$this->_sort_nested_sets($result, $childprop, create_function('$a,$b',$f));
+			}
+			return new TArrayIterator($result);
 		}
-		return new TArrayIterator($result);
+		return false;
 	}
 	
 /**
@@ -993,28 +1162,43 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param mixed $row
  * @param object|string $dummy
  */	
-	public function Create($row,$dummy){
+	public function Create($row,$dummy, array $assumed_classes = array()){
 		if (is_array($row))
 			$row = (object)$row;
-		$orm = $this->_get_orm_config($dummy);
-		if (!is_object($dummy))
-			$dummy = new $orm['classname']();
+		if ($orm = $this->_get_orm_config($dummy)){
+			if (!is_object($dummy)){
+				$cn = $orm['classname'];
+				foreach ($assumed_classes as $c=>$keyfields){
+					$isit = true;
+					foreach ($keyfields as $kf){
+						$kf = $c.'_'.$kf;
+						if (!isset($row->$kf))
+							$isit = false;
+					}
+					if ($isit){
+						$cn = $c;
+						break;
+					}
+				}
+				$dummy = new $cn();
+			}
+	
+			foreach ($orm['keys'] as $key)
+				$this->_assign_property($dummy, $key, $orm['properties'][$key], $row, $assumed_classes);
 			
-		foreach ($orm['keys'] as $key)
-			$this->_assign_property($dummy, $key, $orm['properties']['key'], $row);
-			
-		$dummy = $this->_check_loaded($dummy, $orm);	
+			$dummy = $this->_check_loaded($dummy, $orm);	
 
-		if (!empty($orm['nestedsets'])){
-			$parentprop = $orm['nestedsets']['parent'];
-			$dummy->$parentprop = new TNOrmBranchLoader($dummy,$this);
-		}		
+			if (!empty($orm['nestedsets'])){
+				$parentprop = $orm['nestedsets']['parent'];
+				$dummy->$parentprop = new TNOrmBranchLoader($dummy,$this);
+			}		
 		
-		foreach ($orm['properties'] as $name=>$prop)
-			if (!in_array($name,$orm['keys']))
-				$this->_assign_property($dummy, $name, $prop, $row);
-
-		return $dummy;
+			foreach ($orm['properties'] as $name=>$prop)
+				if (!in_array($name,$orm['keys']))
+					$this->_assign_property($dummy, $name, $prop, $row, $assumed_classes);
+			return $dummy;
+		}
+		return null;
 	}
 	
 	public function __set($nm,$value){
@@ -1055,7 +1239,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		$rc = null;
 		if (is_string($object))
 			$cn = $object;
-		if ($object instanceof ReflectionClass){
+		else if ($object instanceof ReflectionClass){
 			$cn = $object->getName();
 			$rc = $object;
 		} else if (is_object($object)) 
@@ -1064,8 +1248,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 
 		if (!isset($this->_loaded_orms_[$cn])){
 			if (!$this->_script_config_path_)
-				$this->_script_config_path_ = TApplication::$Application->AdjustPath('orm');
-			
+				$this->_script_config_path_ = TApplication::$Application->AdjustPath('private/orm');
+				
+			TFileSystem::ForceDir($this->_script_config_path_);	
+				
 			if ($this->_use_config_ & (self::CONF_XML | self::CONF_PHPDOC)){
 				$filename = $this->_script_config_path_.'/'.$cn.'.orm.php';
 				if (!$rc)
@@ -1082,9 +1268,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					if ($this->_use_config_ & self::CONF_PHPDOC)
 						if (filemtime($rc->getFileName()) > $src_time)
 							$src_time = filemtime($rc->getFileName());
-					if ($this->_use_config_ & self::CONF_XML)
-						if (filemtime($this->_xml_config_path_.'/'.$rc->getName().'.orm.xml') > $src_time)
-							$src_time = filemtime($this->_xml_config_path_.'/'.$rc->getName().'.orm.xml');
+					if ($this->_use_config_ & self::CONF_XML){
+						$fn = $this->_xml_config_path_.'/'.$rc->getName().'.orm.xml';
+						if (file_exists($fn) && filemtime($fn) > $src_time)
+							$src_time = filemtime($fn);
+					}		
 					array_unshift($classes, $rc);
 					$rc = $rc->getParentClass();
 				}
@@ -1093,17 +1281,21 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				if (!file_exists($filename) || (filemtime($filename) < $src_time)){
 					$orm = new TClassOrmConfig($cn);
 
+					if ($this->_use_config_ & self::CONF_XML){
+						foreach ($classes as $rc)
+							if (file_exists($this->_xml_config_path_.'/'.$rc->getName().'.orm.xml'))	
+								$orm->ParseXml($this->_xml_config_path_.'/'.$rc->getName().'.orm.xml');
+					}
+					
 					if ($this->_use_config_ & self::CONF_PHPDOC)
 						foreach ($classes as $rc)
 							$orm->ParseClass($rc);
-						
-					if ($this->_use_config_ & self::CONF_XML){
-						foreach ($classes as $rc)	
-							$orm->ParseXml($this->_xml_config_path_.'/'.$rc->getName().'.orm.xml');
-					}
-					file_put_contents($filename, $orm);
+					if ($orm->IsOrmClass())	
+						file_put_contents($filename, $orm);
 				}	
-				include $filename;
+				$ormconfig = false;
+				if (file_exists($filename))
+					include $filename;
 				$this->_loaded_orms_[$cn] = $ormconfig;
 			}
 		} 

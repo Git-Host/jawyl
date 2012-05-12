@@ -175,7 +175,7 @@ class TMenuItem implements IIdentity {
  */	
 	public function __construct($base, IMenu $menu){
 		self::$_id_counter_++;
-		$this->id = self::$_id_counter_;
+		$this->_id_ = self::$_id_counter_;
 		$this->base = $base;
 		$this->menu = $menu;
 	}

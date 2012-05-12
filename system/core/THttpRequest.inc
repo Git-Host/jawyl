@@ -17,7 +17,8 @@
  * @subpackage Application
  * @category Core
  * 
- * @property-read string $Service Name of service to which request was made
+ * @property string $Service Name of service to which request was made
+ * @property string $RawPostData
  * 
  * @see TApplication
  */
@@ -25,6 +26,9 @@
 		private $_get_parameters_ = array();
 		private $_post_parameters_ = array();
 		private $_file_parameters_ = array();
+		private $_raw_post_data_ = null;
+		
+		protected $origin = '';
 /**
  * @var bool $IsXmlHttpRequest stores value indicating whether current request was sent by XmlHttpRequest object.
  */		
@@ -55,17 +59,18 @@
 			$this->IsAjax = $this->IsXmlHttpRequest;
 			
 			if (strtolower($this->Header('Content-Type')) == 'application/json')
-				$this->JsonObject = json_decode(file_get_contents("php://input"));
+				$this->JsonObject = json_decode($this->RawPostData());
 			
 			$orig = array();
 			
 			$this->_accept_query_params($_GET, true, $this->_get_parameters_, $orig);
 			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
-				
-			foreach ($_FILES as $key=>$file){
-				$this->_file_parameters_[$key] = new TUploadedFile($file);
-				$orig[$key] = $file["name"];
-			}
+	
+			foreach ($_FILES as $key=>$file)
+				if ($file){
+					$this->_file_parameters_[$key] = new TUploadedFile($file);
+					$orig[$key] = $file["name"];
+				}
 
 			$t = null;
 			$this->_accept_query_params($_COOKIE, false, $t, $orig);
@@ -110,6 +115,15 @@
  */
 		public function SetPostParameter($name,$value){
 			$this->_post_parameters_[$name] = $this->$value;
+		}
+		
+		public function RawPostData(){
+			global $HTTP_RAW_POST_DATA;
+			if (isset($HTTP_RAW_POST_DATA))
+				return $HTTP_RAW_POST_DATA;
+			if (is_null($this->_raw_post_data_))
+				$this->_raw_post_data_ = file_get_contents("php://input");
+			return $this->_raw_post_data_;	
 		}
 				
 /**
@@ -172,6 +186,8 @@
  */		
 		
 		public function __get($nm){
+			if ($nm == 'RawPostData')
+				return $this->RawPostData();
 			if (key_exists($nm, $this->_get_parameters_))
 				return $this->_get_parameters_[$nm];
 			if (key_exists($nm, $this->_post_parameters_))

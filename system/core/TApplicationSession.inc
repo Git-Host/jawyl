@@ -206,7 +206,7 @@
 		
 		public function ResetId(){
 			if ($this->isOpen)
-				return session_regenerate_id(false);
+				return session_regenerate_id(true);
 			return false;
 		}
 		

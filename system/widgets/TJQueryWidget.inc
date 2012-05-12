@@ -157,12 +157,12 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 			$f = $base->Value();
 			if ($f instanceof TDBStoredFile)
 				return $this->response->Url($this,"File",array("id"=>$item->ItemId(),"name"=>$base->Name()));
-			return $f->getLink();	
+			return $f->GetLink();	
 		} 
 		if ($base instanceof TActionParameter){
 			$f = $base->Value();
 			if ($f instanceof TFile)
-				return $f->getLink();
+				return $f->GetLink();
 			if (is_string($f))
 				return $f;	
 		}
