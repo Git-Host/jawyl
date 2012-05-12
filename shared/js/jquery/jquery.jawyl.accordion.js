@@ -34,6 +34,8 @@
 										w.accordion2().expand(Number(params[2])-1);
 									});	
 									acc.accordion2().init();
+									if ($("div.ui-accordion-header",acc.get(0)).length > 0)
+										$($("div.ui-accordion-header",acc.get(0)).get(0)).click();
 								}
 							return $(this.origin);
 						},

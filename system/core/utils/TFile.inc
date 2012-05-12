@@ -45,6 +45,8 @@
    	public function __construct($name,$path,$type = null,$size = null){
    		$this->Name = $name;
    		$this->MimeType = $type;
+   		if (!TFileSystem::IsAbsolute($path))
+   			$path = TApplication::FileStoragePath().'/'.$path;
    		$this->path = $path;
    		$this->size = $size;
    	}
@@ -53,7 +55,7 @@
  * gets file contents
  * @return string
  */   	
-   	public function getContents(){
+   	public function GetContents(){
    		return file_get_contents($this->path);
    	}
    	
@@ -61,20 +63,23 @@
  * gets a path where the file is actualy stored
  * @return string
  */   	
-   	public function getStorePath(){
+   	public function GetStorePath(){
    		return $this->path;
    	}
-
-/**
- * gets url to file
- */   	
-   	public function getLink(){
-   		$path = $this->getStorePath();
+   	
+   	protected function formLink($path){
    		$path = preg_replace('/[\\/\\\\]/','|',$path);
    		$docroot = preg_replace('/[\\/\\\\]/','|',$_SERVER["DOCUMENT_ROOT"]);
    		$link = str_ireplace($docroot,"",$path);
    		$link = str_replace('|','/',$link);
    		return $link;
+   	}
+
+/**
+ * gets url to file
+ */   	
+   	public function GetLink(){
+   		return $this->formLink($this->GetStorePath());
    	}
    	
 /**
@@ -82,8 +87,70 @@
  * @return string
  */   	
    	public function __toString(){
-		return $this->getStorePath();	
+		return $this->GetStorePath();	
 	}   	
+   }
+   
+   class TImage extends TFile {
+   		protected $thumbnail;
+   		protected $imageType;
+	
+   		public function __construct($name,$path,$thumbnail = null,$type = null,$size = null){
+   			parent::__construct($name, $path,$type,$size);
+   			if ($thumbnail){
+   				if (!TFileSystem::IsAbsolute($thumbnail))
+   					$thumbnail = TApplication::FileStoragePath().'/'.$thumbnail;
+   				$this->thumbnail = $thumbnail;
+   			} else $this->thumbnail = $this->path;
+   		}   
+
+   		public function ImageType(){
+   			if (!$this->imageType){
+   				if (function_exists('exif_imagetype'))
+   					$this->imageType = exif_imagetype($this->path);
+   				else {
+   					$im = getimagesize($this->path);	
+   					$this->imageType = $im[2];
+   				}
+   			}
+   			return $this->imageType;	
+   		}
+   		
+   		public function TypeExtension(){
+   			return image_type_to_extension($this->ImageType());
+   		}
+   		
+		public function GetThumbnailLink(){
+			return $this->formLink($this->thumbnail);
+		}
+   	
+   		public function SaveAs($filename,$type,$width=null,$height=null){
+   			if (file_exists($filename))
+   				unlink($filename);
+   			list($orig_width, $orig_height, $orig_type, $attr) = getimagesize($this->path);
+   			if (!$width)
+   				$width = $orig_width;
+   			if (!$height)
+   				$height = $orig_height;
+
+   			if ($orig_width < $orig_height)
+   				$width = ($height / $orig_height) * $orig_width;
+   			else 
+   				$height = ($width / $orig_width) * $orig_height;
+   				
+			$image_dest = imagecreatetruecolor($width, $height);
+			switch ($orig_type){
+				case IMAGETYPE_GIF:$image_src = imagecreatefromgif($this->path);break;
+				case IMAGETYPE_PNG:$image_src = imagecreatefrompng($this->path);break;
+				case IMAGETYPE_JPEG:$image_src = imagecreatefromjpeg($this->path);break;
+			}
+			imagecopyresampled($image_dest, $image_src, 0, 0, 0, 0, $width, $height, $orig_width, $orig_height);
+   			switch ($type){
+   				case IMAGETYPE_GIF: imagegif($image_dest,$filename);break; 
+   				case IMAGETYPE_PNG: imagepng($image_dest,$filename);break;
+   				default:imagejpeg($image_dest,$filename);break;	
+   			}
+   		}
    }
    
 /**
@@ -110,12 +177,21 @@
  * If saving fails, then file is saved to 'files' directory in application root folder, which is created if not exists. 
  * @see TApplication 
  */   		
-   		public function Store(){
+   		public function Store($filename = null){
    			if ($this->_stored_) return $this->path;
-   			$path = TApplication::FileStoragePath();
-   			$ts = new TDate();
-   			$pi = pathinfo($this->Name);
-   			$filename = $path."/".str_ireplace(".".$pi["extension"],"",$pi["basename"])."[".$ts->TimeStamp()."]".($pi["extension"]?".".$pi["extension"]:"");
+   			if ($filename){
+   				if (!TFileSystem::IsAbsolute($filename))
+   					$filename = TApplication::FileStoragePath().'/'.$filename;
+   			}
+   			if (!$filename){
+   				$path = TApplication::FileStoragePath();
+   				$ts = new TDate();
+   				$pi = pathinfo($this->Name);
+   				$filename = $path."/".str_ireplace(".".$pi["extension"],"",$pi["basename"])."[".$ts->TimeStamp()."]".($pi["extension"]?".".$pi["extension"]:"");
+   			}
+   			
+   			TFileSystem::ForceDir(dirname($filename));
+   			
    			if (move_uploaded_file($this->path,$filename)){
    				$this->path = $filename;
    				$this->_stored_ = true;
@@ -127,7 +203,7 @@
  * @return string
  * @see TFile::getStorePath()
  */   		
-   		public function getStorePath(){
+   		public function GetStorePath(){
    			return $this->Store();
    		}
    }
@@ -184,7 +260,7 @@
  * gets file actual contents (not xml document contents)
  * @return string
  */   		
-      	public function getContents(){
+      	public function GetContents(){
    			return $this->_content_;
    		}   		
 
@@ -192,7 +268,7 @@
  * gets file path which evaluates to "" for compatibility.
  * @return string
  */   		
-   		public function getStorePath(){
+   		public function GetStorePath(){
    			return $this->path;
    		}
 
@@ -201,7 +277,7 @@
  * @return string
  */   		
    		public function __toString(){
-   			return '<file><header><name>'.$this->Name.'</name><mime>'.$this->MimeType.'</mime></header><content><![CDATA['.$this->getContents().']]></content></file>';
+   			return '<file><header><name>'.$this->Name.'</name><mime>'.$this->MimeType.'</mime></header><content><![CDATA['.$this->GetContents().']]></content></file>';
 		}   	
    }
 ?>

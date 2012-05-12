@@ -50,12 +50,15 @@ class TMySqlDataSetProcessor {
 	protected $driver;
 	
 	protected function getFieldPrefix(IDataSourceField $fld){
-		if ($fld instanceof TNestedSetsField)
-			switch ($fld->Type){
-				case TNestedSetsField::BASE_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:$fld->DataSource->Name).self::NS_BASE_SUFFIX;break;
-				case TNestedSetsField::SUBSET_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:('['.$fld->DataSource->Name.']'));break;
-			}
-		return 	$fld->DataSource->Alias?$fld->DataSource->Alias:('['.$fld->DataSource->Name.']');
+		if ($fld->DataSource){
+			if ($fld instanceof TNestedSetsField)
+				switch ($fld->Type){
+					case TNestedSetsField::BASE_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:$fld->DataSource->Name).self::NS_BASE_SUFFIX;break;
+					case TNestedSetsField::SUBSET_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:('['.$fld->DataSource->Name.']'));break;
+				}	
+			return 	$fld->DataSource->Alias?$fld->DataSource->Alias:('['.$fld->DataSource->Name.']');
+		}
+		return '';	
 	}
 	
 	protected function parseAllField(IDataSourceField $fld){
@@ -173,7 +176,10 @@ class TMySqlDataSetProcessor {
    				case TOperationType::O_TIME_HOUR:{$oper = "hour";$type="unar";}break;
    				case TOperationType::O_TIME_MIN:{$oper = "minute";$type="unar";}break;
    				case TOperationType::O_TIME_SEC:{$oper = "second";$type="unar";}break;
-   				case TOperationType::O_TIME_MKSEC:{$oper = "microsecond";$type="unar";}break;			
+   				case TOperationType::O_TIME_MKSEC:{$oper = "microsecond";$type="unar";}break;
+   				case TOperationType::O_COUNT:{$oper = "count";$type="unar";}break;			
+   				case TOperationType::O_SUM:{$oper = "sum";$type="unar";}break;
+   				case TOperationType::O_AVG:{$oper = "avg";$type="unar";}break;
 			}
 			
 			if (in_array($oper,array("adddate","subdate"))){
@@ -214,13 +220,16 @@ class TMySqlDataSetProcessor {
 			} else {
 				$arguments = array();
 				foreach ($o->Operands as $o)
-			 		$arguments[] = $this->parseOperand($o);
+			 		$arguments[] = $this->parseOperand($o);	
 			}
 
 			if ($type=="binar")
 				return join(" ".$oper." ",$arguments);
-			else 
+			else {
+				if ($oper == 'count' && empty($arguments))
+					$arguments[] = '*';
 				return $oper."(".join($unarseparator,$arguments).")";
+			}
 			return null;
 	}
 
@@ -232,12 +241,11 @@ class TMySqlDataSetProcessor {
 	} 
 	
 	protected final function parseSort(TSorting $s){
-		$result = $this->parseField($s->Field);
 		switch ($s->Sort){
-			case TSorting::SORT_ASC:$result .= " asc";break;
-			case TSorting::SORT_DESC:$result .= " desc";break;
+			case TSortingType::SORT_ASC:return $this->parseField($s->Field)." asc";break;
+			case TSortingType::SORT_DESC:return $this->parseField($s->Field)." desc";break;
+			case TSortingType::SORT_SHUFFLE:return "rand()";break;
 		}
-		return $result;
 	}
 	
 	protected function dataSourceTargetName(TDataSource $ds){
@@ -277,7 +285,10 @@ class TMySqlDataSetProcessor {
 				$this->_where_[] = "(".$src.".".TMySqlDBDriver::NS_LEVEL_FIELD." <= ".$ds->Depth.")";
 			if ($ds->IsTarget)	
 				if (empty($this->_order_))
-					$this->_order_ = array($src.".".TMySqlDBDriver::NS_LKEY_FIELD." asc"); 	
+					$this->_order_ = array($src.".".TMySqlDBDriver::NS_LKEY_FIELD." asc");
+			$this->_fields_[] = $src.".".TMySqlDBDriver::NS_LKEY_FIELD;		 	
+			$this->_fields_[] = $src.".".TMySqlDBDriver::NS_RKEY_FIELD;		 	
+			$this->_fields_[] = $src.".".TMySqlDBDriver::NS_LEVEL_FIELD;
 			return $result;
 		} else if ($ds instanceof TTable){
 			return "[".$ds->Name."]".($ds->Alias?" as ".$ds->Alias:"").$on;
@@ -397,7 +408,7 @@ class TMySqlDataSetUpdateProcessor extends TMySqlDataSetProcessor {
 		$n = count($fields);
 		$m = count($values);
 		for ($i = 0; ($i < $n) && ($i < $m); $i++)
-			$this->_updates_[] = $this->_internal_->parseField($fields[$i])." = ".$this->_internal_->parseOperand($values[$i]);
+			$this->_updates_[] = $this->_internal_->parseField(($fields[$i] instanceof IDataSourceField)?$fields[$i]:(is_string($fields[$i])?new TTableField($fields[$i]):null))." = ".$this->_internal_->parseOperand($values[$i]);
 		$this->_updates_ = join(",",$this->_updates_);
 	}
 	
@@ -448,7 +459,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	protected $connection;
 	
 	private $_auth_method_ = self::AUTH_CONNECTION;
-	private $_acl_manager_ = null;
+	//private $_acl_manager_ = null;
 	private $_query_debug_ = false;
 	
 	private $_json_ns_names_ = null;
@@ -474,7 +485,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		if (is_bool($value)) return $value?"1":"0";
 		if (is_int($value) || is_float($value)) return $value;
 		if ($value instanceof TDate)
-			$value = $value->ToString("Y-m-d");	  
+			$value = $value->ToString("Y-m-d H:i:s");	  
 		if (is_string($value)){
 			if ($value == "")
 		  		return "Null";
@@ -506,18 +517,21 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$pvalues = array_values($parameters);
 		array_walk($pnames,array($this,"_prepare_query_param_key"));
 		$evaluated = $this->_prepare_record_result($pvalues);
-		return str_replace($pnames,$evaluated,preg_replace_callback('/\[(\w[\w_]*)\]/',array($this,"_prepare_table_name"),$q));
+		return str_replace(array_reverse($pnames),array_reverse($evaluated),preg_replace_callback('/\[(\w[\w_]*)\]/',array($this,"_prepare_table_name"),$q));
 	}
 		
 	public function Execute($q,array $parameters = array()){
-		$this->query($this->_prepare_statement($q,$parameters));
+		$this->_auto_connect();
+		return $this->query($this->_prepare_statement($q,$parameters));
 	}
 
 	public function Fetch($q, array $parameters = array()){
+		$this->_auto_connect();
 		return $this->iQuery($this->_prepare_statement($q,$parameters));
 	}
 	
 	public function Scalar($q, array $parameters = array()){
+		$this->_auto_connect();
 		return $this->scalarValue($this->_prepare_statement($q,$parameters));
 	}	
 	
@@ -549,7 +563,8 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			throw new TMySqlException(mysql_errno($this->connection),array("msgtext"=>mysql_error($this->connection),"query"=>$q));
 			return false;
 		}
-			
+
+		
 		if (!$select)
 			$result = mysql_affected_rows($this->connection);
 		
@@ -603,12 +618,19 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		return !is_null($this->connection);
 	}
 	
+	private function _auto_connect(){
+		if (!$this->IsConnected()) $this->Connect();
+	}
+	
 	public function DisConnect(){
 		//mysql_close($this->connection);
 		$this->connection = null;
 	}	
 		
-	public function BeginTransaction(){$this->query("start transaction");}
+	public function BeginTransaction(){
+		$this->_auto_connect();
+		$this->query("start transaction");
+	}
 		
 	public function CommitTransaction(){$this->query("commit");}
 		
@@ -693,6 +715,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 								
 	public function TableExists($tablename){
+		$this->_auto_connect();
 		return mysql_num_rows(mysql_query(sprintf("show tables like %s",$this->quoteValue($this->RealTableName($tablename))),$this->connection)) > 0;
 	}
 		
@@ -777,6 +800,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 	
 	public function InsertRecords(TTable $table,array $records, array $fields = array(),&$primary_key = null){
+		$this->_auto_connect();
 		$q1 = "insert ".$this->RealTableName($table->Name)." ";
 		if (count($fields))
 			$q1 .= "(".join(",",$fields).") ";
@@ -795,9 +819,9 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			throw $e;
 			return false;
 		}
-		$this->CommitTransaction();
 		$primary_key = $this->lastInsertId();
-		$primary_key = ($primary_key == $oldid)?null:$primary_key;
+		$this->CommitTransaction();
+		$primary_key = ($primary_key === $oldid)?null:$primary_key;
 		return true;
 	}
 	
@@ -825,11 +849,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 
 	private function _ns_findparent(TNestedSets $target, TDataSource $parents){		
 		$result = array(null,null,-1);
-		
-		if (!empty($parents->Filter) || !empty($parents->Join)){
+		$f= $parents->Filter;
+		$j = $parents->Join;
+		if (!empty($f) || !empty($j)){
 			$target->Fetch(array(new TNestedSetsField(TMySqlDBDriver::NS_LKEY_FIELD),new TNestedSetsField(TMySqlDBDriver::NS_RKEY_FIELD),new TNestedSetsField(TMySqlDBDriver::NS_LEVEL_FIELD)));
 			$p = new TMySqlDataSetProcessor($parents, $this);
-			
 			if ($res = $this->Fetch($p->SelectQuery(),$p->Parameters))
 				foreach ($res as $item){
 					$result[0] = $item[TMySqlDBDriver::NS_LKEY_FIELD];
@@ -871,6 +895,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 		
 	public function NestedSetBulkInsert(TDataSource $parent, array &$sets, array $fields){
+		$this->_auto_connect();
 		$target = $this->_get_nstarget($parent);
 		$tname = $this->RealTableName($target->Name);
 		$this->query("lock tables ".$tname." write");
@@ -933,6 +958,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 		
 	public function NestedSetAddRecord(TDataSource $parents, array $record,&$primary_key = null){
+		$this->_auto_connect();
 		$target = $this->_get_nstarget($parents);
 		$tname = $this->RealTableName($target->Name);
 		$this->query("lock tables ".$tname." write");
@@ -942,7 +968,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		try {
 		$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + 2, ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." >= :rk,".TMySqlDBDriver::NS_LKEY_FIELD." + 2,".TMySqlDBDriver::NS_LKEY_FIELD.") where ".TMySqlDBDriver::NS_RKEY_FIELD." >= :rk", array("rk"=>$prk));
 		$oldid = $this->lastInsertId();
-		$this->Execute("insert ".$tname." (".join(",",array_keys($record)).",".TMySqlDBDriver::NS_LKEY_FIELD.",".TMySqlDBDriver::NS_RKEY_FIELD.",".TMySqlDBDriver::NS_PARENTLKEY_FIELD.") values (".join(",",$this->prepare_record_result(array_values($record))).",:lk,:rk,:pl)",array("lk"=>$prk,"rk"=>$prk+1,"plk"=>$plk,"pl"=>$plevel+1));
+		$this->Execute("insert ".$tname." (".join(",",array_keys($record)).",".TMySqlDBDriver::NS_LKEY_FIELD.",".TMySqlDBDriver::NS_RKEY_FIELD.",".TMySqlDBDriver::NS_LEVEL_FIELD.") values (".join(",",$this->_prepare_record_result(array_values($record))).",:lk,:rk,:pl)",array("lk"=>$prk,"rk"=>$prk+1,"pl"=>$plevel+1));
 		$primary_key = $this->lastInsertId();
 		if ($primary_key == $oldid) $primary_key = null; 
 		$this->CommitTransaction();
@@ -983,6 +1009,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 	
 	public function NestedSetBranchesDelete(TDataSource $branches){
+		$this->_auto_connect();
 		$result = 0;
 		$target = $this->_get_nstarget($branches);
 		$tname = $this->RealTableName($target->Name);
@@ -990,7 +1017,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->BeginTransaction();
 		try {
 			$this->_ns_eject_branches($tname, $branches);
-			$result = $this->Execute("delete ".$target." where ".TMySqlDBDriver::NS_DELETED_FIELD." = 1");
+			$result = $this->Execute("delete from ".$target->Name." where ".TMySqlDBDriver::NS_DELETED_FIELD." = 1");
 			$this->CommitTransaction();
 			$this->query("unlock tables");
 			$result = true;
@@ -1004,6 +1031,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}	
 	
 	public function NestedSetBranchesMove(TDataSource $branches, TDataSource $destination){
+		$this->_auto_connect();
 		$result = 0;
 		$target = $this->_get_nstarget($branches);
 		$dest_target = $this->_get_nstarget($destination);

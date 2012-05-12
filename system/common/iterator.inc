@@ -48,7 +48,7 @@
 		public function __get($nm){
 			switch ($nm) {
 				case "Item":return $this->Item();break;
-				default:return $this->Item()->__get($nm);break;
+				default:return is_object($this->Item())?$this->Item()->$nm:null;break;
 			}
 		}
 		

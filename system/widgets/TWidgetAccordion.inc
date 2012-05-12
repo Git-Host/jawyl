@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-	TApplication::import("widgets::TXmlWidgetContainer");
+	TApplication::import("widgets::TWidgetContainer");
 
 /**
  * @package View
@@ -20,9 +20,9 @@
  * @category System
  * widget displaying widgets in accordion
  */	
-	class TWidgetAccordion extends TXmlWidgetContainer {
+	class TWidgetAccordion extends TWidgetContainer {
 		
-		protected function TWidgetAccordionInlineJavaScript(){
+		protected function inlineJavaScript(){
 			?>
 		jQuery(document).one("ready",function(e){jQuery("#<?php echo $this->Name(); ?>").accordion2().construct();});
 			<?php

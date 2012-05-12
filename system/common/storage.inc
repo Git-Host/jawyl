@@ -366,7 +366,7 @@ class TTableField extends TDataSourceField {
 /**
  * 
  * @property int $Direction
- * @property boolean $Direct
+ * @property int $Depth
  * @property boolean $IncludeBases
  */
 
@@ -602,7 +602,7 @@ class TSorting {
 	public function __get($nm){
 		switch ($nm){
 			case "Field":return $this->_field_;break;
-			case "Sort":return $this->_sort_;break;
+			case "Sort":return (int)$this->_sort_->__toString();break;
 		}
 	}
 }
@@ -657,7 +657,7 @@ class TOperation {
 /**
  * @var array
  */	
-	protected $operands;
+	protected $operands = array();
 	
 	protected function checkType($type){
 		return new TOperationType($type);
@@ -669,7 +669,8 @@ class TOperation {
  * @param array $operands condition operands, array which can contain php values, IAttributeDefinition or TSysField
  */	
 	public function __construct($type, array $operands){
-		$this->type = $this->checkType($type);
+		$this->type = (string)$this->checkType($type);
+		$this->type = (int)$this->type;
 		foreach ($operands as $o)
 			$this->addOperand($o);
 	}

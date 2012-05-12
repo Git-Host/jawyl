@@ -259,10 +259,33 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		return $this->widgets;
 	}	
 	
+	protected function processUrlParameters(array $parameters){
+		return $parameters;
+	}
+	
 	public function Url($controller = null,$method = null,array $parameters = array()){
-		return $this->Service()->Url($this->Name(),$controller,$method,$parameters); 
+		return $this->Service()->Url($this->Name(),$controller,$method,$this->processUrlParameters($parameters)); 
 	} 	
 }
+
+abstract class TUtilPage extends TPage {
+	public $Contents;
+}
+
+class TAccessDeniedPage extends TUtilPage {
+	public function SendHeaders(){
+		header('HTTP/1.0 403 Access denied!',true,403);
+		parent::SendHeaders();
+	}
+}
+
+class TNotFoundPage extends TUtilPage {
+	public function SendHeaders(){
+		header('HTTP/1.0 404 Page not found!',true,404);
+		parent::SendHeaders();
+	}
+}
+
 
 /**
  * @package Services
@@ -327,6 +350,14 @@ abstract class TPageService extends TService {
 		return TApplication::Url($this->name,$parameters);
 	}
 	
+	public function RedirectToNotFound(){
+		TApplication::Redirect($this->Url($this->getNotFoundPage()->Name()));
+	}
+	
+	public function RedirectToAccessDenied(){
+		TApplication::Redirect($this->Url($this->getAccessDeniedPage()->Name()));
+	}
+	
 	
 /**
  * checks access to current page
@@ -352,7 +383,7 @@ abstract class TPageService extends TService {
 		if (!$request->page)
 			$this->page = $this->getDefaultPage();
 		 else 
-			$this->page = $this->getPage($request->page);
+			$this->page = $this->getPage($request->page);	
 		if (is_null($this->page))
 			$this->page = $this->getNotFoundPage();
 		else if (!$this->checkAccess())

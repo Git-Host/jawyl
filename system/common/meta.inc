@@ -436,7 +436,7 @@ class TMetaException extends TException {
  */		
 		public function SetValue($value,$needsave = true){
 			if ($value instanceof TFile){
-				$v = new TDBStoredFile('<file><header><name>'.$value->Name.'</name><mime>'.$value->MimeType.'</mime></header><content><![CDATA['.$value->getContents().']]></content></file>');
+				$v = new TDBStoredFile('<file><header><name>'.$value->Name.'</name><mime>'.$value->MimeType.'</mime></header><content><![CDATA['.$value->GetContents().']]></content></file>');
 				parent::SetValue($v,$needsave);
 			}
 			else if (is_string($value)){

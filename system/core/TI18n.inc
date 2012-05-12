@@ -374,7 +374,7 @@
 			if (is_string($locale))
 				self::$_locale_ = TConfigurable::Instance($locale);
 			else if ($locale instanceof ILocale)	
-				self::$_locale_ = TConfigurable::Instance($localename);
+				self::$_locale_ = $locale;
 			else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 			self::locale_obj()->SetLanguage(self::$_language_);
 		}

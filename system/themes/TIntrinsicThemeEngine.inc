@@ -22,6 +22,10 @@ TApplication::import("common::theme::engine");
  */
 TApplication::import("services::TPageService");
 
+function capitalize($str){
+	return strtoupper($str[0]).strtolower(substr($str, 1));
+}
+
 /**
  * @package View
  * @subpackage Theming
@@ -52,6 +56,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private $_cleaner_;
 	
+	private $_global_vars_ = array();
+	
 	protected $_ioc_output_cache_; 
 	
 /**
@@ -67,26 +73,26 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	}
 		
 	protected function processTag($name){
-		$cc = $this->currentContext();
-		if (strtolower($name) == "context"){
-			echo $cc;
-			return;
-		}	
-		if (method_exists($cc,$name)){
-			echo call_user_func(array($cc,$name));
-			return;
+		$v = $name; 
+		if (is_string($name)){
+			$cc = $this->currentContext();
+			if (strtolower($name) == "context")
+				$v = $cc;
+			else if (method_exists($cc,$name))
+				$v = call_user_func(array($cc,$name));
+			else if (isset($cc->$name))
+				$v = $cc->$name;
+			else if (method_exists($cc,"__get")){
+				$t = $cc->__get($name);
+				if (!is_null($t))
+					$v = $t;
+				else if (isset($this->_global_vars_[$name]))
+					$v = $this->_global_vars_[$name];
+				else if (defined($name))
+					$v = constant($name);		
+			}
 		}
-		if (isset($cc->$name)){
-			echo $cc->$name;
-			return;
-		}
-		if (method_exists($cc,"__get")){	
-			echo $cc->__get($name);
-			return;	
-		}
-		
-		echo $name;	
-		return;
+		echo $v;
 	}
 
 	protected function pushContext($context){
@@ -97,17 +103,62 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		array_pop($this->_context_stack_);
 	}
 	
-	protected function evalContextTag($name){
+	protected function evalContextTag($name,$get_self = false){
 		$cc = $this->currentContext();
-		if (strtolower($name) == "context")
+		$n = trim($name);
+		if (strtolower($n) == "context")
 			return $cc;
-		if (method_exists($cc,$name))
-			return call_user_func(array($cc,$name));
-		if (isset($cc->$name))
-			return $cc->$name;
-		if (method_exists($cc,"__get"))	
-			return $cc->__get($name);	
+		if (method_exists($cc,$n))
+			return call_user_func(array($cc,$n));
+		if (isset($cc->$n))
+			return $cc->$n;
+		if (isset($this->_global_vars_[$n]))
+			return $this->_global_vars_[$n];
+		if (defined($n))
+			return constant($n);	
+		$v = @$cc->$n;
+		if (!is_null($v))
+			return $v;
+		if (isset($this->response->$n))
+			return $this->response->$n;
+		if (isset($this->response->Service()->$n))
+			return $this->response->Service()->$n;
+		if (isset(TApplication::$Application->$n))
+			return TApplication::$Application->$n;
+		if ($get_self)	
+			return $name;
 		return null;
+	}
+	
+	private function _compile_arr_index($matches){
+		$expr = trim($matches[1]);
+		if ($expr[0] == '`')
+			return '['.str_replace('`','"',addslashes($expr)).']';
+		if ($expr[0] == '$'){
+			return '[$this->_global_vars_["'.substr($expr,1).'"]]';
+		}
+		return '[$this->evalContextTag(\''.$expr.'\',true)]';		
+	}
+	
+	private function _compile_expression($expr,$get_self = false){
+		$expr = trim($expr);
+		if ($expr[0] == '`')
+			return str_replace('`','"',addslashes($expr));
+
+		if ($expr[0] == '$'){
+			$brpos = strpos($expr, '[');
+			$result = '$this->_global_vars_["'.substr($expr,1,$brpos?($brpos-1):(strlen($expr)-1)).'"]';
+			if ($brpos !== false){
+				$expr = substr($expr,$brpos);
+				$result .= preg_replace_callback('/\[([^\]]*)\]/', array($this,'_compile_arr_index'), $expr);
+			}
+			return $result;
+		}
+		
+		if (strpos($expr,'::') !== false)
+			return $expr;
+		
+		return '$this->evalContextTag("'.$expr.'"'.($get_self?',true':'').')';
 	}
 	
 	protected function getContextIterator($name){
@@ -141,6 +192,93 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$tmpl = ($tmpl == "")?"null":$tmpl;
 		return '<?php $this->_out_widget("'.$nm.'",'.$tmpl.'); ?>';
 	}
+	
+	protected function callMethod($method,$var){
+		if (method_exists($this->currentContext(), $method))
+			return $this->currentContext()->$method($var);
+		if ($this->currentWidget())
+			if (method_exists($this->currentWidget(), $method))
+				return $this->currentWidget()->$method($var);
+		if (method_exists($this->response,$method))
+			return $this->response->$method($var);	
+		if (method_exists($this->response->Service(),$method))
+			return $this->response->Service()->$method($var);
+		if (function_exists($method))
+			return  $method($var);
+		return null;
+	}
+	
+	private function _compile_filters_open(array $filters){
+		$result ='';
+		foreach ($filters as $f){
+			$v = strtolower(trim($f));
+			if ($v){
+				switch ($v){
+					case 'c':
+					case 'd':
+					case 'dt':
+					case 't':
+					case 'n':
+					case 'i':$result .= '_'.$v.'(';break;
+					case 'u':$result .= 'strtoupper(';break;
+					case 'l':$result .= 'strtolower(';break;
+					case 'cap':$result .= 'capitalize(';break;
+					case 'q':$result .= 'htmlentities(';break;
+					default:{
+						if (function_exists($v))
+							$result .= $v.'(';
+						else
+							$result .= '$this->callMethod("'.trim($f).'",'; 	
+					}break;
+				}
+			}
+		}
+		return $result;
+	}
+	
+	private function _compile_filters_close(array $filters){
+		$result ='';
+		foreach ($filters as $f){
+			$v = strtolower(trim($f));
+			if ($v){
+				switch ($v){
+					case 'q':$result .= ',ENT_QUOTES,"UTF-8")';break;
+					default:$result .= ')';break;
+				}
+			}
+		}
+		return $result;
+	}
+	
+	private function _assign_compile($matches){
+		$result = '<?php $this->_global_vars_["'.$matches[1].'"] = ';
+		$filters = explode('<', $matches[2]);
+		$result .= $this->_compile_filters_open($filters);
+		$val = trim($matches[3]); 
+		$result .= $this->_compile_expression($val,true); 
+		$result .= $this->_compile_filters_close($filters);
+		return $result.'; ?>';
+	}
+	
+	private function _varout_compile($matches){
+		$result = '<?php echo ';
+		$filters = explode('<', $matches[1]);
+		$result .= $this->_compile_filters_open($filters);
+		$val = trim($matches[2]); 
+		$result .= $this->_compile_expression($val,true); 
+		$result .= $this->_compile_filters_close($filters);
+		return $result.'; ?>';
+	}
+	
+	private function _rawout_compile($matches){
+		$result = '<?php echo ';
+		$filters = explode('<', $matches[1]);
+		$result .= $this->_compile_filters_open($filters);
+		$result .= trim($matches[2]);
+		$result .= $this->_compile_filters_close($filters);
+		return $result.'; ?>';
+	}
+	
 
 	private function _repl_compile($matches){
 		$context = "null";
@@ -155,12 +293,36 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _iter_compile($matches){
 		$this->_cycle_counter_++;
-		return '<?php $cyclebase'.$this->_cycle_counter_.'=$this->getContextIterator("'.$matches[1].'"); $cyclecounter'.$this->_cycle_counter_.' = 0; foreach ($cyclebase'.$this->_cycle_counter_.' as $'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[2].'); ?>';
+		$result = '<?php $this->_global_vars_["iterlevel"] = (!isset($this->_global_vars_["iterlevel"]))?0:$this->_global_vars_["iterlevel"]+1; $cyclebase'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[1]).'; if (is_array($cyclebase'.$this->_cycle_counter_.')) $cyclebase'.$this->_cycle_counter_.' = new TArrayIterator($cyclebase'.$this->_cycle_counter_.'); $cyclecounter'.$this->_cycle_counter_.' = 0; foreach ($cyclebase'.$this->_cycle_counter_.' as ';
+		if (count($matches) == 4)
+			return $result.'$'.$matches[2].'=>$'.$matches[3].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[3].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].';$this->_global_vars_[\''.$matches[3].'\'] = $'.$matches[3].'; ?>';
+		return $result.'$'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[2].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].'; ?>';
 	}
 	
 	protected function preCompile($text){
 		return $text;
 	}
+	
+	private function _compile_oper($matches){
+		switch ($matches[1]){
+			case 'if':{
+				if (count($matches) > 3)
+					return '<?php if ('.$this->_compile_expression($matches[2]).' == '.$this->_compile_expression($matches[3],true).') { ?>';
+				else
+					return '<?php if (@'.$this->_compile_expression($matches[2]).') { ?>';
+			}break;
+			case 'ifnot':{
+				if (count($matches) > 3)
+					return '<?php if ('.$this->_compile_expression($matches[2]).' != '.$this->_compile_expression($matches[3],true).') { ?>'; 
+				else
+					return '<?php if (!@'.$this->_compile_expression($matches[2]).') { ?>';
+			}break;
+			case 'switch':return '<?php switch ('.$this->_compile_expression($matches[2]).') { ?>';break;
+			case 'case':return '<?php case '.$this->_compile_expression($matches[2],true).':{ ?>';break;
+			case 'with':return '<?php $this->pushContext('.$this->_compile_expression($matches[2]).'); ?>';break;
+		}
+	}
+	
 	
 	private function _compile($filename,$preprocessor = null){
 		if (basename($filename) == $filename)
@@ -168,24 +330,43 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = file_get_contents($filename);
 		if ($preprocessor instanceof ITemplatePreProcessor)
 			$text = $preprocessor->PreProcess($text);
-		
+			
+		$expr = '[_\w][_\w:]*|\$[_\w]+(?:\[[^\]]*\])*|`[^`]*`';
+						
 		$text = $this->preCompile($text);
-		$text = preg_replace('/<%startcache\\s+([_\\w]+)\\s+(\\d+)%>/','<?php if ($this->startCache("$1",$2)) { ?>',$text);
-		$text = preg_replace('/<%stopcache%>/','<?php $this->saveCache(); } ?>',$text);		
-		$text = preg_replace_callback('/<%insert\\s+([^\\s]*|"[^"]*")(?:\\s+context\\s*=\\s*([^\\s]*|"[^"]*"))?\\s*%>/',array(&$this,"_repl_compile"),$text);
-		$text = preg_replace_callback('/<%widget\\s+([^\\s]*|"[^"]*")(?:\\s+skin\\s*=\\s*([^\\s]*|"[^"]*"))?\\s*%>/',array(&$this,"_widg_compile"),$text);
-		$text = preg_replace('/<\\?(?!php)/','<?php ',$text);	
-		$text = preg_replace_callback('/<%iterate\\s+([_\\w]+)\\s+as\\s+([_\\w]+)\\s*%>/',array(&$this,"_iter_compile"),$text);
-		$text = preg_replace('/<%iterate%>/','<?php $this->popContext();} ?>',$text);
-		$text = preg_replace('/<%if\\s+([_\\w]+)\\s*%>/','<?php if ($this->evalContextTag("$1")) { ?>',$text);
-		$text = preg_replace('/<%if\\s+([_\\w]+)\\s+([_\\w]+|"[^"]*")\\s*%>/','<?php if ($this->evalContextTag("$1") == $2) { ?>',$text);
-		$text = preg_replace('/<%odd%>/','<?php if ($this->_cycleodd_) { ?>',$text);
-		$text = preg_replace('/<%else%>/','<?php } else { ?>',$text);
-		$text = preg_replace('/<%endif%>/','<?php } ?>',$text);
-		$text = preg_replace('/<%endodd%>/','<?php } ?>',$text);
-		$text = preg_replace('/<%assign\\s+([_\\w]+)\\s+([_\\w]+|"[^"]*")\\s*%>/','<?php \\$$1 = $this->evalContextTag("$2"); ?>',$text);
-		$text = preg_replace('/<%\\s*([_\\w]*?)\\s*%>/','<?php $this->processTag("$1"); ?>',$text);
-		$text = preg_replace('/<%\\s*(.*?)\\s*%>/','<?php echo $1; ?>',$text);
+		$text = preg_replace('/{%startcache\s+([_\w]+)\s+(\d+)\s*%}/','<?php if ($this->startCache("$1",$2)) { ?>',$text);
+		$text = preg_replace('/{%stopcache%}/','<?php $this->saveCache(); } ?>',$text);		
+		$text = preg_replace_callback('/{%insert\s+([^\s]*|"[^"]*")(?:\s+context\s*=\s*([^\s]*|"[^"]*"))?\s*%}/',array(&$this,"_repl_compile"),$text);
+		$text = preg_replace_callback('/{%widget\s+([^\s]*|"[^"]*")(?:\s+skin\s*=\s*([^\s]*|"[^"]*"))?\s*%}/',array(&$this,"_widg_compile"),$text);
+		$text = preg_replace('/<\?(?!php)/','<?php ',$text);
+			
+		$text = preg_replace_callback('/{%iterate\s+('.$expr.')\s+as\s+([_\w]+)(?:\s*>\s*([_\w]+))?\s*%}/',array(&$this,"_iter_compile"),$text);
+		$text = preg_replace('/{%iterate%}/','<?php $this->popContext(); } $this->_global_vars_["iterlevel"]--; ?>',$text);
+		
+		$text = preg_replace_callback('/{%(if)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(if)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		
+		$text = preg_replace('/{%odd%}/','<?php if ($this->_cycleodd_) { ?>',$text);
+		
+		$text = preg_replace_callback('/{%(with)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(switch)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(case)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		
+		$text = preg_replace('/{%default%}/','<?php default:{ ?>',$text);		
+		$text = preg_replace('/{%else%}/','<?php } else { ?>',$text);
+		$text = preg_replace('/{%endif%}/','<?php } ?>',$text);
+		$text = preg_replace('/{%endodd%}/','<?php } ?>',$text);
+		$text = preg_replace('/{%endcase%}/','<?php }break; ?>',$text);
+		$text = preg_replace('/{%endswitch%}/','<?php } ?>',$text);
+		$text = preg_replace('/{%endwith%}/','<?php $this->popContext(); ?>',$text);
+		
+		$text = preg_replace_callback('/{%assign\\s+([_\w]+)(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?\s+('.$expr.')\s*%}/',array(&$this,"_assign_compile"),$text);
+		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?('.$expr.')\s*%}/',array(&$this,"_varout_compile"),$text);
+		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)(.*?)\s*%}/',array(&$this,"_rawout_compile"),$text);
+		$text = preg_replace('/{%\s*(.*?)\s*%}/','<?php echo $1; ?>',$text);
+		$text = preg_replace('/\?>\s*<\?php/m','',$text);
 		return $text;
 	}
 	
@@ -241,12 +422,15 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if ($cachelifetime > 0)
 			if (!$this->startCache($filename,$cachelifetime)) return;
 			
-		$SERVICE = TApplication::$Application->CurrentService();
-		$PAGE = $this->response;
-		$THEME_URL = $this->ThemeUrl();
-		$APPLICATION = TApplication::$Application;
-		$CONTEXT = $context;
-		$WIDGET = $this->CurrentWidget();
+		$this->_global_vars_['SERVICE'] = TApplication::$Application->CurrentService();
+		$this->_global_vars_['PAGE'] = $this->response;
+		$this->_global_vars_['THEME_URL'] = $this->ThemeUrl();
+		$this->_global_vars_['APPLICATION'] = TApplication::$Application;
+		$this->_global_vars_['APPLICATION_SHARED'] = TApplication::$Application->Shared;
+/*		
+		$this->_global_vars_['CONTEXT'] = $context;
+		$this->_global_vars_['WIDGET'] = $this->CurrentWidget();
+*/
 		include $this->getCompiledFile($filename,$preprocessor);
 		if ($cachelifetime > 0)
 			$this->stopCache(); 

@@ -56,7 +56,10 @@ final class TOperationType extends TEnumeration {
    	const O_TIME_MIN = 66;
    	const O_TIME_SEC = 67;
    	const O_TIME_MKSEC = 68;
-}
+   	const O_COUNT = 69;
+   	const O_SUM = 70;
+   	const O_AVG = 71; 
+} 
 
 final class TConditionType extends TEnumeration {
 	const C_EQUAL = 0;
@@ -79,4 +82,5 @@ final class TConditionType extends TEnumeration {
 final class TSortingType extends TEnumeration {
 	const SORT_ASC = 0;
 	const SORT_DESC = 1;
+	const SORT_SHUFFLE = 2;
 }

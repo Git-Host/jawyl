@@ -56,7 +56,7 @@ class TIntrinsicPage extends TPage {
 	private static function _compile_page_element(DOMNode $node, DOMXPath $xpath, $container_class, $compiled_container, &$result,&$counter,&$classes){
 		if ($node->tagName == "setting"){ 
 			if (!is_subclass_of($container_class,"TResponseElement"))
-				$result .= $compiled_container.'->'.$node->getAttribute("name").' = "'.$node->nodeValue.'";'."\n";
+				$result .= $compiled_container.'->'.$node->getAttribute("name").' = "'.addcslashes($node->nodeValue,'"').'";'."\n";
 		}
 		else {
 			$extension = false;
@@ -73,8 +73,8 @@ class TIntrinsicPage extends TPage {
 				$varname = '$obj'.$counter;
 				$counter++;
 				$c = TApplication::GetClass($node->getAttribute("classname"));
+				if (!$c) throw new TCoreException(TCoreException::ERR_NOT_CLASS,array('class'=>$node->getAttribute("classname")));
 				$classes[$node->getAttribute("name")] = array($node->getAttribute("classname"),$varname,$c->getName());
-				if (!$c) throw new TCoreException(TCoreException::ERR_NOT_CLASS);
 				if (!$c->implementsInterface("IConfigurable")) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 				if (!(is_subclass_of($c->getName(),"TConfigurable") || is_subclass_of($c->getName(),"TMVPObject"))) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 				$result .= '$params = array("name"=>"'.$node->getAttribute("name").'");'."\n";
@@ -144,7 +144,7 @@ class TIntrinsicPage extends TPage {
 		if ($dom->firstChild->getAttribute("parent")){
 			$pfilenames = $service->PageConfigFiles($dom->firstChild->getAttribute("parent"));
 			if (is_file($pfilenames[0]))
-				self::_compile_page_contents($pfilename[0],$service,$counter,$classes,$text);
+				self::_compile_page_contents($pfilenames[0],$service,$counter,$classes,$text);
 		}
 		
 		if ($dom->firstChild->getAttribute("cache"))
@@ -158,6 +158,10 @@ class TIntrinsicPage extends TPage {
 		return $classname;
 	}
 	
+	private static function _create_path($dir){
+		TFileSystem::ForceDir($dir);
+	}
+	
 	private static function _compile_page(array $filenames,TIntrinsicPageService $service){
 		$text = "<?php\n";
 		$counter = 1;	
@@ -165,11 +169,7 @@ class TIntrinsicPage extends TPage {
 		$classname = self::_compile_page_contents($filenames[0],$service,$counter, $classes, $text);		
 		$text .= "?>";
 		
-		$dir = dirname($filenames[1].".php");
-		while (!file_exists($dir)){
-			mkdir($dir);
-			$dir = dirname($dir);
-		}
+		self::_create_path(dirname($filenames[1].".php"));
 		file_put_contents($filenames[1].".php", $text);
 		
 		$text = "<?php\n";
@@ -275,6 +275,34 @@ class TIntrinsicPage extends TPage {
 		parent::Handle($request);
 	}
 }
+
+class TIntrinsicAccessDeniedPage extends TIntrinsicPage {
+	private $_worker_;
+	
+	public function __construct($path, $filename, TIntrinsicPageService $service){		
+		parent::__construct($path, $filename, $service);
+		$this->_worker_ = new TAccessDeniedPage($service,$path,"","");
+	}
+	
+	public function SendHeaders(){
+		$this->_worker_->SendHeaders();
+		parent::SendHeaders();
+	}
+}
+
+class TIntrinsicNotFoundPage extends TIntrinsicPage {
+	private $_worker_;
+	
+	public function __construct($path, $filename, TIntrinsicPageService $service){		
+		parent::__construct($path, $filename, $service);
+		$this->_worker_ = new TNotFoundPage($service,$path,"","");
+	}
+	
+	public function SendHeaders(){
+		$this->_worker_->SendHeaders();
+		parent::SendHeaders();
+	}
+} 
 
 /**
 /**

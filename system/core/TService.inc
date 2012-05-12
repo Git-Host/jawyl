@@ -95,7 +95,7 @@ interface ISecuredService extends IService {
  * as in this case property value is set for service object.   
  * 
  * @property string $Policy policy component name
- * @property string $ACL acl component name
+ * @property string $Acl acl component name
  *    
  * @package CoreRuntimeClasses
  * @subpackage Service

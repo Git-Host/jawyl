@@ -2,6 +2,10 @@
 TApplication::Import('common::storage');
 TApplication::Import('common::item');
 
+/**
+ * @author dkrasilnikov@gmail.com
+ * @property int $Type
+ */
 class TOrmSorting {
 /**
  * @var string
@@ -22,10 +26,15 @@ class TOrmSorting {
 	
 	public function __get($nm){
 		if ($nm == 'Type')
-			return $this->_type_;
+			return (int)$this->_type_->__toString();
 	}
 }
 
+/**
+ * @author dkrasilnikov@gmail.com
+ * @property int $Type
+ * @property array $Operands
+ */
 class TOrmCondition {
 	private $_type_;
 	private $_operands_;
@@ -37,7 +46,7 @@ class TOrmCondition {
 	
 	public function __get($nm){
 		switch ($nm){
-			case 'Type':return $this->_type_;break;
+			case 'Type':return (int)$this->_type_->__toString();break;
 			case 'Operands':return $this->_operands_;break;
 		}
 	}
@@ -72,9 +81,10 @@ class TOrmReferencePropertyMeta extends TOrmPropertyMeta implements IReferencePr
 	}
 }
 
-class TOrmCollectionPropertyMeta extends TPropertyMeta {
-	public function __construct($name,$caption,$readonly = false){
-		parent::__construct($name, $caption, TItemPropertyType::PT_COLLECTION, array(),true,$readonly);
+class TOrmCollectionPropertyMeta extends TOrmReferencePropertyMeta {
+	public function __construct($name,$caption,$classname,$readonly = false){
+		parent::__construct($name, $caption, $classname,true,$readonly);
+		$this->Type = TItemPropertyType::PT_COLLECTION;
 	}
 } 
 
@@ -84,13 +94,13 @@ interface IORMStorage {
  * @param object $object
  * @return object
  */	
-	public function Load($object);
+	public function Load($object, array $assume_descendants = array());
 /** 
  * Saves object to storage, returns saved object
  * @param object $object
  * @return object
  */	
-	public function Save($object);
+	public function Save($object, array $propeties_mask = array());
 	
 /** 
  * Deleted object from storage, returns true on success
@@ -106,7 +116,7 @@ interface IORMStorage {
  * @param TOrmCondition[] $conditions
  * @param TOrmSorting[] $sorting
  */	
-	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null);
+	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null);
 /**
  * @param object|ReflectionClass|string $object
  * @return TOrmPropertyMeta[]
@@ -115,7 +125,8 @@ interface IORMStorage {
 }
 
 interface IORMHierarchyStorage {
+	public function Put($object,$container);
 	public function Container($object);
-	public function Contents();
-	public function FetchContents($dummy,$direct = true, array $greedy = array(),array $conditions = array(),array $sorting = array(),$offset = null, $count = null);
+	public function Contents($object);
+	public function FetchContents($dummy,$direct = true, array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null);
 }

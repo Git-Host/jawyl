@@ -1,4 +1,5 @@
 <?php
+TApplication::import('common::enum');
 
 /**
  * @package Common

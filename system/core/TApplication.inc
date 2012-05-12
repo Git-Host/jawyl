@@ -13,6 +13,7 @@
  * @ignore
  */
 	require_once "TException.inc";
+	require_once "utils/TFileSystem.inc";	
 	require_once "utils/TFile.inc";
 	require_once "utils/TDate.inc";
 	require_once "utils/TOutputBuffer.inc";
@@ -100,6 +101,7 @@
 		private $_sef_;
 		private $_string_encoding_ = 'UTF-8';
 		private $_call_type_;
+		private $_file_storage_path_;
 /**
  * @var IExceptionHandler
  */		
@@ -107,7 +109,7 @@
 		
 		public static $CompileAppConfig = false;
 		public static $ConfigCompileDirectory = 'config';
-		public static $IocTypesCompileDirectory = 'ioc';
+		public static $IocTypesCompileDirectory = 'private/ioc';
 		
 		public static $Environment = self::ENV_PRODUCTION;
 		
@@ -133,6 +135,7 @@
 				case "RequestPath":return $this->_request_path_;break;
 				case "AppPath":return $this->_app_path_;break;
 				case "PrivateDir":return $this->_private_dir_;break;
+				case "FileStoragePath":return $this->_file_storage_path_;break;
 				case "Shared":return $this->_shared_;break;
 				case "URI":return $this->_uri_;break;
 				case "Root":return $this->_root_;break;
@@ -236,7 +239,7 @@
 								$result .= $container.'->__set("'.$node->getAttribute("membername").'",$obj'.$counter.');'."\n";
 							self::_parse_contents($xpath,$node,'$obj'.$counter,$result,$counter);
 					}break;
-					case "setting":$result .= $container.'->'.$node->getAttribute("name").' = "'.$node->nodeValue.'";'."\n";break;
+					case "setting":$result .= $container.'->'.$node->getAttribute("name").' = "'.addcslashes($node->nodeValue,'"').'";'."\n";break;
 				}
 			}
 		}		
@@ -330,11 +333,19 @@
 			self::$_import_paths_[] = $path;
 		}
 		
+		private function _canonical_path($path){
+			$path = preg_replace('/[\\\\\\/]\.[\\\\\\/]/','/',$path);
+			$path = preg_replace('/[\\\\\\/][\\\\\\/]+/','/',$path);
+			while (preg_match('/[\\\\\\/]\.\.[\\\\\\/]/',$path) > 0)
+				$path = preg_replace('/[\\\\\\/][^\\\\\\/]+[\\\\\\/]\.\.[\\\\\\/]/','/',$path);
+			return $path;
+		}
+		
 		public function AdjustPath($path){
 			$trimmed = trim($path);
 			if (preg_match('/^(https?:\/\/|\/|\w:\\\)[\w\d].*$/',$trimmed))
-				return $trimmed;
-			return $this->_app_path_."/".$trimmed;
+				return $this->_canonical_path($trimmed);
+			return $this->_canonical_path($this->_app_path_."/".$trimmed);
 		}
 		
 /**
@@ -399,6 +410,8 @@
 */					
 		public static function GetClass($classname){
 			$result = null;
+			if (class_exists($classname))
+				return new ReflectionClass($classname);
 			if (!key_exists($classname,self::$_classes_))
 				self::import($classname);
 			if (!key_exists($classname,self::$_classes_))
@@ -580,7 +593,7 @@
    			if (!$path)
    				$path = TApplication::$Application->AppPath."/files";
    			if (!is_dir($path))
-   				mkdir($path);
+   				TFileSystem::ForceDir($path);	
    			return $path;
 		}
 		
@@ -618,6 +631,7 @@
 				}break;
 				case "Path":self::$_import_paths_ = explode(";",$value);break;
 				case "PrivateDir":$this->_private_dir_ = $value;break;
+				case "FileStoragePath":$this->_file_storage_path_ = $this->AdjustPath($value);break;
 				case "ImportPath":self::AddImportPath($value);break;
 				case "Sef":$this->_sef_ = TConvertions::ConvertToBoolean($value);break;
 				case "Environment":{

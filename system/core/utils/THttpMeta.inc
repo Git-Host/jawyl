@@ -82,9 +82,9 @@ class THttpMeta {
  */
 	public function SendHeaders(){
 		if (!isset($this->headers['Content-Type']))
-			header($this->ContentTypeHeader());
+			header($this->ContentTypeHeader(),true);
 		foreach ($this->headers as $key=>$value)
-			header($key.":".$value);			
+			header($key.":".$value,true);			
 	}
 	
 /**

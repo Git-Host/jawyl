@@ -26,6 +26,14 @@
 		</xsd:restriction>
 	</xsd:simpleType>
 	
+	<xsd:simpleType name="t_identity">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="auto" />
+			<xsd:enumeration value="explicit" />
+			<xsd:enumeration value="implicit" />
+		</xsd:restriction>
+	</xsd:simpleType>	
+	
 	<xsd:complexType name="t_collection">
 		<xsd:complexContent>
 			<xsd:extension base="t_reference">
@@ -74,6 +82,7 @@
 					<xsd:element name="collection" type="t_collection" />
 				</xsd:choice>
 			</xsd:sequence>
+			<xsd:attribute name="identity" default="auto" use="optional" type="t_identity" />
 		</xsd:complexType>
 	</xsd:element>
 </xsd:schema>
