@@ -115,7 +115,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if (isset($this->_global_vars_[$n]))
 			return $this->_global_vars_[$n];
 		if (defined($n))
-			return constant($n);	
+			return constant($n);		
 		$v = @$cc->$n;
 		if (!is_null($v))
 			return $v;
@@ -125,6 +125,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			return $this->response->Service()->$n;
 		if (isset(TApplication::$Application->$n))
 			return TApplication::$Application->$n;
+		if (class_exists($n))
+			return $n;			
 		if ($get_self)	
 			return $name;
 		return null;
@@ -317,6 +319,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 				else
 					return '<?php if (!@'.$this->_compile_expression($matches[2]).') { ?>';
 			}break;
+			case 'is':return '<?php $__c__n__ = '.$this->_compile_expression($matches[2],true).'; if ($this->CurrentContext() instanceof $__c__n__) { ?>';break;
 			case 'switch':return '<?php switch ('.$this->_compile_expression($matches[2]).') { ?>';break;
 			case 'case':return '<?php case '.$this->_compile_expression($matches[2],true).':{ ?>';break;
 			case 'with':return '<?php $this->pushContext('.$this->_compile_expression($matches[2]).'); ?>';break;
@@ -336,18 +339,19 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = $this->preCompile($text);
 		$text = preg_replace('/{%startcache\s+([_\w]+)\s+(\d+)\s*%}/','<?php if ($this->startCache("$1",$2)) { ?>',$text);
 		$text = preg_replace('/{%stopcache%}/','<?php $this->saveCache(); } ?>',$text);		
-		$text = preg_replace_callback('/{%insert\s+([^\s]*|"[^"]*")(?:\s+context\s*=\s*([^\s]*|"[^"]*"))?\s*%}/',array(&$this,"_repl_compile"),$text);
-		$text = preg_replace_callback('/{%widget\s+([^\s]*|"[^"]*")(?:\s+skin\s*=\s*([^\s]*|"[^"]*"))?\s*%}/',array(&$this,"_widg_compile"),$text);
+		$text = preg_replace_callback('/{%insert\s+([^\s]*?|`[^`]*`)(?:\s+context\s*=\s*([^\s]*?|`[^`]*`))?\s*%}/',array(&$this,"_repl_compile"),$text);
+		$text = preg_replace_callback('/{%widget\s+([^\s]*?|`[^`]*`)(?:\s+skin\s*=\s*([^\s]*?|`[^`]*`))?\s*%}/',array(&$this,"_widg_compile"),$text);
 		$text = preg_replace('/<\?(?!php)/','<?php ',$text);
 			
 		$text = preg_replace_callback('/{%iterate\s+('.$expr.')\s+as\s+([_\w]+)(?:\s*>\s*([_\w]+))?\s*%}/',array(&$this,"_iter_compile"),$text);
 		$text = preg_replace('/{%iterate%}/','<?php $this->popContext(); } $this->_global_vars_["iterlevel"]--; ?>',$text);
-		
-		$text = preg_replace_callback('/{%(if)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
-		$text = preg_replace_callback('/{%(if)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
-		$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+
+		$text = preg_replace_callback('/{%(if(?:not)?|is)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(if(?:not)?)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+	/*	$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
-		
+		$text = preg_replace_callback('/{%(is)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+	*/	
 		$text = preg_replace('/{%odd%}/','<?php if ($this->_cycleodd_) { ?>',$text);
 		
 		$text = preg_replace_callback('/{%(with)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
@@ -356,6 +360,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		
 		$text = preg_replace('/{%default%}/','<?php default:{ ?>',$text);		
 		$text = preg_replace('/{%else%}/','<?php } else { ?>',$text);
+		$text = preg_replace('/{%endis%}/','<?php } ?>',$text);
 		$text = preg_replace('/{%endif%}/','<?php } ?>',$text);
 		$text = preg_replace('/{%endodd%}/','<?php } ?>',$text);
 		$text = preg_replace('/{%endcase%}/','<?php }break; ?>',$text);
@@ -370,12 +375,9 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return $text;
 	}
 	
-	private function _need_compile($filename){
-		if (basename($filename) == $filename)
-			$filename = $this->TemplateDir."/".$filename;
-		$cf = basename($filename);
-		if (file_exists($this->CompileDir."/".$cf)){
-			if (filemtime($this->CompileDir."/".$cf) < filemtime($filename))
+	private function _need_compile($filename,$compiled){
+		if (file_exists($compiled)){
+			if (filemtime($compiled) < filemtime($filename))
 				return true;
 			return false;
 		}
@@ -443,12 +445,18 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
  * @return string 
  */	
 	protected function getCompiledFile($filename, $cachelifetime = 0, $preprocessor = null){
-		$cf = $filename;
-		if ($this->_need_compile($filename)){
-			$compiletext = $this->_compile($filename,$preprocessor);
-			file_put_contents($this->CompileDir."/".basename($cf),$compiletext);
+		if (!TFileSystem::IsAbsolute($filename)){
+			$cf = $this->CompileDir."/".$filename;
+			$filename = $this->TemplateDir."/".$filename;
+		} else {
+			$cf = str_ireplace($this->TemplateDir,'', $filename);
 		}
-		return $this->CompileDir."/".basename($cf);
+		if ($this->_need_compile($filename,$cf)){
+			$compiletext = $this->_compile($filename,$preprocessor);
+			TFileSystem::ForceDir(dirname($cf));
+			file_put_contents($cf,$compiletext);
+		}
+		return $cf;
 	}
 	
 /**
