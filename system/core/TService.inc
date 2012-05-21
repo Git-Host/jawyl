@@ -176,13 +176,6 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
  * @see IService::Name()
  */	
 	//public function Name(){return $this->name;}
-
-/**
- * public constructor
- */
-	public function __construct($name){
-		parent::__construct($name);
-	}
 	
 	protected abstract function handleRequest(TRequest $request);
 	
