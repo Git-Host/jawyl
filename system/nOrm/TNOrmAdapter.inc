@@ -894,27 +894,33 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return null;
 	}
 	
+	
 	private function _filter_from_conditions(array &$filter,$orm,$tables,$conditions){
-		foreach ($conditions as $condition){
-			$operands = array();
-			foreach ($condition->Operands as $o)
-				if (is_string($o) && isset($orm['properties'][$o])){
-					switch ($orm['properties'][$o]['type']){
-						case 'collection':break;
-						case 'reference':{
-							if (count($orm['properties'][$o]['fields']) > 1)
-								throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
-							foreach ($orm['properties'][$o]['fields'] as $field)
-								$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0); 
-						}break;
-						case 'scalar':
-						default: $operands[] = $this->_create_field($orm['properties'][$o]['field']['name'], $tables[$orm['properties'][$o]['field']['table']], ($tables[$orm['properties'][$o]['field']['table']] instanceof TNestedSets)?1:0);
-					}
-				} else 	
-					$operands[] = $o;
-					
-			$filter[] = new TCondition($condition->Type, $operands);
-		}
+		foreach ($conditions as $condition)
+			if ($condition instanceof TOrmCondition){
+				$operands = array();
+				foreach ($condition->Operands as $o)
+					if (is_string($o) && isset($orm['properties'][$o])){
+						switch ($orm['properties'][$o]['type']){
+							case 'collection':break;
+							case 'reference':{
+								if (count($orm['properties'][$o]['fields']) > 1)
+									throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+								foreach ($orm['properties'][$o]['fields'] as $field)
+									$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0); 
+							}break;
+							case 'scalar':
+							default: $operands[] = $this->_create_field($orm['properties'][$o]['field']['name'], $tables[$orm['properties'][$o]['field']['table']], ($tables[$orm['properties'][$o]['field']['table']] instanceof TNestedSets)?1:0);
+						}
+					} else 	
+						$operands[] = $o;
+								
+				$filter[] = new TCondition($condition->Type, $operands);
+			} else if ($condition instanceof TOperation){
+				$temp = array();
+				$this->_filter_from_conditions($temp, $orm, $tables, $condition->Operands);
+				$filter[] = ($condition instanceof TCondition)?new TCondition($condition->Type,$temp):new TOperation($condition->Type,$temp);
+			}
 	}
 	
 	private function _form_sorting($orm,$tables,$sorting){
@@ -956,7 +962,6 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$filter = $this->_filter_from_object($orm, $dummy, $tables);
 
 			$this->_filter_from_conditions($filter, $orm, $tables, $conditions);	
-		
 			$ds->Filter = $filter;
 			if (!is_null($total)){
 				$cds = clone $ds;

@@ -384,9 +384,13 @@ abstract class TPageService extends TService {
 			$this->page = $this->getDefaultPage();
 		 else 
 			$this->page = $this->getPage($request->page);	
-		if (is_null($this->page))
+		if (is_null($this->page)){
 			$this->page = $this->getNotFoundPage();
-		else if (!$this->checkAccess())
+			if (is_null($this->page)){
+				header('HTTP/1.0 404 Page not found!',true,404);
+				die;	
+			}
+		} else if (!$this->checkAccess())
 			$this->page = $this->getAccessDeniedPage();
 		if (!($this->page instanceof TPage))
 			return false;	
