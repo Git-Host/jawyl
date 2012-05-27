@@ -23,7 +23,7 @@ TApplication::import("common::theme::engine");
 TApplication::import("services::TPageService");
 
 function capitalize($str){
-	return strtoupper($str[0]).strtolower(substr($str, 1));
+	return mb_strtoupper(mb_substr($str,0,1)).mb_strtolower(mb_substr($str, 1));
 }
 
 /**
@@ -222,8 +222,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 					case 't':
 					case 'n':
 					case 'i':$result .= '_'.$v.'(';break;
-					case 'u':$result .= 'strtoupper(';break;
-					case 'l':$result .= 'strtolower(';break;
+					case 'u':$result .= 'mb_strtoupper(';break;
+					case 'l':$result .= 'mb_strtolower(';break;
 					case 'cap':$result .= 'capitalize(';break;
 					case 'q':$result .= 'htmlentities(';break;
 					default:{
@@ -301,6 +301,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return $result.'$'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[2].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].'; ?>';
 	}
 	
+	private function _counter_iter_compile($matches){
+		$this->_cycle_counter_++;
+		$result = '<?php $this->_global_vars_["iterlevel"] = (!isset($this->_global_vars_["iterlevel"]))?0:$this->_global_vars_["iterlevel"]+1; $cyclecounter'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[1]).';$cyclebound'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[2]).'; while ($cyclecounter'.$this->_cycle_counter_.' <= $cyclebound'.$this->_cycle_counter_.'){';
+		return $result.' $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($cyclecounter'.$this->_cycle_counter_.'); ?>';
+	}
+	
 	protected function preCompile($text){
 		return $text;
 	}
@@ -344,6 +350,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace('/<\?(?!php)/','<?php ',$text);
 			
 		$text = preg_replace_callback('/{%iterate\s+('.$expr.')\s+as\s+([_\w]+)(?:\s*>\s*([_\w]+))?\s*%}/',array(&$this,"_iter_compile"),$text);
+		$text = preg_replace_callback('/{%iterate\s+('.$expr.')\s+>\s+('.$expr.')\s*%}/',array(&$this,"_counter_iter_compile"),$text);
+		
 		$text = preg_replace('/{%iterate%}/','<?php $this->popContext(); } $this->_global_vars_["iterlevel"]--; ?>',$text);
 
 		$text = preg_replace_callback('/{%(if(?:not)?|is)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
@@ -427,6 +435,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$this->_global_vars_['SERVICE'] = TApplication::$Application->CurrentService();
 		$this->_global_vars_['PAGE'] = $this->response;
 		$this->_global_vars_['THEME_URL'] = $this->ThemeUrl();
+		$this->_global_vars_['APP_URL'] = TApplication::$Application->Root;
 		$this->_global_vars_['APPLICATION'] = TApplication::$Application;
 		$this->_global_vars_['APPLICATION_SHARED'] = TApplication::$Application->Shared;
 /*		

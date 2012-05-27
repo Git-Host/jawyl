@@ -114,7 +114,7 @@ class TIntrinsicPage extends TPage {
 			
 			if ($node->getAttribute("membername"))
 				$result .= $compiled_container.'->'.$node->getAttribute("membername").' = '.$varname.';'."\n";
-			self::_compile_elements($node,$c->getName(),$varname,$xpath,$result,$counter,$classes);
+			self::_compile_elements($node,$classes[$node->getAttribute("name")][2],$varname,$xpath,$result,$counter,$classes);
 		}
 	}
  	

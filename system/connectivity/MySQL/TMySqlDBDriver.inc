@@ -38,6 +38,7 @@ class TMySqlDataSetProcessor {
 	private $_param_prefix_ = TMySqlDataSetProcessor::PARAM_PREFIX;
 	private $_subqueries_ = 0;
 	protected $parameters = array();
+	private $_force_unique_ = false;
 	
 	private $_param_counter_ = 1;
 	
@@ -254,6 +255,7 @@ class TMySqlDataSetProcessor {
 	
 	private function _parse_ds(TDataSource $ds, array $joinconditions){
 		if ($ds->IsTarget){
+			$this->_force_unique_ = $ds->ForceUniqueness;
 			$this->_targets_[] = $this->dataSourceTargetName($ds);
 			$this->_targets_ds_[] = $ds;
 		}		
@@ -368,7 +370,7 @@ class TMySqlDataSetProcessor {
 	}
 	
 	public function SelectQuery(){
-		$result = "select ";
+		$result = "select ".($this->_force_unique_?'distinct':'')." ";
 		if ($this->Fields)
 			$result .= $this->Fields;
 		else

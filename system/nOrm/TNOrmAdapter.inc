@@ -16,13 +16,13 @@ class TClassOrmConfig {
 	}
 	
 	private function _parse_refprop($propname,$type,$propval,$sorting,$default_tbl){
-		preg_match_all('/([_\w\.]+)\s*\(([^\)]*)\)/', $propval, $props);
-			$n2 = count($props[1]);
+		preg_match_all('/([_\w]+)\s*\(([^\)]*)\)/', $propval, $props);
+			$n2 = count($props[2]);
 			for ($j = 0; $j < $n2; $j++){
-				$flds = explode(',',$props[1][$j]);
+				$flds = explode(',',$props[2][$j]);
 				foreach ($flds as $fld){
 					$fldnm = explode('.',$fld);
-					$this->_properties_[$propname]['fields'][] = array('name'=>trim(count($fldnm) > 1?$fldnm[1]:$fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[0]):$default_tbl,'property'=>$props[2][$j]);
+					$this->_properties_[$propname]['fields'][] = array('name'=>trim(count($fldnm) > 1?$fldnm[1]:$fldnm[0]),'table'=>count($fldnm) > 1?trim($fldnm[0]):$default_tbl,'property'=>$props[1][$j]);
 				}
 			}
 			if ($type == 'collection'){
@@ -50,6 +50,7 @@ class TClassOrmConfig {
 			$this->_properties_[$name]['type'] = $settings['type'];
 			$this->_properties_[$name]['classname'] = $settings['classname'];
 			$this->_properties_[$name]['defclass'] = $class;
+			$this->_properties_[$name]['mtm'] = explode('.',trim(@$settings['mtm']));
 			$this->_parse_refprop($name,$settings['type'],$settings['fields'],@$settings['sorting'],$default_tbl);
 	}
 	
@@ -105,8 +106,8 @@ class TClassOrmConfig {
 			if (preg_match('/@orm.scalar\s+(\w[_\w\.]*)\s*$/m', $pdoc,$matches)){
 				$fld = explode('.',$matches[1]);
 				$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>(count($fld) > 1)?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
-			} elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:(?:[_\w\.]+)\s*\((?:(?:\s*\w[_\w]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
-				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'fields'=>$matches[2],'sorting'=>$matches[3]),$default_tbl,$rc->getName());
+			} elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
+				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'mtm'=>$matches[2][$i],'fields'=>$matches[3],'sorting'=>$matches[4]),$default_tbl,$rc->getName());
 			}
 		}
 		
@@ -117,10 +118,10 @@ class TClassOrmConfig {
 			$this->_override_scalar_property($matches[2][$i], array('datatype'=>$matches[1][$i],'field'=>array('name'=>count($fld) > 1?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
 		}
 		
-		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.(reference|collection)\s+((?:(?:[_\w\.]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+([^\}]*)|\s*)\}'.$lineend,$doc,$matches);
+		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)((?:\s+-s\s+[^\}]*)?)\s*\}'.$lineend,$doc,$matches);
 		$n = count($matches[2]);
 		for ($i = 0; $i < $n; $i++){
-			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'fields'=>$matches[4][$i],'sorting'=>$matches[5][$i]),$default_tbl,$rc->getName());
+			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'mtm'=>$matches[4][$i],'fields'=>$matches[5][$i],'sorting'=>$matches[6][$i]),$default_tbl,$rc->getName());
 		}
 	}
 
@@ -223,6 +224,12 @@ class TClassOrmConfig {
 				case 'reference':
 				case 'collection':{
 					$pt .= '"classname"=>"'.$data['classname'].'",';
+					if ($data['type'] == 'collection'){
+						if (count($data['mtm']) > 1)
+						$pt .= '"mtm"=>array("class"=>"'.$data['mtm'][0].'","property"=>"'.$data['mtm'][1].'"),';
+						else
+						$pt .= '"mtm"=>false,';
+					}
 					$pt .= '"fields"=>array(';
 					$temp2 = array();
 					foreach ($data['fields'] as $field){
@@ -331,11 +338,14 @@ abstract class TNOrmLoader {
 	private $_empty_key_ = false;
 	protected $assumeDescendants = array();
 	
+	protected function createDummy($meta){
+		return new $meta['classname']();
+	}
 	
 	public function __construct(&$row, &$meta, TNOrmAdapter $adapter, array $assume_descendants = array()){
 		$this->adapter = $adapter;
 		$this->assumeDescendants = $assume_descendants; 
-		$this->dummy = new $meta['classname']();
+		$this->dummy = $this->createDummy($meta);
 		$keys = array();
 		$props = array();
 		foreach ($meta['fields'] as $field){
@@ -386,10 +396,24 @@ class TNOrmObjectLoader extends TNOrmLoader {
 	}
 }
 
-
+class TNOrmMtmCollectionIterator extends TIteratorAdapter {
+	private $_ref_prop_;
+	
+	public function __construct(IIterator $base,$refproperty){
+		parent::__construct($base);
+		$this->_ref_prop_ = $refproperty;
+	}
+	
+	public function Item() {
+		$item = parent::Item();
+		$nm = $this->_ref_prop_;
+		return $item->$nm;
+	}
+}
 
 class TNOrmCollectionLoader extends TNOrmLoader {
 	protected $sorting;
+	private $_mtm_ref_prop_;
 	
 	public function __construct(&$row, &$meta, TNOrmAdapter $adapter){
 		parent::__construct($row, $meta, $adapter);
@@ -398,8 +422,18 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 			$this->sorting[] = new TOrmSorting($prop,new TSortingType($type));
 	}
 	
+	protected function createDummy($meta){
+		if (count($meta['mtm']) > 1){
+			$this->_mtm_ref_prop_ = $meta['mtm']['property']; 
+			return new $meta['mtm']['class']();
+		}
+		return new $meta['classname']();
+	}
+	
 	protected function load(){
 		$this->value = $this->adapter->Fetch($this->dummy,array(),$this->sorting,$this->assumeDescendants);
+		if ($this->_mtm_ref_prop_)
+			$this->value = new TNOrmMtmCollectionIterator($this->value,$this->_mtm_ref_prop_);
 	}
 }
 
@@ -519,7 +553,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		$keyfields = array();
 		foreach ($orm['tables'] as $table=>$keys)
 			if (!isset($tables[$table])){
-				$this->_form_ds_join(TJoin::JOIN_LEFT, $ds, $prevkeys, $keys, $table, $tables, $join);
+				$this->_form_ds_join(TJoin::JOIN_LEFT, $ds, $basekeys, $keys, $table, $tables, $join);
 				if (!$keys_set && ($classname == $orm['tdefclasses'][$table])){
 					foreach ($keys as $keyfield){
 						$alias = strtolower($classname).'_'.$keyfield;
@@ -537,12 +571,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	private function _form_ds($orm,&$join,&$tables,&$fields,&$assumed_descendants){
 		$prevkeys = null;
+		
 		foreach ($orm['tables'] as $table=>$keys){
 			if (!isset($ds)){
 				if (empty($orm['nestedsets']))
-					$tables[$table] = new TTable($table,null,array(),array(),array(),array(), true);
+					$tables[$table] = new TTable($table,null,array(),array(),array(),array(), true, null, null, true);
 				else	
-					$tables[$table] = new TNestedSets($table,null,null,null,null,array(),array(),array(),array(), true);
+					$tables[$table] = new TNestedSets($table,null,null,null,null,array(),array(),array(),array(), true, null, null, true);
 				$ds = $tables[$table];	
 				$prevkeys = $keys;
 			} else 
@@ -555,13 +590,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		
 		if (!empty($assumed_descendants)){
 			usort($assumed_descendants, create_function('$a,$b','return (is_subclass_of($a,$b))?1:0;'));
-			$assumed_keys = array();
+			$real_descendants = array();
 			foreach ($assumed_descendants as $cname)
 				if (is_subclass_of($cname, $orm['classname'])){
 					$this->_form_assumed_descender($ds,$orm, $cname,  $prevkeys, $join, $tables, $fields,$kv);
-					$assumed_keys[] = $kv;
-				}
-			$assumed_descendants = array_combine(array_reverse($assumed_descendants),array_reverse($assumed_keys));		
+					$real_descendants[$cname] = $kv;
+				}	
+			$assumed_descendants = array_reverse($real_descendants,true);
 		}	
 		return $ds;	
 	}
@@ -675,8 +710,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$fields = array();
 			$ds = $this->_form_ds($orm, $join, $tables, $fields,$assume_descendants);
 			$ds->Fields = $fields;
-			$ds->Join = $join;
 			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
+			$ds->Join = $join;
 			$result = $this->_ioc_driver_->FetchRecords($ds);
 			foreach ($result as $item){
 				return $this->Create($item,$object);
@@ -895,14 +930,48 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	}
 	
 	
-	private function _filter_from_conditions(array &$filter,$orm,$tables,$conditions){
+	private function _filter_from_conditions(array &$filter,$orm,&$tables,$conditions, &$join){
 		foreach ($conditions as $condition)
 			if ($condition instanceof TOrmCondition){
 				$operands = array();
 				foreach ($condition->Operands as $o)
 					if (is_string($o) && isset($orm['properties'][$o])){
 						switch ($orm['properties'][$o]['type']){
-							case 'collection':break;
+							case 'collection':{
+								if (count($orm['properties'][$o]['mtm']) > 1){
+									$colorm = $this->_get_orm_config($orm['properties'][$o]['mtm']['class']);
+									$fp = $colorm['properties'][$orm['properties'][$o]['mtm']['property']];
+								} else {
+									$colorm = $this->_get_orm_config($orm['properties'][$o]['classname']);
+									if (count($colorm['keys']) > 1)
+										throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+									$fp = $colorm['properties'][$colorm['keys'][0]];
+								}
+								
+								if (count($fp['fields']) > 1)
+									throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+								
+								$coljoin = array();
+								$fields = array();
+								$ad = array(); 
+								$colds = $this->_form_ds($colorm, $coljoin, $tables, $fields, $ad);
+								$conditions = array();
+								foreach ($orm['properties'][$o]['fields'] as $fld){
+									$jp = $colorm['properties'][$fld['property']];
+									if (count($jp['fields']) > 1)
+										throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+									$jfld = $jp['fields'][0];	
+									$conditions[] = new TCondition(TConditionType::C_EQUAL, array(
+										$this->_create_field($fld['name'], $tables[$fld['table']], ($tables[$fld['table']] instanceof TNestedSets)?1:0),
+										$this->_create_field($jfld['name'], $tables[$jfld['table']], ($tables[$jfld['table']] instanceof TNestedSets)?1:0)
+									));
+								}
+								
+								$join[] = new TJoin($colds, TJoin::JOIN_INNER, $conditions); 	
+									
+								foreach ($fp['fields'] as $field)
+									$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0); 
+							}break;
 							case 'reference':{
 								if (count($orm['properties'][$o]['fields']) > 1)
 									throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
@@ -918,7 +987,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$filter[] = new TCondition($condition->Type, $operands);
 			} else if ($condition instanceof TOperation){
 				$temp = array();
-				$this->_filter_from_conditions($temp, $orm, $tables, $condition->Operands);
+				$this->_filter_from_conditions($temp, $orm, $tables, $condition->Operands, $join);
 				$filter[] = ($condition instanceof TCondition)?new TCondition($condition->Type,$temp):new TOperation($condition->Type,$temp);
 			}
 	}
@@ -954,30 +1023,35 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();	
-		
+			
+			$break = !empty($assume_descendants);
+			
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
-			$ds->Join = $join;
-		
+			
 			if (is_object($dummy))
 				$filter = $this->_filter_from_object($orm, $dummy, $tables);
-
-			$this->_filter_from_conditions($filter, $orm, $tables, $conditions);	
+								
+			$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
+				
 			$ds->Filter = $filter;
+			$ds->Join = $join;
+						
 			if (!is_null($total)){
 				$cds = clone $ds;
+				$cds->ForceUniqueness = false;
 				$cds->Fields = new TExpressionField('cnt', new TOperation(TOperationType::O_COUNT, array()));
 				$cntr = $this->_ioc_driver_->FetchRecords($cds);
 				foreach ($cntr as $cnt){
 					$total = $cnt['cnt'];
 					break;
 				}
-			}
-		
+			}			
+			
 			$ds->Fields = $fields;
 			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
 			$ds->Offset = $offset;
 			$ds->Count = $count;
-		
+						
 			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants);
 		}
 		return false;
@@ -1108,7 +1182,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			if (is_object($dummy))
 				$filter = $this->_filter_from_object($orm, $dummy, $tables, 2);
 		
-			$this->_filter_from_conditions($filter, $orm, $tables, $conditions);
+			$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
 			$ds->Fields = $fields;
 			$ds->Join = $join;
 			$ds->Filter = $filter;
@@ -1176,7 +1250,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				foreach ($assumed_classes as $c=>$keyfields){
 					$isit = true;
 					foreach ($keyfields as $kf){
-						$kf = $c.'_'.$kf;
+						$kf = strtolower($c.'_'.$kf);
 						if (!isset($row->$kf))
 							$isit = false;
 					}
@@ -1201,6 +1275,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			foreach ($orm['properties'] as $name=>$prop)
 				if (!in_array($name,$orm['keys']))
 					$this->_assign_property($dummy, $name, $prop, $row, $assumed_classes);
+					
 			return $dummy;
 		}
 		return null;
