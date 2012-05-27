@@ -111,6 +111,7 @@ interface IDataSourceField {
  * @property string $Alias
  * @property array $Targets
  * @property array $UsedFields
+ * @property bool $ForceUniqueness
  */
 abstract class TDataSource {
 	protected $fields = array();
@@ -121,6 +122,7 @@ abstract class TDataSource {
 	protected $count = null;
 	protected $alias = null;
 	protected $sorting = array();
+	protected $forceUniqueness = false;
 	
 	private $_attached_fields_ = array();
 	
@@ -160,10 +162,11 @@ abstract class TDataSource {
  */	
 	public abstract function Name();
 	
-	public function __construct($alias = null, array $fields = array(), array $filter = array(), array $join = array(), array $sorting = array(), $istarget = false,$offset = null,$count = null){
+	public function __construct($alias = null, array $fields = array(), array $filter = array(), array $join = array(), array $sorting = array(), $istarget = false,$offset = null,$count = null,$force_unique = false){
 		$this->alias = $alias;
 		$this->Fetch($fields)->Filter($filter)->Join($join)->Sort($sorting)->SetOffset($offset)->SetCount($count);
 		$this->isTarget = TConvertions::ConvertToBoolean($istarget);
+		$this->forceUniqueness = $force_unique;
 	}
 	
 	public function Add(TDataSource $datasource){
@@ -262,6 +265,7 @@ abstract class TDataSource {
 			case "IsTarget":$this->isTarget = TConvertions::ConvertToBoolean($value);break;
 			case "Offset":$this->SetOffset($value);break;
 			case "Count":$this->SetCount($value);break;
+			case "ForceUniqueness":$this->forceUniqueness = $value;break;
 		}
 	}
 	
@@ -276,6 +280,7 @@ abstract class TDataSource {
 			case "IsTarget":return $this->isTarget;break;
 			case "Offset":return $this->offset;break;
 			case "Count":return $this->count;break;
+			case "ForceUniqueness":return $this->forceUniqueness;break;
 			case "Targets":{
 				if (!is_array($this->targetsCache))
 					$this->_targets_ = $this->ExplicitTargets();
@@ -336,9 +341,9 @@ class TDataSourceField implements IDataSourceField {
 class TTable extends TDataSource {
 	protected $name;
 
-	public function __construct($name, $alias = null, array $fields = array(), array $filter = array(), array $join = array(), array $sorting = array(), $istarget = false, $offset = null, $count = null){
+	public function __construct($name, $alias = null, array $fields = array(), array $filter = array(), array $join = array(), array $sorting = array(), $istarget = false, $offset = null, $count = null, $force_unique = false){
 		$this->name = $name;
-		parent::__construct($alias,$fields,$filter,$join,$sorting,$istarget,$offset,$count);
+		parent::__construct($alias,$fields,$filter,$join,$sorting,$istarget,$offset,$count,$force_unique);
 	}	
 	
 	public function Name(){
@@ -393,8 +398,8 @@ class TNestedSets extends TTable {
 		parent::AttachField($fld);
 	}
 	
-	public function __construct($name, $direction = null, $depth = null, $includebases = null, $alias = null, array $fields = array(), array $filter = array(), array $join = array(),array $sorting = array(), $istarget = false, $offset = null, $count = null){
-		parent::__construct($name, $alias,$fields,$filter,$join,$sorting,$istarget,$offset,$count);
+	public function __construct($name, $direction = null, $depth = null, $includebases = null, $alias = null, array $fields = array(), array $filter = array(), array $join = array(),array $sorting = array(), $istarget = false, $offset = null, $count = null, $force_unique = false){
+		parent::__construct($name, $alias,$fields,$filter,$join,$sorting,$istarget,$offset,$count,$force_unique);
 		if (!is_null($direction))
 			$this->setDirection($direction);
 		if (is_int($depth))
@@ -466,8 +471,8 @@ final class TNestedSetsAllField extends TNestedSetsField {
 final class TDataSet extends TDataSource {
 	protected $source = array();
 	
-	public function __construct($source, $alias = null, array $fields = array(),array $filter = array(), array $join = array(), array $sorting = array(), $istarget = false,$offset = null,$count = null){
-		parent::__construct($alias,$fields,$filter,$join,$sorting,$istarget,$offset,$count);
+	public function __construct($source, $alias = null, array $fields = array(),array $filter = array(), array $join = array(), array $sorting = array(), $istarget = false,$offset = null,$count = null, $force_unique = false){
+		parent::__construct($alias,$fields,$filter,$join,$sorting,$istarget,$offset,$count,$force_unique);
 		$this->AddSource($source);
 	}
 	
