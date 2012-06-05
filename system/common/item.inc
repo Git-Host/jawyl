@@ -52,10 +52,18 @@ TApplication::import('common::enum');
  * @param array $selection
  */		
 		public function SetSelection(array $selection);
-		
+/**
+ * @return bool
+ */		
 		public function ReadOnly();
-		
-		public function Nullable();		
+/**
+ * @return bool
+ */		
+		public function Nullable();
+/**
+ * @return bool
+ */		
+		public function Required();
 	}
 
 /**
@@ -165,14 +173,16 @@ TApplication::import('common::enum');
 		protected $selection;
 		protected $nullable;
 		protected $readonly;
+		protected $required;
 		
-		public function __construct($name,$caption,$type,array $selection = array(),$nullable = true,$readonly = false){
+		public function __construct($name,$caption,$type,array $selection = array(),$nullable = true,$readonly = false,$required = false){
 			$this->name = $name;
 			$this->caption = $caption;
 			$this->type = new TItemPropertyType($type);
 			$this->selection = $selection;
 			$this->nullable = $nullable;
-			$this->readonly = $readonly;			
+			$this->readonly = $readonly;
+			$this->required = $required;			
 		}
 /**
  *  gets property name
@@ -222,6 +232,10 @@ TApplication::import('common::enum');
 		public function Nullable(){
 			return $this->nullable;
 		}		
+		
+		public function Required(){
+			return $this->required;
+		}		
 	}
 
 	abstract class TProperty implements IProperty {
@@ -261,8 +275,9 @@ TApplication::import('common::enum');
 		
 		public function ReadOnly(){return $this->meta->ReadOnly();}
 		
-		public function Nullable(){return $this->meta->Nullable();}		
-		
+		public function Nullable(){return $this->meta->Nullable();}	
+			
+		public function Required(){return $this->meta->Required();}
 	} 
 	
 	abstract class TReferenceProperty extends TProperty implements IReferenceProperty, IReferencePropertyMeta {

@@ -910,7 +910,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 					$this->SetCookie($name."[$key]", null);
 				else
 					$this->SetCookie($name."[$key]", $v, $expire);
-		} else
+		} else 
 			setcookie($name,$value,$expire,TApplication::$Application->Host);
 	}
 	
@@ -1014,7 +1014,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 		
 		if ($result)
 			if (!(($controller->Name() == $this->DefaultController) && ($method == $controller->DefaultMethod)))
-				$this->CleanCall();	
+				$this->CleanCall();
 		return $result;
 	}
 

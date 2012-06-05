@@ -225,8 +225,9 @@ class TIntrinsicPage extends TPage {
 /**
  * constructor
  */	
-	public function __construct($path, $filename, TIntrinsicPageService $service){		
-		parent::__construct($service,$path,"","");
+	public function __construct($path, $filename, TIntrinsicPageService $service){
+		if (!$path) $path = 'default';		
+		parent::__construct($service,$path);
 		include $filename;
 	}
 	

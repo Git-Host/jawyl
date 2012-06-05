@@ -105,6 +105,9 @@
    		}   
 
    		public function ImageType(){
+   			if (!file_exists($this->path))
+   				throw new TCoreException(TCoreException::ERR_FILE_MISSING);	
+   			
    			if (!$this->imageType){
    				if (function_exists('exif_imagetype'))
    					$this->imageType = exif_imagetype($this->path);
@@ -125,8 +128,14 @@
 		}
    	
    		public function SaveAs($filename,$type,$width=null,$height=null){
+   			if (!file_exists($this->path))
+   				throw new TCoreException(TCoreException::ERR_FILE_MISSING,array('file'=>$this->path));
+   			if (!TFileSystem::IsAbsolute($filename))
+   				$filename = TApplication::FileStoragePath().'/'.$filename;		
    			if (file_exists($filename))
    				unlink($filename);
+   			TFileSystem::ForceDir(dirname($filename));
+   				
    			list($orig_width, $orig_height, $orig_type, $attr) = getimagesize($this->path);
    			if (!$width)
    				$width = $orig_width;

@@ -690,7 +690,7 @@ final class TMetaClassDataSource extends TDataSource {
 		}
 	}
 	
-	public function AttachField(TDataSourceField $fld){
+	public function AttachField(IDataSourceField $fld){
 		if (!(($fld instanceof TMetaClassDataSourceAttribute) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		if ($fld instanceof TAllField)

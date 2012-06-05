@@ -15,6 +15,7 @@
 TApplication::import("common::iterator");
 TApplication::import("common::data");
 TApplication::import("common::logic");
+TApplication::import("common::acid");
 
 /**
  * @package Common
@@ -937,7 +938,7 @@ interface IDBACLManager {
  * @property IDBACLManager $Acl
  * @property boolean $QueryDebug
  */
-interface IDBDriver {	
+interface IDBDriver extends ITransactionProvider {	
 	const AUTH_DEFAULT = 0;
 	const AUTH_IMPLICIT_ACL = 1;
 	const AUTH_EXPLICIT_ACL = 2;
@@ -957,18 +958,6 @@ interface IDBDriver {
  * disconnects from current database
  */		
 	public function DisConnect();
-/**
- * starts transaction
- */			
-	public function BeginTransaction();
-/**
- * commits transaction
- */		
-	public function CommitTransaction();
-/**
- * rollbacks transaction
- */		
-	public function RollbackTransaction();	
 
 /**
  * @param string $tablename

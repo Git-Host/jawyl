@@ -204,6 +204,7 @@
 				
 			$this->_relative_path_ = preg_replace('/\?.*$/','',str_ireplace($this->_root_,"",$this->_uri_));
 
+			parent::__construct('');	
 			if (self::$CompileAppConfig){
 				if (!is_dir($this->ConfCompileDir))
 					mkdir($this->ConfCompileDir);
@@ -221,7 +222,7 @@
 				 		if (filemtime($config_file) < filemtime($this->ConfigFile))
 				 			$this->_compile_config();
 				}
-			}	
+			}
 		}
 		
 		
@@ -251,9 +252,8 @@
 				$configXml->Load($this->ConfigFile);
 				if (!$configXml->schemaValidate(self::$SystemPath."/schemas/application.xsd"))
 					throw new TCoreException(TCoreException::ERR_APPCONF_INCORRECT);
-				parent::__construct($configXml->firstChild->getAttribute("name"));
-
 				$app_config = '<?php'."\n";
+				$app_config .= '$this->name = "'.$configXml->firstChild->getAttribute("name").'";';
 				$xpath = new DOMXPath($configXml);
 				$objid = 0;
 				self::_parse_contents($xpath,$configXml->firstChild,'$this',$app_config,$objid);
@@ -343,7 +343,7 @@
 		
 		public function AdjustPath($path){
 			$trimmed = trim($path);
-			if (preg_match('/^(https?:\/\/|\/|\w:\\\)[\w\d].*$/',$trimmed))
+			if (preg_match('/^(https?:\/\/|\/|[a-zA-Z]:\\\).*$/',$trimmed))
 				return $this->_canonical_path($trimmed);
 			return $this->_canonical_path($this->_app_path_."/".$trimmed);
 		}

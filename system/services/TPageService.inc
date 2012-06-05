@@ -39,6 +39,7 @@ class TPagePolicy extends TPolicy {
  * @property string $AjaxContentType ContentType that is used for response to ajax requests
  * @property string $ContentType the same as of TResponse, but when request is ajax returns value of $AjaxContentType property
  * @property IAjaxEngine $AjaxEngine component used foe ajax interactions
+ * @property IThemeEngine $ThemeEngine
  * @property boolean $IsExceptionThrown
  * @property Exception $Exception
  * @property boolean $BuiltinErrorHandling  
@@ -219,8 +220,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			TOutputBuffer::StartRecording();
 			
 		try {	
-			$result = parent::Handle($request);
 			$this->exception = null;
+			$result = parent::Handle($request);
 		} catch (Exception $e){
 			$this->exception = $e;
 			if ($this->BuiltinErrorHandling)
