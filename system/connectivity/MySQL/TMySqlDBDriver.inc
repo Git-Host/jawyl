@@ -81,7 +81,7 @@ class TMySqlDataSetProcessor {
 		$prefix = $this->getFieldPrefix($fld);
 		if ($prefix)
 			$prefix .= ".";
-		return $prefix.$this->getFieldName($fld).($forfetch?($fld->Alias?(" as ".$fld->Alias):""):""); 
+		return $prefix.'`'.$this->getFieldName($fld).'`'.($forfetch?($fld->Alias?(" as ".$fld->Alias):""):""); 
 	}
 	
 	protected final function parseOperand($operand){
@@ -99,6 +99,14 @@ class TMySqlDataSetProcessor {
 			$this->_param_counter_++;
 			return ":".$name;
 		}		
+	}
+	
+	private function _operands_to_array($operands,&$result){
+		foreach ($operands as $o)
+			if (is_array($o))
+				$this->_operands_to_array($o, $result);
+			else
+				$result[] = $this->parseOperand($o);	
 	}
 	
 	protected function parseOperation(TOperation $o){
@@ -214,9 +222,7 @@ class TMySqlDataSetProcessor {
 			} elseif ($oper == "in"){
 				$result = $this->parseOperand($o->Operands[0])." in (";
 				$temp = array();
-				$n = count($o->Operands);
-				for ($i = 1; $i < $n; $i++)
-					$temp[] = $this->parseOperand($o->Operands[$i]);
+				$this->_operands_to_array(array_slice($o->Operands,1), $temp);
 				return $result.join(",",$temp).")";
 			} else {
 				$arguments = array();
@@ -225,7 +231,7 @@ class TMySqlDataSetProcessor {
 			}
 
 			if ($type=="binar")
-				return join(" ".$oper." ",$arguments);
+				return '('.join(" ".$oper." ",$arguments).')';
 			else {
 				if ($oper == 'count' && empty($arguments))
 					$arguments[] = '*';
@@ -322,7 +328,6 @@ class TMySqlDataSetProcessor {
 			else if ($fld instanceof TOperation)
 				$this->_fields_[] = $this->parseOperation($fld); 
 					 
-		
 		foreach ($ds->Filter as $f)
 			$this->_where_[] = $this->parseOperation($f);
 			
@@ -465,6 +470,8 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	private $_query_debug_ = false;
 	
 	private $_json_ns_names_ = null;
+	
+	protected $_conf_debug_file_;
 
 	public function __set($nm,$value){
 		switch ($nm){
@@ -556,8 +563,13 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		}
 
 		if ($this->_query_debug_){
-			echo $q."<br/>";
-			return;
+			if ($this->_conf_debug_file_){
+				$filename = TApplication::$Application->AdjustPath($this->_conf_debug_file_);
+				$f = fopen($filename,'a');
+				$d = new TDate();			
+				fwrite($f,$d.':'.$q."\n");
+				fclose($f);
+			}
 		}
 		
 		$result = mysql_query($q,$this->connection);
@@ -803,9 +815,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	
 	public function InsertRecords(TTable $table,array $records, array $fields = array(),&$primary_key = null){
 		$this->_auto_connect();
-		$q1 = "insert ".$this->RealTableName($table->Name)." ";
-		if (count($fields))
+		$q1 = "insert into `".$this->RealTableName($table->Name)."` ";
+		if (!empty($fields)){
+			array_walk($fields,create_function('&$item','$item = "`".$item."`";'));
 			$q1 .= "(".join(",",$fields).") ";
+		}
 		array_walk($records,array(&$this,"_prepare_record"));
 		$oldid = $this->lastInsertId();
 		$this->BeginTransaction();

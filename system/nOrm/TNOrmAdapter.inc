@@ -1,5 +1,6 @@
 <?php
 TApplication::Import('common::orm');
+TApplication::Import('common::acid');
 
 class TClassOrmConfig {
 	private $_classname_;
@@ -504,7 +505,7 @@ class TNOrmObject implements INOrmObject {
  * @property IDBDriver $Driver
  */
 
-class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchyStorage {
+class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchyStorage, ITransactionProvider {
 	const CONF_SCRIPT = 0;
 	const CONF_XML = 1;
 	const CONF_PHPDOC = 2;
@@ -674,9 +675,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return new TTableField($name,null,$table);
 	}
 	
-	private function _filter_from_object($orm,$object,&$tables,$fieldtype = 1){
-		$filter = array();
-		foreach ($orm['properties'] as $prop=>$meta)
+	private function _form_filter_condition(array &$filter, $object, $prop, array $meta, array $tables, $fieldtype){
 			if (!is_null($object->$prop)){
 				switch ($meta['type']){
 					case 'reference':{
@@ -695,8 +694,45 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					}break;
 				}
 			}
+	}
+	
+	private function _filter_from_object($orm,$object,&$tables,$fieldtype = 1){
+		$filter = array();
+		foreach ($orm['keys'] as $prop)
+			$this->_form_filter_condition($filter, $object, $prop, $orm['properties'][$prop], $tables, $fieldtype);
+			
+		if (count($filter) == count($orm['keys']))
+			return $filter;	
+		
+		foreach ($orm['properties'] as $prop=>$meta)
+			if (!in_array($prop,$orm['keys']))
+				$this->_form_filter_condition($filter, $object, $prop, $meta, $tables, $fieldtype);
+				
 		return $filter;
 	}
+	
+/**
+ * starts transaction
+ * @return bool
+ */			
+	public function BeginTransaction(){
+		return $this->_ioc_driver_->BeginTransaction();
+	}
+/**
+ * commits transaction
+ * @return bool
+ */		
+	public function CommitTransaction(){
+		return $this->_ioc_driver_->CommitTransaction();
+	}
+/**
+ * rollbacks transaction
+ * @return bool
+ */		
+	public function RollbackTransaction(){
+		return $this->_ioc_driver_->RollbackTransaction();
+	}	
+	
 	
 /**
  * Fills an object with missing data
@@ -714,7 +750,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$ds->Join = $join;
 			$result = $this->_ioc_driver_->FetchRecords($ds);
 			foreach ($result as $item){
-				return $this->Create($item,$object);
+				return $this->Create($item,$object,$assume_descendants);
 			}
 		}
 		return null;
@@ -863,8 +899,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	public function Delete($object){
 		if ($orm = $this->_get_orm_config($object)){
 			$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
-			if ($emptyid)
+			if ($emptyid){
 				throw new TNOrmException(TNOrmException::ERR_MISSING_KEY);
+			}
 		
 /* 
  * @todo Probably implement removing object from loaded objects
@@ -1028,11 +1065,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			
-			if (is_object($dummy))
+			if (is_object($dummy)){
 				$filter = $this->_filter_from_object($orm, $dummy, $tables);
+			}
 								
 			$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
-				
+			
 			$ds->Filter = $filter;
 			$ds->Join = $join;
 						
@@ -1050,8 +1088,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$ds->Fields = $fields;
 			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
 			$ds->Offset = $offset;
-			$ds->Count = $count;
-						
+			$ds->Count = $count;			
 			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants);
 		}
 		return false;
@@ -1245,22 +1282,25 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		if (is_array($row))
 			$row = (object)$row;
 		if ($orm = $this->_get_orm_config($dummy)){
-			if (!is_object($dummy)){
-				$cn = $orm['classname'];
-				foreach ($assumed_classes as $c=>$keyfields){
-					$isit = true;
-					foreach ($keyfields as $kf){
-						$kf = strtolower($c.'_'.$kf);
-						if (!isset($row->$kf))
-							$isit = false;
-					}
-					if ($isit){
-						$cn = $c;
-						break;
-					}
+			$cn = $orm['classname'];
+			foreach ($assumed_classes as $c=>$keyfields){
+				$isit = true;
+				foreach ($keyfields as $kf){
+					$kf = strtolower($c.'_'.$kf);
+					if (!isset($row->$kf))
+						$isit = false;
 				}
-				$dummy = new $cn();
+				if ($isit){
+					$cn = $c;
+					break;
+				}
 			}
+			if ($cn != $orm['classname']){
+				$orm = $this->_get_orm_config($cn);
+				if (!$orm)
+					throw TCoreException(TCoreException::ERR_BAD_VALUE); 
+			}	
+			$dummy = new $cn();
 	
 			foreach ($orm['keys'] as $key)
 				$this->_assign_property($dummy, $key, $orm['properties'][$key], $row, $assumed_classes);
@@ -1271,11 +1311,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$parentprop = $orm['nestedsets']['parent'];
 				$dummy->$parentprop = new TNOrmBranchLoader($dummy,$this);
 			}		
-		
-			foreach ($orm['properties'] as $name=>$prop)
+			
+			foreach ($orm['properties'] as $name=>$prop){
 				if (!in_array($name,$orm['keys']))
 					$this->_assign_property($dummy, $name, $prop, $row, $assumed_classes);
-					
+			}		
 			return $dummy;
 		}
 		return null;

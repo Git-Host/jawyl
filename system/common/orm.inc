@@ -56,6 +56,7 @@ class TOrmCondition {
  * @author dkrasilnikov@gmail.com
  * @property bool $Nullable
  * @property bool $ReadOnly
+ * @property bool $Required
  * @property int $Type
  */
 class TOrmPropertyMeta extends TPropertyMeta {
@@ -64,6 +65,7 @@ class TOrmPropertyMeta extends TPropertyMeta {
 			case 'Nullable':$this->nullable = $value;break;
 			case 'ReadOnly':$this->readonly = $value;break;
 			case 'Type':$this->type = new TItemPropertyType($value);break;
+			case 'Required':$this->required = $value;break;
 		}
 	}
 }

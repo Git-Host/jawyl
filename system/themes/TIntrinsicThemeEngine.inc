@@ -267,7 +267,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$filters = explode('<', $matches[1]);
 		$result .= $this->_compile_filters_open($filters);
 		$val = trim($matches[2]); 
-		$result .= $this->_compile_expression($val,true); 
+		$result .= $this->_compile_expression($val,false); 
 		$result .= $this->_compile_filters_close($filters);
 		return $result.'; ?>';
 	}
@@ -297,14 +297,14 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$this->_cycle_counter_++;
 		$result = '<?php $this->_global_vars_["iterlevel"] = (!isset($this->_global_vars_["iterlevel"]))?0:$this->_global_vars_["iterlevel"]+1; $cyclebase'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[1]).'; if (is_array($cyclebase'.$this->_cycle_counter_.')) $cyclebase'.$this->_cycle_counter_.' = new TArrayIterator($cyclebase'.$this->_cycle_counter_.'); $cyclecounter'.$this->_cycle_counter_.' = 0; foreach ($cyclebase'.$this->_cycle_counter_.' as ';
 		if (count($matches) == 4)
-			return $result.'$'.$matches[2].'=>$'.$matches[3].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[3].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].';$this->_global_vars_[\''.$matches[3].'\'] = $'.$matches[3].'; ?>';
-		return $result.'$'.$matches[2].'){  $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[2].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].'; ?>';
+			return $result.'$'.$matches[2].'=>$'.$matches[3].'){ $cyclecounter'.$this->_cycle_counter_.'++;$this->_global_vars_["counter"] = $cyclecounter'.$this->_cycle_counter_.'; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[3].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].';$this->_global_vars_[\''.$matches[3].'\'] = $'.$matches[3].'; ?>';
+		return $result.'$'.$matches[2].'){ $cyclecounter'.$this->_cycle_counter_.'++;$this->_global_vars_["counter"] = $cyclecounter'.$this->_cycle_counter_.'; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($'.$matches[2].'); $this->_global_vars_[\''.$matches[2].'\'] = $'.$matches[2].'; ?>';
 	}
 	
 	private function _counter_iter_compile($matches){
 		$this->_cycle_counter_++;
-		$result = '<?php $this->_global_vars_["iterlevel"] = (!isset($this->_global_vars_["iterlevel"]))?0:$this->_global_vars_["iterlevel"]+1; $cyclecounter'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[1]).';$cyclebound'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[2]).'; while ($cyclecounter'.$this->_cycle_counter_.' <= $cyclebound'.$this->_cycle_counter_.'){';
-		return $result.' $cyclecounter'.$this->_cycle_counter_.'++; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($cyclecounter'.$this->_cycle_counter_.'); ?>';
+		$result = '<?php $this->_global_vars_["iterlevel"] = (!isset($this->_global_vars_["iterlevel"]))?0:$this->_global_vars_["iterlevel"]+1; $cyclecounter'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[1],true).' - 1;$cyclebound'.$this->_cycle_counter_.' = '.$this->_compile_expression($matches[2],true).'; while ($cyclecounter'.$this->_cycle_counter_.' + 1 <= $cyclebound'.$this->_cycle_counter_.'){$cyclecounter'.$this->_cycle_counter_.'++;';
+		return $result.' $this->_global_vars_["counter"] = $cyclecounter'.$this->_cycle_counter_.'; $this->_cycleodd_ = ($cyclecounter'.$this->_cycle_counter_.' % 2 <> 0)?true:false; $this->pushContext($this->currentContext()); ?>';
 	}
 	
 	protected function preCompile($text){
