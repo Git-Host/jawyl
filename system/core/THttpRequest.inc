@@ -67,7 +67,7 @@
 			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
 	
 			foreach ($_FILES as $key=>$file)
-				if ($file){
+				if ($file && ($file['error'] == 0)){
 					$this->_file_parameters_[$key] = new TUploadedFile($file);
 					$orig[$key] = $file["name"];
 				}
