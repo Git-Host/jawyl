@@ -314,11 +314,11 @@
 		
 		private static function _check_path(&$path){
 				$filename = null;
-				if (is_file($path.".inc"))
+				if (file_exists($path.".inc"))
 					$filename = $path.".inc";
-				else if (is_file($path.".php"))
+				else if (file_exists($path.".php"))
 					$filename = $path.".php";
-				else if (is_dir($path))
+				else if (is_dir($path) && file_exists($path))
 					$filename = $path;
 				if (!is_null($filename)) $path = $filename;
 				return !is_null($filename);
@@ -413,7 +413,7 @@
 			if (class_exists($classname))
 				return new ReflectionClass($classname);
 			if (!key_exists($classname,self::$_classes_))
-				self::import($classname);
+				self::Import($classname);
 			if (!key_exists($classname,self::$_classes_))
 				return $result;
 			$result = new ReflectionClass(self::$_classes_[$classname]);
