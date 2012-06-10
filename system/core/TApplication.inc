@@ -549,6 +549,8 @@
 			
 			$pth = str_ireplace($dr,"",$rp);	
 			$pth = str_replace("|","/",$pth);
+			if (!$pth || $pth[0] != '/')
+				$pth = '/'.$pth;
 			$url = "";
 			if ($this->Sef){
 				$notapplied = array();
@@ -567,7 +569,7 @@
 			$url = $pth;
 			
 			if ((!is_null($service)) || (count(array_values($parameters)) > 0))
-				$url .= "/?";
+				$url .= "?";
 			if (!is_null($service))
 				$url .= "service=".urlencode($service);
 				
