@@ -9,7 +9,7 @@
 	</xsd:group>
 	
 	<xsd:complexType name="t_item">
-		<xsd:attribute name="check_access" type="xsd:boolean" use="optional" />
+		<xsd:attribute name="forceAccess" type="xsd:boolean" use="optional" default="false" />
 	</xsd:complexType>
 	
 

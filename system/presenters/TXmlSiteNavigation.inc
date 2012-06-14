@@ -23,13 +23,6 @@ TApplication::import("presenters::TXmlMenuSource");
  * class of navigation link
  */
 class TXmlStrictLinkMenuItem extends TXmlLinkMenuItem  {
-	protected function createSubItem(DOMNode $node, DOMXPath $xpath){
-			switch ($node->tagName){
-				case "link":return new TXmlStrictLinkMenuItem($node,$xpath,$this);break;
-				default:return parent::createSubItem($node, $xpath);break;
-			} 
-	}	
-	
 	public function Url(){
 		$page = $this->node->getAttribute("page");
 		if ($page)
@@ -86,14 +79,18 @@ class TXmlSiteNavigation extends TXmlMenuSource {
     	        $xpath = new DOMXPath($dom);
 				$links = $xpath->query("/root/link|group");
 				foreach ($links as $link)
-					switch ($link->tagName){
-					case "link":$result[] = new TXmlStrictLinkMenuItem($link,$xpath,$this);break;
-					case "group":$result[] = new TXmlGroupMenuItem($link,$xpath,$this);break;
-				} 
+					$result[] = $this->CreateItem($link, $xpath); 
 				//}            		
 			}	
 		}
 		return $result;
+	}	
+	
+	public function CreateItem(DOMNode $node, DOMXPath $xpath){
+		switch ($node->tagName){
+			case "link":return new TXmlStrictLinkMenuItem($node,$xpath,$this);break;
+			default:return parent::CreateItem($node, $xpath);
+		} 
 	}
 }
 ?>
