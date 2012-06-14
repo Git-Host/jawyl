@@ -59,6 +59,7 @@ class TIntrinsicPage extends TPage {
 				$result .= $compiled_container.'->'.$node->getAttribute("name").' = "'.addcslashes($node->nodeValue,'"').'";'."\n";
 		}
 		else {
+			$result .= " if (\$loadcomponents) {\n";
 			$extension = false;
 			
 			if (isset($classes[$node->getAttribute("name")])){
@@ -115,6 +116,7 @@ class TIntrinsicPage extends TPage {
 			if ($node->getAttribute("membername"))
 				$result .= $compiled_container.'->'.$node->getAttribute("membername").' = '.$varname.';'."\n";
 			self::_compile_elements($node,$classes[$node->getAttribute("name")][2],$varname,$xpath,$result,$counter,$classes);
+			$result .= " }\n";
 		}
 	}
  	
@@ -228,6 +230,7 @@ class TIntrinsicPage extends TPage {
 	public function __construct($path, $filename, TIntrinsicPageService $service){
 		if (!$path) $path = 'default';		
 		parent::__construct($service,$path);
+		$loadcomponents = is_null($service->CurrentPage()); 
 		include $filename;
 	}
 	
@@ -414,9 +417,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		parent::handleRequest($request); 
 	}
 	
-	public function Url($page,$controller = null,$method = null, array $parameters = array()){
-		if (is_null($page))
-			$page = $this->page->Name();
+	protected function formAppUrlParameters($page,$controller = null,$method = null,array $parameters = array()){
 		if (TConvertions::ConvertToBoolean(TApplication::$Application->sef)){
 			$path = $page;
 			if ($controller)
@@ -430,14 +431,9 @@ abstract class TIntrinsicPageService extends TPageService {
 				else if (is_numeric($key))
 					$path .= "/".$value;
 			}
-			$parameters = array("path"=>$path);
-			$parameters = array_merge($parameters,$params);
-		} else {	
-			$parameters["page"] = $page;
-			if (!is_null($controller)) $parameters["controller"] = $controller;
-			if (!is_null($method)) $parameters["method"] = $method;
+			return array("path"=>$path) + $params;
 		}
-		return TApplication::Url($this->name,$parameters);
+		return parent::formAppUrlParameters($page, $controller, $method, $parameters); 
 	}	
 }
 ?>

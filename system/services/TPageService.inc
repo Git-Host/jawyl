@@ -332,6 +332,13 @@ abstract class TPageService extends TService {
  * @return TPage  
  */	
 	protected abstract function getAccessDeniedPage();
+	
+	protected function formAppUrlParameters($page,$controller = null,$method = null,array $parameters = array()){
+		$temp["page"] = $page;
+		if (!is_null($controller)) $temp["controller"] = $controller;
+		if (!is_null($method)) $temp["method"] = $method;
+		return $temp + $parameters;
+	}
 		
 /**
  * gets an url to specified page
@@ -342,13 +349,16 @@ abstract class TPageService extends TService {
  * @return string 
  * @see TApplication::Url()
  */	
-	public function Url($page,$controller = null,$method = null, array $parameters = array()){
+	public final function Url($page,$controller = null,$method = null, array $parameters = array()){
+		$pg = null; 
 		if (is_null($page))
-			$page = $this->page->Name();
-		$parameters["page"] = $page;
-		if (!is_null($controller)) $parameters["controller"] = $controller;
-		if (!is_null($method)) $parameters["method"] = $method;
-		return TApplication::Url($this->name,$parameters);
+			$this->page->Name();
+		if ($page != $this->page->Name()) { 
+			if (!$this->_check_page_access($page))
+				return null;
+		}	
+		
+		return TApplication::Url($this->name,$this->formAppUrlParameters($page, $controller, $method, $parameters));
 	}
 	
 	public function RedirectToNotFound(){
@@ -359,17 +369,22 @@ abstract class TPageService extends TService {
 		TApplication::Redirect($this->Url($this->getAccessDeniedPage()->Name()));
 	}
 	
+	private function _check_page_access($page){
+		$policy = $this->Policy();
+		$acl = $this->ACL();
+		if (!($page instanceof TPage))		
+			$page = $this->getPage($page); 
+		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker && $page instanceof TPage)
+			return $policy->CheckPolicy($acl->CurrentUser(),new TPagePolicy(TPagePolicy::PAGE_ACCESS,$page));
+		return true;
+	}
 	
 /**
  * checks access to current page
  * @return boolean
  */	
 	protected function checkAccess(){
-		$policy = $this->Policy();
-		$acl = $this->ACL();		
-		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker)
-			return $policy->CheckPolicy($acl->CurrentUser(),new TPagePolicy(TPagePolicy::PAGE_ACCESS,$this->page));
-		return false;
+		return $this->_check_page_access($this->page);
 	}
 	
 	protected function checkRequest(TRequest $request){
@@ -391,12 +406,13 @@ abstract class TPageService extends TService {
 				header('HTTP/1.0 404 Page not found!',true,404);
 				die;	
 			}
-		} else if (!$this->checkAccess())
+		} else if (!$this->checkAccess()){
+			$this->page = null;
 			$this->page = $this->getAccessDeniedPage();
+		}
 		if (!($this->page instanceof TPage))
 			return false;	
-		$result = $this->page->Handle($this->Request);	
-		return $result;
+		return $this->page->Handle($this->Request);	
 	}
 	
 	public function CurrentPage(){

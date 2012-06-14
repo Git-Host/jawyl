@@ -42,15 +42,7 @@ class TXmlMenuItem implements IParent {
 		$this->_source_ = $source;
 		$links = $xpath->query("link|group|action",$this->node);	
 		foreach ($links as $link)
-			$this->sublinks[] = $this->createSubItem($link, $xpath);
-	}
-	
-	protected function createSubItem(DOMNode $node, DOMXPath $xpath){
-			switch ($node->tagName){
-				case "link":return new TXmlLinkMenuItem($node,$xpath,$this->_source_);break;
-				case "group":return new TXmlGroupMenuItem($node,$xpath,$this->_source_);break;
-				case "action":return TConfigurable::Instance($node->getAttribute("name"));break;
-			} 
+			$this->sublinks[] = $this->_source_->CreateItem($link, $xpath);
 	}
 	
 	public function Children(){
@@ -58,9 +50,9 @@ class TXmlMenuItem implements IParent {
 	}
 
 	public function Available(){
-		if (TConvertions::ConvertToBoolean($this->node->getAttribute("check_access")))
-			return $this->_source_->ItemAvailable($this);
-		return true;
+		if (TConvertions::ConvertToBoolean($this->node->getAttribute("forceAccess")))
+			return true;
+		return $this->_source_->ItemAvailable($this);
 	}	
 }
 
@@ -90,7 +82,7 @@ class TXmlLinkMenuItem extends TXmlMenuItem implements ILink, ISecurityObject {
 	}
 	
 	public function Url(){
-		return $this->node->getAttribute("url");
+		return $this->node->getAttribute("url")?$this->node->getAttribute("url"):null;
 	}
 	
 /**
@@ -122,6 +114,12 @@ class TXmlGroupMenuItem extends TXmlMenuItem {
 	public function __toString(){
 		return $this->node->getAttribute("title");
 	}
+	
+	public function Available(){
+		foreach ($this->sublinks as $lnk)
+			if ($lnk->Available()) return true; 
+		return false;
+	}
 }
 
 /**
@@ -150,7 +148,17 @@ class TXmlMenuSource extends TPresenter implements IMenuStructure, IActionsList 
 	}
 	
 	public function ItemAvailable(TXmlMenuItem $link){
+		if ($link instanceof TXmlLinkMenuItem)
+			return !is_null($link->Url());
 		return true;
+	}
+	
+	public function CreateItem(DOMNode $node, DOMXPath $xpath){
+		switch ($node->tagName){
+			case "link":return new TXmlLinkMenuItem($node,$xpath,$this);break;
+			case "group":return new TXmlGroupMenuItem($node,$xpath,$this);break;
+			case "action":return TConfigurable::Instance($node->getAttribute("name"));break;
+		} 
 	}
 	
 /**
@@ -162,11 +170,7 @@ class TXmlMenuSource extends TPresenter implements IMenuStructure, IActionsList 
     		$xpath = new DOMXPath($this->_dom_);
 			$links = $xpath->query("link|group|action");
 			foreach ($links as $link)
-				switch ($link->tagName){
-					case "link":$result[] = new TXmlLinkMenuItem($link,$xpath,$this);break;
-					case "group":$result[] = new TXmlGroupMenuItem($link,$xpath,$this);break;
-					case "action":$result[] = TConfigurable::Instance($link->getAttribute("name"));break;
-				} 
+				$result[] = $this->CreateItem($link, $xpath);
 		}
 		return $result;
 	}

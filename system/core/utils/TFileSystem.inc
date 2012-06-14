@@ -2,8 +2,7 @@
 class TFileSystem {
 	public static function ForceDir($dir){
 		if (!file_exists($dir)){
-			self::ForceDir(dirname($dir));
-			mkdir($dir);	
+			mkdir($dir,0777,true);	
 		}
 	}
 	
