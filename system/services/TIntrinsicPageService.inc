@@ -27,6 +27,8 @@ TApplication::import("core::utils::TConvertions");
 class TIntrinsicPage extends TPage {
 	protected $caching;	
 	protected $itemData = array();
+	private $_config_file_;
+	private $_lazy_load_ = false;
 	
 /**
  * gets xml dom of page element specified by name
@@ -37,6 +39,15 @@ class TIntrinsicPage extends TPage {
 			if ($this->itemData[$name] instanceof DOMDocument)
 				return $this->itemData[$name];
 		return null;
+	}
+	
+	public function __get($nm){
+		if ($this->_lazy_load_){
+			$this->_lazy_load_ = false;
+			$loadcomponents = true;  
+			include $this->_config_file_;
+		}
+		return parent::__get($nm);
 	}
 
 	private static function _compile_page_element_settings(DOMNode $node, DOMXPath $xpath){
@@ -230,10 +241,12 @@ class TIntrinsicPage extends TPage {
 	public function __construct($path, $filename, TIntrinsicPageService $service){
 		if (!$path) $path = 'default';		
 		parent::__construct($service,$path);
-		$loadcomponents = is_null($service->CurrentPage()); 
+		$loadcomponents = is_null($service->CurrentPage());
+		$this->_lazy_load_ = !$loadcomponents;
+		$this->_config_file_ = $filename;  
 		include $filename;
 	}
-	
+		
 /**
  * gest page cache life time
  * @return int
