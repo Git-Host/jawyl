@@ -261,13 +261,17 @@ class TNOrmIterator extends TIteratorAdapter {
  * @var TNOrmAdapter
  */	
 	private $_adapter_;
+
+	private $_assumed_descendants_ = array();
 	
 	private $_assumed_classes_ = array();
 	
-	public function __construct(IIterator $base, $classname, $adapter, array $assumed_classes = array()){
+	public function __construct(IIterator $base, $classname, $adapter, array $assumed_descendants = array(), array $assumed_classes = array()){
 		parent::__construct($base);
 		$this->_classname_ = $classname;
 		$this->_adapter_ = $adapter;
+		if (!empty($assumed_descendants))
+			$this->_assumed_descendants_ = $assumed_descendant;
 		if (!empty($assumed_classes))
 			$this->_assumed_classes_ = $assumed_classes;
 	}
@@ -275,7 +279,7 @@ class TNOrmIterator extends TIteratorAdapter {
 	public function Item() {
 		$row = parent::Item();
 		if (!is_null($row))
-			return $this->_adapter_->Create(parent::Item(), $this->_classname_, $this->_assumed_classes_);
+			return $this->_adapter_->Create(parent::Item(), $this->_classname_, $this->_assumed_descendants_, $this->_assumed_classes_);
 		return null;
 	}
 }
@@ -416,8 +420,8 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 	protected $sorting;
 	private $_mtm_ref_prop_;
 	
-	public function __construct(&$row, &$meta, TNOrmAdapter $adapter){
-		parent::__construct($row, $meta, $adapter);
+	public function __construct(&$row, &$meta, TNOrmAdapter $adapter, array $assume_descendants = array()){
+		parent::__construct($row, $meta, $adapter,$assume_descendants);
 		$this->sorting = array();
 		foreach ($meta['sorting'] as $prop=>$type)
 			$this->sorting[] = new TOrmSorting($prop,new TSortingType($type));
@@ -432,7 +436,7 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 	}
 	
 	protected function load(){
-		$this->value = $this->adapter->Fetch($this->dummy,array(),$this->sorting,$this->assumeDescendants);
+		$this->value = $this->adapter->Fetch($this->dummy,array(),array(),$this->sorting,$this->assumeDescendants);
 		if ($this->_mtm_ref_prop_)
 			$this->value = new TNOrmMtmCollectionIterator($this->value,$this->_mtm_ref_prop_);
 	}
@@ -744,13 +748,14 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();
+			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields,$assume_descendants);
 			$ds->Fields = $fields;
 			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
 			$ds->Join = $join;
 			$result = $this->_ioc_driver_->FetchRecords($ds);
 			foreach ($result as $item){
-				return $this->Create($item,$object,$assume_descendants);
+				return $this->Create($item,$object,$assume_descendants,$assume_classes);
 			}
 		}
 		return null;
@@ -943,7 +948,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();
-		
+			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			$ds->Filter = $this->_filter_from_object($orm, $object, $tables, 2);
 			$ds->Direction = TNestedSets::DIR_UP;
@@ -954,7 +959,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$parentprop = $orm['nestedsets']['parent'];
 			$item = false;
 			foreach ($ns as $nse){
-				$item = $this->Create($nse,$orm['classname']);
+				$item = $this->Create($nse,$orm['classname'],$assume_descendants,$assume_classes);
 				if (isset($p))
 					$item->$parentprop = $p;
 				else 
@@ -1056,13 +1061,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param int $count
  */	
 	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){
-		if ($orm = $this->_get_orm_config($dummy)){
+		if ($orm = $this->_get_orm_config($dummy)){			
 			$join = array(); 
 			$tables = array();
 			$fields = array();	
 			
 			$break = !empty($assume_descendants);
-			
+			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			
 			if (is_object($dummy)){
@@ -1088,8 +1093,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$ds->Fields = $fields;
 			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
 			$ds->Offset = $offset;
-			$ds->Count = $count;			
-			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants);
+			$ds->Count = $count;	
+			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants,$assume_classes);
 		}
 		return false;
 	} 
@@ -1145,7 +1150,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				if ($assign)
 					$dummy->$property = new TNOrmObjectLoader($row,$meta,$this,$assume_descendants);
 			}break;
-			case 'collection': if (!isset($dummy->$property)) $dummy->$property = new TNOrmCollectionLoader($row,$meta,$this,$assume_descendants);break;
+			case 'collection':{
+				if (!isset($dummy->$property)) 
+					$dummy->$property = new TNOrmCollectionLoader($row,$meta,$this,$assume_descendants);	
+			}break;
 		}
 	}
 
@@ -1214,7 +1222,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();
-		
+			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			if (is_object($dummy))
 				$filter = $this->_filter_from_object($orm, $dummy, $tables, 2);
@@ -1230,20 +1238,20 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			if ($direct){
 				$ds->Depth = 0;
 				$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
-				return new TNOrmIterator($this->_ioc_driver_->NestedSetFetch($ds), $orm['classname'], $this, $assume_descendants);
+				return new TNOrmIterator($this->_ioc_driver_->NestedSetFetch($ds), $orm['classname'], $this, $assume_descendants,$assume_classes);
 			} 
 			$ns = $this->_ioc_driver_->NestedSetFetch($ds);
 			$result = array();
 			$items = array();
 			$childprop = $orm['nestedsets']['children'];
 			foreach ($ns as $nse){
-				$item = $this->Create($nse,$orm['classname'],$assume_descendants);
+				$item = $this->Create($nse,$orm['classname'],$assume_descendants,$assume_classes);
 				$item->$childprop = array();
 				$items[join('|',$this->_entity_keys($item, $orm, $remptyid))] = $item;
 				if (is_null($nse->NestingParent())){
 					$result[] = $item;
 				} else {
-					$p = $this->Create($nse->NestingParent(), $orm['classname']);
+					$p = $this->Create($nse->NestingParent(), $orm['classname'],$assume_descendants,$assume_classes);
 					$p = $items[join('|',$this->_entity_keys($p,$orm, $remptyid))];					
 					array_push($p->$childprop,$item); 
 				}
@@ -1278,12 +1286,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param mixed $row
  * @param object|string $dummy
  */	
-	public function Create($row,$dummy, array $assumed_classes = array()){
+	public function Create($row,$dummy, array $assumed_descendants = array(), array $assumed_classes = array()){
 		if (is_array($row))
 			$row = (object)$row;
 		if ($orm = $this->_get_orm_config($dummy)){
 			$cn = $orm['classname'];
-			foreach ($assumed_classes as $c=>$keyfields){
+			foreach ($assumed_descendants as $c=>$keyfields){
 				$isit = true;
 				foreach ($keyfields as $kf){
 					$kf = strtolower($c.'_'.$kf);
@@ -1309,7 +1317,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 
 			if (!empty($orm['nestedsets'])){
 				$parentprop = $orm['nestedsets']['parent'];
-				$dummy->$parentprop = new TNOrmBranchLoader($dummy,$this);
+				$dummy->$parentprop = new TNOrmBranchLoader($dummy,$this,$assumed_classes);
 			}		
 			
 			foreach ($orm['properties'] as $name=>$prop){
