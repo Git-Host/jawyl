@@ -1037,15 +1037,17 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private function _form_sorting($orm,$tables,$sorting){
 		$sort = array();
 		foreach ($sorting as $s){
-			if (isset($orm['properties'][$s->Attribute]))
+			if ($s->Type == TSortingType::SORT_SHUFFLE)
+				$sort[] = new TSorting(new TTableField(''),$s->Type);	
+			else if (isset($orm['properties'][$s->Attribute]))
 				switch ($orm['properties'][$s->Attribute]['type']){
 					case 'collection':break;
 					case 'reference':{
 						foreach ($orm['properties'][$s->Attribute]['fields'] as $field){
-							$sort[] = new TSorting(($s->Type == TSortingType::SORT_SHUFFLE)?new TTableField(''):$this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0), $s->Type);
+							$sort[] = new TSorting($this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0), $s->Type);
 						}
 					}break;
-					default:$sort[] = new TSorting(($s->Type == TSortingType::SORT_SHUFFLE)?new TTableField(''):$this->_create_field($orm['properties'][$s->Attribute]['field']['name'], $tables[$orm['properties'][$s->Attribute]['field']['table']], ($tables[$orm['properties'][$s->Attribute]['field']['table']] instanceof TNestedSets)?1:0), $s->Type);break;	
+					default:$sort[] = new TSorting($this->_create_field($orm['properties'][$s->Attribute]['field']['name'], $tables[$orm['properties'][$s->Attribute]['field']['table']], ($tables[$orm['properties'][$s->Attribute]['field']['table']] instanceof TNestedSets)?1:0), $s->Type);break;	
 				}
 		}
 		return $sort;
