@@ -480,7 +480,11 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		switch ($nm){
 			case "TemplateDir":return $this->ThemeDir().'/templates';break;
 			case "CompileDir":return $this->ThemeDir().'/compile';break;
-			default:return parent::__get($nm);break;
+			default:{
+				if (isset($this->_global_vars_[$nm]))
+					return $this->_global_vars_[$nm];
+				return parent::__get($nm);
+			}break;
 		}
 	}
 	

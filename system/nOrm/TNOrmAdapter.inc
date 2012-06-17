@@ -271,7 +271,7 @@ class TNOrmIterator extends TIteratorAdapter {
 		$this->_classname_ = $classname;
 		$this->_adapter_ = $adapter;
 		if (!empty($assumed_descendants))
-			$this->_assumed_descendants_ = $assumed_descendant;
+			$this->_assumed_descendants_ = $assumed_descendants;
 		if (!empty($assumed_classes))
 			$this->_assumed_classes_ = $assumed_classes;
 	}
@@ -1081,8 +1081,19 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						
 			if (!is_null($total)){
 				$cds = clone $ds;
-				$cds->ForceUniqueness = false;
-				$cds->Fields = new TExpressionField('cnt', new TOperation(TOperationType::O_COUNT, array()));
+				$cfields = array(); 
+				foreach ($orm['keys'] as $keyprop)
+					if (isset($orm['properties'][$keyprop])){
+						switch ($orm['properties'][$keyprop]['type']){
+							case 'scalar':$cfields[] = $this->_create_field($orm['properties'][$keyprop]['field']['name'], $orm['properties'][$keyprop]['field']['table'], 0);break;
+							case 'reference':{
+								foreach ($orm['properties'][$keyprop]['fields'] as $cfld)
+									$cfields[] = $this->_create_field($cfld['name'], $cfld['table'], 0);break;
+							}break;
+						}
+					}
+				$cds->Fields = $cfields;
+				$cds = new TDataSet(new TDataSet($cds,'cnt_base'),null,array(new TExpressionField('cnt', new TOperation(TOperationType::O_COUNT, array()))));
 				$cntr = $this->_ioc_driver_->FetchRecords($cds);
 				foreach ($cntr as $cnt){
 					$total = $cnt['cnt'];
