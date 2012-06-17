@@ -321,7 +321,7 @@ class TMySqlDataSetProcessor {
 		return $result;
 	}
 	
-	private function _parse(TDataSource $ds, $root, array $joinconditions){			
+	private function _parse(TDataSource $ds, $root, array $joinconditions = array()){			
 		foreach ($ds->Fields as $fld)
 			if ($fld instanceof IDataSourceField)
 				$this->_fields_[] = $this->parseField($fld,true);
@@ -340,14 +340,13 @@ class TMySqlDataSetProcessor {
 			
 		if (($ds instanceof TDataSet) && $root){
 			foreach ($ds->Sources as $s)
-				$this->_parse($s,$false);
+				$this->_parse($s,false);
 		} else {
 			$from = $this->_parse_ds($ds,$joinconditions);
 			foreach ($ds->Join as $j)
 				$from .= $this->_parse_join($j);
-		}
-
-		$this->_from_[] = $from;	
+			$this->_from_[] = $from;	
+		}	
 	}
 	
 	public function __construct(TDataSource $dataset, TMySqlDBDriver $driver, $paramprefix = TMySqlDataSetProcessor::PARAM_PREFIX){
