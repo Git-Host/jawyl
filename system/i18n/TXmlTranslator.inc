@@ -30,7 +30,7 @@
 		protected function domain_search($domain,$text,$plural = null){
 			if (key_exists($domain,$this->domains)){
 				$xpath = new DOMXPath($this->domains[$domain]);
-				$msg = $xpath->query("/domain/msg[@id='".$text."']");
+				$msg = $xpath->query("/domain/msg[@id='".htmlentities($text,ENT_QUOTES,'UTF-8')."']");
 				if ($msg->length > 0){
 					$count = $plural;
 					if (is_null($count)) $count = 1;

@@ -236,14 +236,14 @@ class TClassOrmConfig {
 					foreach ($data['fields'] as $field){
 						$temp2[] = 'array("name"=>"'.$field['name'].'","table"=>"'.$field['table'].'","property"=>"'.$field['property'].'")';
 					}
-					$pt .= join(',',$temp2).')'; 
+					$pt .= join(',',$temp2).')';
 					if ($data['type'] == 'collection'){
 						$pt .= ',"sorting"=>array(';
 						$temp2 = array();
 						foreach ($data['sorting'] as $sort){
 							$temp2[] = 'array("property"=>"'.$sort['property'].'","type"=>"'.$sort['type'].'")';
 						}
-						$pt .= ')';
+						$pt .= join(',',$temp2).')';
 					}
 				}break;
 			}
@@ -423,8 +423,9 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 	public function __construct(&$row, &$meta, TNOrmAdapter $adapter, array $assume_descendants = array()){
 		parent::__construct($row, $meta, $adapter,$assume_descendants);
 		$this->sorting = array();
-		foreach ($meta['sorting'] as $prop=>$type)
-			$this->sorting[] = new TOrmSorting($prop,new TSortingType($type));
+		foreach ($meta['sorting'] as $sort){
+			$this->sorting[] = new TOrmSorting($sort['property'],new TSortingType($sort['type']));
+		}
 	}
 	
 	protected function createDummy($meta){
