@@ -390,7 +390,7 @@ class TMySqlDataSetProcessor {
 	}
 	
 	public function DeleteQuery(){
-		$result = "delete ".$this->Targets." from ".$this->From;
+		$result = "delete `".$this->Targets."` from ".$this->From;
 		if ($this->Where)
 			$result .= " where ".$this->Where;
 		return $result;		
