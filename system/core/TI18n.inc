@@ -68,7 +68,7 @@
 /**
  * format datetime according to current application locale
  *
- * @param int $timestamp
+ * @param int|TDate $timestamp
  * @return string
  */
 	function _dt($timestamp){
@@ -78,7 +78,7 @@
 /**
  * format datetime according to current application locale and send it ot output
  *
- * @param int $timestamp
+ * @param int|TDate $timestamp
  * * @uses _dt
  */
 	function __dt($timestamp){echo _dt($timestamp);}
@@ -180,13 +180,13 @@
 		public function FormatDate($date);
 /**
  * formats time according to locale time format
- * @param int $timestamp datetime value
+ * @param int|TDate $timestamp datetime value
  * @return string 
  */		
 		public function FormatTime($timestamp);
 /**
  * formats datetime according to locale datetime format
- * @param int $timestamp datetime value
+ * @param int|TDate $timestamp datetime value
  * @return string 
  */		
 		public function FormatDateTime($timestamp);
