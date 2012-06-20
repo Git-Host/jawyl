@@ -159,7 +159,7 @@
 					}
 				}
 				if (!is_null($year) && !is_null($month) && !is_null($day))
-					return mktime($hour,$minute,$second,$month,$day,$year);
+					return @mktime($hour,$minute,$second,$month,$day,$year);
 			}
 			return null;
 		} 

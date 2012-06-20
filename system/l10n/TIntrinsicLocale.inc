@@ -220,10 +220,13 @@ class TIntrinsicLocale extends TLocale {
 
 	/**
 	 * @see ILocale::FormatTime()
-	 * @param int $timestamp
+	 * @param int|TDate $timestamp
 	 * @return string
 	 */
 	public function FormatTime($timestamp){
+		if ($timestamp instanceof TDate)
+			$timestamp = $timestamp->TimeStamp();
+		
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
 		return @date("C",$timestamp);
 			
@@ -234,10 +237,13 @@ class TIntrinsicLocale extends TLocale {
 
 	/**
 	 * @see ILocale::FormatDateTime()
-	 * @param int $timestamp
+	 * @param int|TDate $timestamp
 	 * @return string
 	 */
 	public function FormatDateTime($timestamp){
+		if ($timestamp instanceof TDate)
+			$timestamp = $timestamp->TimeStamp();
+		
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
 		return @date("C",$timestamp);
 			
