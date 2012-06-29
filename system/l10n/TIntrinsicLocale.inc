@@ -205,6 +205,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function FormatDate($date){
+		if (!$date) return '';
 		if ($date instanceof TDate)
 			$timestamp = $date->TimeStamp();
 		else if (is_int($date)) 
@@ -224,6 +225,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function FormatTime($timestamp){
+		if (!$timestamp) return '';
 		if ($timestamp instanceof TDate)
 			$timestamp = $timestamp->TimeStamp();
 		
@@ -241,6 +243,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function FormatDateTime($timestamp){
+		if (!$timestamp) return '';
 		if ($timestamp instanceof TDate)
 			$timestamp = $timestamp->TimeStamp();
 		
