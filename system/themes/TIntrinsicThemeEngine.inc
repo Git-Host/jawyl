@@ -121,10 +121,17 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			return $v;
 		if (isset($this->response->$n))
 			return $this->response->$n;
+		if (method_exists($this->response,$n))
+			return $this->response->$n();			
 		if (isset($this->response->Service()->$n))
 			return $this->response->Service()->$n;
+		if (method_exists($this->response->Service(),$n))
+			return $this->response->Service()->$n();			
 		if (isset(TApplication::$Application->$n))
 			return TApplication::$Application->$n;
+		if (method_exists(TApplication::$Application,$n))
+			return TApplication::$Application->$n();			
+			
 		if (class_exists($n))
 			return $n;			
 		if ($get_self)	

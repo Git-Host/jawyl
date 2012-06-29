@@ -972,6 +972,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return null;
 	}
 	
+// @todo Implement operations in orm list filters	
 	
 	private function _filter_from_conditions(array &$filter,$orm,&$tables,$conditions, &$join){
 		foreach ($conditions as $condition)
