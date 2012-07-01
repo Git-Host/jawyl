@@ -108,7 +108,7 @@ class TIntrinsicPage extends TPage {
 						$_container = $classes[$node->getAttribute("parent")][1];
 						$_container_class = $classes[$node->getAttribute("parent")][3];
 					}
-				} else if ($compiled_container != '$this'){
+				} else /*if ($compiled_container != '$this')*/{
 					$_container = $compiled_container;
 					$_container_class = $container_class;
 				};

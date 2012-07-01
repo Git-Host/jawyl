@@ -8,12 +8,6 @@
  * @license http://opensource.org/licenses/gpl-license.php GNU Public License
  * @version 0.0.1 alpha  
 */
-
-
-/*
- * @todo Refactoring - remove global instances array, implement components paths through containers
- */
-
 interface IConfigurable {
 	public function Name();
 	public function RegisterComponent(IConfigurable $component);
