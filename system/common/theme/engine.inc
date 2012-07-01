@@ -84,8 +84,8 @@ abstract class TThemeEngine extends TConfigurable implements IThemeEngine {
  * constructor.
  * @param string $name engine name
  */
-	public function __construct($name){
-		parent::__construct($name);
+	public function __construct($name, IConfigurable $container = null){
+		parent::__construct($name,$container);
 	}
 }
 ?>

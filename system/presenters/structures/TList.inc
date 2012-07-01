@@ -689,7 +689,7 @@ class TList extends TItemsSource implements ISortableItems, IFilterableItems, IP
 	protected function getPolicyProvider(){
 		if ($this->__datasource__ instanceof IPolicyProvider)
 			return $this->__datasource;
-		$provider = TApplication::Instance($this->PolicyProvider);
+		$provider = TApplication::$Application->Instance($this->PolicyProvider);
 		if ($provider instanceof IPolicyProvider)
 			return $provider;
 		return null;

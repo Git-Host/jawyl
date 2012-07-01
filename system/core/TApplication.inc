@@ -265,7 +265,7 @@
 				$one_service =  $servicenodes->length == 1;
 				
 				foreach ($servicenodes as $servicenode){
-					$app_config .= 'self::$_services_["'.$servicenode->getAttribute("name").'"] = self::Instantiate("'.$servicenode->getAttribute("classname").'",array("name"=>"'.$servicenode->getAttribute("name").'"));'."\n";
+					$app_config .= 'self::$_services_["'.$servicenode->getAttribute("name").'"] = self::Instantiate("'.$servicenode->getAttribute("classname").'",array("name"=>"'.$servicenode->getAttribute("name").'","container"=>$this));'."\n";
 					if (TConvertions::ConvertToBoolean($servicenode->getAttribute("default")) || $one_service)
 						$default_service = $servicenode->getAttribute("name");
 					$service_config = '<?php'."\n";
@@ -626,7 +626,7 @@
 				case "Translator":TI18n::SetTranslator($value);break;
 				case "SessionHandler":{
 					if (is_string($value))
-						TApplicationSession::SetHandler(TConfigurable::Instance($value));
+						TApplicationSession::SetHandler($this->Instance($value));
 					else if ($value instanceof ISessionHandler)
 						TApplicationSession::SetHandler($value);
 					else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
