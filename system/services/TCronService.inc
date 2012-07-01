@@ -45,7 +45,7 @@ class TCronService extends TService {
 		$jobs = $xpath->query("/jobs/list[@name='".$request->list."']/job");
 		
 		foreach ($jobs as $job){
-			$item = TApplication::Instance($job->getAttribute("component"));
+			$item = TApplication::$Application->Instance($job->getAttribute("component"));
 			if ($item instanceof IScheduleHandler){
 				$parameters = array();
 				$params = $xpath->query("parameter",$job);

@@ -142,7 +142,7 @@ class TXmlMenuSource extends TPresenter implements IMenuStructure, IActionsList 
     		$xpath = new DOMXPath($this->_dom_);
 			$actions = $xpath->query("//action");
 			foreach ($actions as $a)
-				$result[] = TConfigurable::Instance($a->getAttribute("name"));
+				$result[] = $this->response->Instance($a->getAttribute("name"));
 		}
 		return $result;
 	}
@@ -157,7 +157,7 @@ class TXmlMenuSource extends TPresenter implements IMenuStructure, IActionsList 
 		switch ($node->tagName){
 			case "link":return new TXmlLinkMenuItem($node,$xpath,$this);break;
 			case "group":return new TXmlGroupMenuItem($node,$xpath,$this);break;
-			case "action":return TConfigurable::Instance($node->getAttribute("name"));break;
+			case "action":return $this->response->Instance($node->getAttribute("name"));break;
 		} 
 	}
 	

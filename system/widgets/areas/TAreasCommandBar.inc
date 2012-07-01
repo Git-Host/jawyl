@@ -77,7 +77,7 @@ class TAreasCommandBar extends TAreasWidget {
  * @return boolean
  */	
 	public function IsActive($name){
-		$action = TConfigurable::Instance($name);
+		$action = $this->response->Instance($name);
 		return $action->Available();
 	}
 	

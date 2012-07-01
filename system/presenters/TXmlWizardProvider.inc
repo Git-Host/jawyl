@@ -82,7 +82,7 @@ class TXmlWizardProvider extends TPresenter implements IWizardProvider {
 		if ($needperform){
 			$perform = $xpath->query("step[position()=$this->_current_step_]");
 			foreach ($perform as $p){
-				$a = TConfigurable::Instance($p->getAttribute('action'));
+				$a = $this->response->Instance($p->getAttribute('action'));
 				if ($a instanceof IAction)
 					$a->Execute($stored[$p->getAttribute('action')]);
 			}
@@ -104,7 +104,7 @@ class TXmlWizardProvider extends TPresenter implements IWizardProvider {
 		$stored = TApplicationSession::Get($this->Name().'_wizparams');
 		$result = array();
 		foreach ($params as $p){
-			$action = TConfigurable::Instance($p->getAttribute('action'));
+			$action = $this->response->Instance($p->getAttribute('action'));
 			$v = null;
 			if (isset($stored[$p->getAttribute('action')]))
 				if (isset($stored[$p->getAttribute('action')][$p->getAttribute('name')]))
