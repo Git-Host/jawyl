@@ -372,7 +372,7 @@
  */		
 		public static function  SetLocale($locale){
 			if (is_string($locale))
-				self::$_locale_ = TConfigurable::Instance($locale);
+				self::$_locale_ = TApplication::$Application->Instance($locale);
 			else if ($locale instanceof ILocale)	
 				self::$_locale_ = $locale;
 			else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
@@ -385,7 +385,7 @@
  */		
 		public static function SetTranslator($translator){
 			if (is_string($translator))
-				self::$_translator_ = TConfigurable::Instance($translator);
+				self::$_translator_ = TApplication::$Application->Instance($translator);
 			else if ($translator instanceof ITranslator)
 				self::$_translator_ = $translator;
 			else throw new TCoreException(TCoreException::ERR_BAD_VALUE);				

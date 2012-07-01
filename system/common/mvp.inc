@@ -359,6 +359,8 @@ abstract class TResponseElement extends TMVPObject implements IResponseElement {
  * @param array $settings associative array of element settings
  */	
 	public function __construct ($name,TResponse $response, array $settings = array(), IConfigurable $container = null){
+		if (is_null($container))
+			$container = $response;
 		parent::__construct($name,$container);
 		$this->response = $response;
 		$this->BroadCasters = $this->response;
@@ -1032,7 +1034,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  * @return TResponseElement
  */	
 	public function Item($name){
-		return TConfigurable::Instance($name);
+		return $this->Instance($name);
 	}	
 }
 

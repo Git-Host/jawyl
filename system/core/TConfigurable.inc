@@ -8,14 +8,11 @@
  * @license http://opensource.org/licenses/gpl-license.php GNU Public License
  * @version 0.0.1 alpha  
 */
-
-
-/*
- * @todo Refactoring - remove global instances array, implement components paths through containers
- */
-
 interface IConfigurable {
 	public function Name();
+	public function RegisterComponent(IConfigurable $component);
+	public function Locate($name,IConfigurable $exclude = null);
+	public function Instance($name);
 }
  
 /**
@@ -37,7 +34,7 @@ interface IConfigurable {
 */	
  	protected $container;
  	
- 	private static $_instances_ = array();
+ 	private $_components_ = array();
  	
  	private static $_ioc_types_ = array();
  	
@@ -45,15 +42,13 @@ interface IConfigurable {
  	
 /**
  * class constructor. You need to pass it a unique name of configurable object.
- * It is declared as protected to make TApplication constructor protected. 
- * Descendants can make (and mostly do so) their constructors public, 
- * so they can be instantiated by application object at runtime. 
  * @param string $name name of object being created
  */ 	
 	public function __construct($name, IConfigurable $container = null){
  		$this->name = $name;
  		$this->container = $container;
- 		self::$_instances_[$name] = $this;
+ 		if ($this->container)
+ 			$this->container->RegisterComponent($this);
  		if (!isset(self::$_ioc_types_[get_class($this)])){
 			$filename = TApplication::$Application->IocTypesCompileDir.'/'.get_class($this).'.ioc.php'; 			
  			if (self::$CompileIocTypes)
@@ -63,6 +58,10 @@ interface IConfigurable {
  				self::$_ioc_types_[get_class($this)] = $ioctypes;
  			}
  		}
+ 	}
+ 	
+ 	public function RegisterComponent(IConfigurable $component){
+ 		$this->_components_[$component->Name()] = $component;
  	}
  	
  	public static function CompileIocTypes($classname,$filename,$checkmtime = true){
@@ -105,16 +104,36 @@ interface IConfigurable {
  		return $this->name;
  	}
  	
+ 	protected function component($name,IConfigurable $exclude = null){
+ 		if (isset($this->_components_[$name]))	
+ 			return $this->_components_[$name];
+ 		$inst = null;	
+ 		foreach ($this->_components_ as $com)
+ 			if ($com !== $exclude)
+ 				if ($inst = $com->component($name,$exclude))
+ 					return $inst;
+ 		return null;		
+ 	}
+ 	
+ 	public function Locate($name,IConfigurable $exclude = null){
+ 		if ($name == $this->name)
+ 			return $this;
+ 		$inst = null;	
+ 		if ($inst = $this->component($name,$exclude))
+ 			return $inst;	
+ 		if ($this->container instanceof IConfigurable)
+ 			return $this->container->Locate($name,$this); 	
+ 		return null;
+ 	}
+ 	
+ 	
 /**
- * factory method. Returns configurable object with specified name, if it was already created. 
  * @param string $name name of configurable object
  * @returns TConfigurable
  * @see TConfigurable
  */ 	
- 	public static function Instance($name){
- 		if (key_exists($name,self::$_instances_))
- 			return self::$_instances_[$name];
- 		return null;
+ 	public function Instance($name){
+ 		return $this->Locate($name);
  	}
  	
   	private function _eval_ioc_array_members(array &$member, $type, $callback){
@@ -194,7 +213,7 @@ interface IConfigurable {
   	protected function setIocMember(&$member,$value,$type){
 		if (is_string($value)){
 			$member = $value;
-			$value = self::Instance($value);
+			$value = $this->Instance($value);
 		}
 		if ($value){
 			if ($this->_check_ioc_type($value, $type))
@@ -214,7 +233,7 @@ interface IConfigurable {
 	
 	protected function getIocMember(&$member,$type){
 		if (is_string($member)){
-			$member = self::Instance($member);
+			$member = $this->Instance($member);
 			if (($member) && (!$this->_check_ioc_type($member, $type)))
 				throw new TCoreException(TCoreException::ERR_BAD_TYPE);
 		}
