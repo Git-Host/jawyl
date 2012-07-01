@@ -1032,7 +1032,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  * @return TResponseElement
  */	
 	public function Item($name){
-		return TConfigurable::Instance($name);
+		return $this->Instance($name);
 	}	
 }
 

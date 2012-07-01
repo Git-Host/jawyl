@@ -27,7 +27,7 @@ final class TSoapGateway extends TSoapServer {
 		switch ($nm){
 			case 'Endpoint':{
 				if (is_string($value)){
-					$com = TApplication::Instance($value);
+					$com = TApplication::$Application->Instance($value);
 					if ($com instanceof TSoapClient)
 						$value = $com;
 					else {

@@ -626,7 +626,7 @@
 				case "Translator":TI18n::SetTranslator($value);break;
 				case "SessionHandler":{
 					if (is_string($value))
-						TApplicationSession::SetHandler(TConfigurable::Instance($value));
+						TApplicationSession::SetHandler($this->Instance($value));
 					else if ($value instanceof ISessionHandler)
 						TApplicationSession::SetHandler($value);
 					else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	

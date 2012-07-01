@@ -25,7 +25,7 @@ class TSOAPService extends TService {
 	protected function handleRequest(TRequest $request){
 		$com = null;
 		if ($request->component)
-			$com = TApplication::Instance($request->component);
+			$com = TApplication::$Application->Instance($request->component);
 		if ($com instanceof ISoapServer){
 			if ($request->wsdl){
 				echo $com->WSDL();
