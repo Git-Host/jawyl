@@ -265,7 +265,7 @@
 				$one_service =  $servicenodes->length == 1;
 				
 				foreach ($servicenodes as $servicenode){
-					$app_config .= 'self::$_services_["'.$servicenode->getAttribute("name").'"] = self::Instantiate("'.$servicenode->getAttribute("classname").'",array("name"=>"'.$servicenode->getAttribute("name").'"));'."\n";
+					$app_config .= 'self::$_services_["'.$servicenode->getAttribute("name").'"] = self::Instantiate("'.$servicenode->getAttribute("classname").'",array("name"=>"'.$servicenode->getAttribute("name").'","container"=>$this));'."\n";
 					if (TConvertions::ConvertToBoolean($servicenode->getAttribute("default")) || $one_service)
 						$default_service = $servicenode->getAttribute("name");
 					$service_config = '<?php'."\n";
