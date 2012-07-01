@@ -892,7 +892,6 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 		if (is_null($expire)) $expire = time()+60*60*24;
 		if (is_null($value)) {
 			$expire = -1000;
-			$test_array = array();
 			$oldval = $this->request->Cookie($name);
 			if (is_array($oldval)){
 				array_walk($oldval,create_function('&$item', '$item = null;'));
@@ -904,13 +903,13 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 			if (empty($oldval))
 				$unset = array();
 			else
-				$unset = array_diff(array_keys($oldval), array_keys($value));
+				$unset = array_diff(array_keys($oldval), array_keys($value));	
 			foreach ($value as $key=>$v)
 				if (in_array($key, $unset))
 					$this->SetCookie($name."[$key]", null);
 				else
 					$this->SetCookie($name."[$key]", $v, $expire);
-		} else 
+		} else
 			setcookie($name,$value,$expire,TApplication::$Application->Host);
 	}
 	
