@@ -151,6 +151,7 @@ interface IConfigurable {
  * @param callback $callback handler which is called for evaluated dependency
  */  	
   	protected function setIocArrayMember(&$member,$value,$type,$callback = null){
+  		if (!is_array($member)) $member = array();
   		$this->_eval_ioc_array_members($member, $type, $callback);
   		$m = null;
   		$this->setIocMember($m, $value, $type);

@@ -119,14 +119,16 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$v = @$cc->$n;
 		if (!is_null($v))
 			return $v;
-		if (isset($this->response->$n))
-			return $this->response->$n;
-		if (method_exists($this->response,$n))
-			return $this->response->$n();			
-		if (isset($this->response->Service()->$n))
-			return $this->response->Service()->$n;
-		if (method_exists($this->response->Service(),$n))
-			return $this->response->Service()->$n();			
+		if ($this->response){	
+			if (isset($this->response->$n))
+				return $this->response->$n;
+			if (method_exists($this->response,$n))
+				return $this->response->$n();
+		}				
+		if (isset(TApplication::CurrentService()->$n))
+			return TApplication::CurrentService()->$n;
+		if (method_exists(TApplication::CurrentService(),$n))
+			return TApplication::CurrentService()->$n();			
 		if (isset(TApplication::$Application->$n))
 			return TApplication::$Application->$n;
 		if (method_exists(TApplication::$Application,$n))
@@ -208,10 +210,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if ($this->currentWidget())
 			if (method_exists($this->currentWidget(), $method))
 				return $this->currentWidget()->$method($var);
-		if (method_exists($this->response,$method))
-			return $this->response->$method($var);	
-		if (method_exists($this->response->Service(),$method))
-			return $this->response->Service()->$method($var);
+		if ($this->response){
+			if (method_exists($this->response,$method))
+				return $this->response->$method($var);
+		}	
+		if (method_exists(TApplication::CurrentService(),$method))
+			return TApplication::CurrentService()->$method($var);
 		if (function_exists($method))
 			return  $method($var);
 		return null;

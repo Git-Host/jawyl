@@ -220,7 +220,7 @@ class TIntrinsicPage extends TPage {
  */	
 	public static function Instanciate($path,TIntrinsicPageService $service){
 		$result = null;
-		$conffiles =  $service->PageConfigFiles($path); 
+		$conffiles = $service->PageConfigFiles($path);		
 		if ($service->CompilePages){
 			if (is_file($conffiles[0])){
 				if (self::_check_need_compile($conffiles[0],$conffiles[1], $service))
@@ -228,9 +228,7 @@ class TIntrinsicPage extends TPage {
 			}
 		}
 		if (is_file($conffiles[1]."_loader.php"))
-			include $conffiles[1]."_loader.php";	
-		if (!($result instanceof TIntrinsicPage))
-			throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>'TIntrinsicPage'));		 
+			include $conffiles[1]."_loader.php";
 		return $result;
 	}
 	

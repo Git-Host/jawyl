@@ -891,27 +891,29 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  * @param mixed $value
  */	
 	public function SetCookie($name,$value,$expire = null){
-		if (is_null($expire)) $expire = time()+60*60*24;
-		if (is_null($value)) {
-			$expire = -1000;
-			$oldval = $this->request->Cookie($name);
-			if (is_array($oldval)){
-				array_walk($oldval,create_function('&$item', '$item = null;'));
-				$value = $oldval;
-			}
-		}
-		if (is_array($value)){
-			$oldval = $this->request->Cookie($name);
-			if (empty($oldval))
-				$unset = array();
+		if (is_null($expire)) 
+			$expire = time()+86400;
+			
+		if (is_null($value))
+			$expire = time()-86400;
+			
+		$oldval = TApplication::Request()->Cookie($name);
+		if (is_array($oldval) || is_array($value)){
+			if (empty($value))
+				$unset = array_keys($oldval);
+			else if (empty($oldval))
+				$unset = array();	
 			else
-				$unset = array_diff(array_keys($oldval), array_keys($value));	
-			foreach ($value as $key=>$v)
-				if (in_array($key, $unset))
-					$this->SetCookie($name."[$key]", null);
-				else
-					$this->SetCookie($name."[$key]", $v, $expire);
-		} else
+				$unset = array_diff(array_keys($oldval), array_keys($value));
+
+			if (is_array($value))	
+				foreach ($value as $key=>$v)
+					if (!in_array($key, $unset))
+						$this->SetCookie($name."[$key]", $v, $expire);
+
+			foreach ($unset as $u)
+				$this->SetCookie($name."[$u]", null, $expire);
+		} else 
 			setcookie($name,$value,$expire,TApplication::$Application->Host);
 	}
 	
