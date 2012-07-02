@@ -208,8 +208,8 @@ class TIntrinsicLocale extends TLocale {
 		if (!$date) return '';
 		if ($date instanceof TDate)
 			$timestamp = $date->TimeStamp();
-		else if (is_int($date)) 
-			$timestamp = $date;
+		else 
+			$timestamp = (int)$date;
 			
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
 			return @date("C",$timestamp);

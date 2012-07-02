@@ -434,12 +434,14 @@
 				$c = new ReflectionClass($classname);
 			else 
 				$c = self::GetClass($classname);
-			if ($c){	
+				
+			if ($c){
 				if (count($arguments) == 0)	
 					$i = $c->newInstance();
 				else {
 					$i = $c->newInstanceArgs($arguments);
-				}
+				}				
+				
 			} else throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>$classname));
 			return $i;
 		}
