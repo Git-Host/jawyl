@@ -168,9 +168,7 @@
 			$this->_request_path_ = str_replace("\\","/",$requestPath);
 			$this->_app_path_ = $this->_request_path_;
 			$docroot = str_ireplace("\\","/",realpath($_SERVER["DOCUMENT_ROOT"]));
-			$this->_root_ = str_ireplace($docroot,"",$this->_app_path_);
-			if (!$this->_root_) $this->_root_ = '/'; 
-			
+			$this->_root_ = str_ireplace($docroot,"",$this->_app_path_);			
 			
 			if (!isset($_SERVER["REQUEST_URI"])){
 				if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) 
@@ -202,9 +200,10 @@
 				$this->_uri_ = $_SERVER["REQUEST_URI"];				
 
 			//$this->_uri_ = strtolower($this->_uri_);	
-				
-			$this->_relative_path_ = preg_replace('/\?.*$/','',str_ireplace($this->_root_,"",$this->_uri_));
 
+			$this->_relative_path_ = preg_replace('/\?.*$/','',str_ireplace($this->_root_,"",$this->_uri_));
+			if (!$this->_root_) $this->_root_ = '/'; 
+			
 			parent::__construct('');	
 			if (self::$CompileAppConfig){
 				if (!is_dir($this->ConfCompileDir))
