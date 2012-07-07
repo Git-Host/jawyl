@@ -510,7 +510,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$theme_dir = preg_replace('/[\\\\\\/]/','|',$theme_dir);
 		$apppath = preg_replace('/[\\\\\\/]/','|',TApplication::$Application->AppPath);
 		$theme_url = str_replace('|','/',str_ireplace($apppath,'',$theme_dir));
-		return TApplication::$Application->Root.$theme_url;
+		return (TApplication::$Application->Root == '/')?$theme_url:TApplication::$Application->Root.$theme_url;
 	}
 	
 	public function ThemeDir(){

@@ -169,6 +169,7 @@
 			$this->_app_path_ = $this->_request_path_;
 			$docroot = str_ireplace("\\","/",realpath($_SERVER["DOCUMENT_ROOT"]));
 			$this->_root_ = str_ireplace($docroot,"",$this->_app_path_);
+			if (!$this->_root_) $this->_root_ = '/'; 
 			
 			
 			if (!isset($_SERVER["REQUEST_URI"])){
