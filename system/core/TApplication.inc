@@ -482,10 +482,10 @@
 			if ($this->_call_type_ == self::CALL_HTTP) {
 				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
 				if ($this->Sef){
-					include_once $this->ConfigDir."/url.config";
+					include_once $this->ConfCompileDir."/url.config";
 					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
 				}
-				else 
+				if (!self::$_request_) 
 					self::$_request_ = new THttpRequest($servicename);		
 			} else {
 				self::$_request_ = new TConsoleCall();
@@ -551,12 +551,17 @@
 			
 			$pth = str_ireplace($dr,"",$rp);	
 			$pth = str_replace("|","/",$pth);
+			
 			if (!$pth || $pth[0] != '/')
 				$pth = '/'.$pth;
+			
+			if (!preg_match('/.*[\/\\\\]$/',$pth))
+				$pth .= '/'; 				
+				
 			$url = "";
 			if ($this->Sef){
 				$notapplied = array();
-				$url = $this->serviceMap->MakeUri($service,$parameters,$notapplied);
+				$url = $this->_service_map_->MakeUri($service,$parameters,$notapplied);
 				if (!is_null($url)){
 					if (count($notapplied) > 0){
 						$url .= "?";
@@ -567,6 +572,8 @@
 					return $pth.$url;
 				}
 			}
+			
+			
 			
 			$url = $pth;
 			

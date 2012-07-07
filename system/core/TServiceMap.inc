@@ -59,18 +59,25 @@
 */
 		public function MakeUri($service,array $parameters = array(), array &$notapplied  = array()){
 			if (!in_array("service",$this->_request_params_)) 
-				if ($service != $this->_service_) return null;
+				if ($service != $this->_service_) {
+					return null;
+				}
 			
 			if (count(array_diff($this->_request_params_,array_keys($parameters))) > 0)
 				return null;
+
+			$def = array_intersect(array_keys($this->_defaults_),array_keys($parameters));
+			if (count($def) > 0){
+				foreach ($def as $d)
+					if ($this->_defaults_[$d] != $parameters[$d])
+						return null;
+			}
 				
-			if (count(array_intersect(array_keys($this->_defaults_),array_keys($parameters))) > 0)
-				return null;
-				
-			$notapplied = array_diff(array_keys($parameters),$this->_request_params_);
+			$notapplied = array_diff(array_keys($parameters),array_merge($this->_request_params_,array_keys($this->_defaults_)));
 			
 			$result = $this->_request_;
 			$result = preg_replace('/\{:service\}/',$service,$result);
+			
 			foreach ($parameters as $key=>$value){
 				$result = preg_replace('/\{:\s*'.$key.'\s*\}/',$value,$result);
 				$result = preg_replace('/\[:\s*'.$key.'\s*\]/',urlencode($value),$result);
