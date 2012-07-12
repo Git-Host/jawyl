@@ -199,7 +199,7 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 										l = offset.left;
 									}break;
 								}
-								zi = $(this).css("zIndex")+1000;
+								zi = $(this).css("zIndex")+10;
 								$('#'+this.id+'_sm').css("left",l).css("top",t).css("zIndex",zi).show("fast");
 							}
 						}

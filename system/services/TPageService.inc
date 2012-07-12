@@ -371,12 +371,18 @@ abstract class TPageService extends TService {
 	private function _check_page_access($page){
 		$policy = $this->Policy();
 		$acl = $this->ACL();
-		
 		if (!($page instanceof TPage))
-			$page = $this->getPage($page);			 
-		
-		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker && $page instanceof TPage)
-			return $policy->CheckPolicy($acl->CurrentUser(),new TPagePolicy(TPagePolicy::PAGE_ACCESS,$page));
+			$page = $this->getPage($page);
+			
+		if (!($page instanceof TPage))
+			return false;
+			
+		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker && $page instanceof TPage){
+			$u = $acl->CurrentUser();
+			if (!$u instanceof ISecuritySubject)
+				$u = TAnonymousUser::Instance();
+			return $policy->CheckPolicy($u,new TPagePolicy(TPagePolicy::PAGE_ACCESS,$page));
+		}			
 		return true;
 	}
 	

@@ -22,6 +22,24 @@ interface ISecuritySubject{
 	public function Guid();
 }
 
+class TAnonymousUser implements ISecuritySubject {
+	private static $_instance_;
+	
+	private function __construct(){
+		self::$_instance_ = $this;
+	}
+	
+	public static function Instance(){
+		if (self::$_instance_)
+			return self::$_instance_;
+		return new TAnonymousUser();	
+	}
+	
+	public function Guid(){
+		return null;
+	}
+}
+
 interface ISecurityContext extends ISecuritySubject {
 /** 
  * @return ISecuritySubject[]

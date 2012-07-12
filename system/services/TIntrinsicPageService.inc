@@ -151,15 +151,17 @@ class TIntrinsicPage extends TPage {
 			$real_classname = $classname;
 		} else {
 			$c = TApplication::GetClass($classname);
+			if (is_null($c))
+				throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>$classname));	
 			$real_classname = $c->getName();
 		}	
 		
 		if ($dom->firstChild->getAttribute("parent")){
 			$pfilenames = $service->PageConfigFiles($dom->firstChild->getAttribute("parent"));
-			if (is_file($pfilenames[0]))
+			if (is_file($pfilenames[0])){
 				self::_compile_page_contents($pfilenames[0],$service,$counter,$classes,$text);
+			}
 		}
-		
 		if ($dom->firstChild->getAttribute("cache"))
 			$text .= '$this->caching = "'.$dom->firstChild->getAttribute("cache").'";'."\n";
 		if ($dom->firstChild->getAttribute("title"))
@@ -181,10 +183,8 @@ class TIntrinsicPage extends TPage {
 		$classes = array();
 		$classname = self::_compile_page_contents($filenames[0],$service,$counter, $classes, $text);		
 		$text .= "?>";
-		
 		self::_create_path(dirname($filenames[1].".php"));
 		file_put_contents($filenames[1].".php", $text);
-		
 		$text = "<?php\n";
 		if ($classname == "TIntrinsicPage")
 			$text .= '$result = new TIntrinsicPage($path,"'.$filenames[1].'.php",$service);'."\n";
@@ -223,8 +223,9 @@ class TIntrinsicPage extends TPage {
 		$conffiles = $service->PageConfigFiles($path);		
 		if ($service->CompilePages){
 			if (is_file($conffiles[0])){
-				if (self::_check_need_compile($conffiles[0],$conffiles[1], $service))
+				if (self::_check_need_compile($conffiles[0],$conffiles[1], $service)){
 					self::_compile_page($conffiles,$service);
+				}
 			}
 		}
 		if (is_file($conffiles[1]."_loader.php"))
@@ -372,7 +373,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		if (is_null($id)) $id = 'default';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$conffiles =  $this->PageConfigFiles($id);
-		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php')){
+		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php')){			
 			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id,$this);
 			return $this->PAGES[$id];
 		}
