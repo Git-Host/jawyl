@@ -134,6 +134,7 @@ class TMySqlDataSetProcessor {
    				case TOperationType::O_AND:$oper = "&";break;
    				case TOperationType::O_OR:$oper = "|";break;
    				case TConditionType::C_IN:{$oper = "in";}break;
+   				case TConditionType::C_NOT_IN:{$oper = "not in";}break;
 /*   				case "gsum":{$oper = "sum";$type="unar";}break;
    				case "gavg":{$oper = "avg";$type="unar";}break;
    				case "gcount":{$oper = "count";$type="unar";}break;
@@ -219,8 +220,8 @@ class TMySqlDataSetProcessor {
 				}
 				$result .= " end case";
 				return $result; 
-			} elseif ($oper == "in"){
-				$result = $this->parseOperand($o->Operands[0])." in (";
+			} elseif ($oper == "in" || $oper == "not in"){
+				$result = $this->parseOperand($o->Operands[0])." ".$oper." (";
 				$temp = array();
 				$this->_operands_to_array(array_slice($o->Operands,1), $temp);
 				return $result.join(",",$temp).")";
@@ -585,7 +586,8 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 	
 	protected function iQuery($q){
-		return new TMySqlDBRawDataIterator($this->query($q),$this);
+		$result = new TMySqlDBRawDataIterator($this->query($q),$this);
+		return $result;
 	}
 		
 	public function ConnectionParameters(){

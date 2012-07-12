@@ -208,7 +208,7 @@
 			if (self::$CompileAppConfig){
 				if (!is_dir($this->ConfCompileDir))
 					mkdir($this->ConfCompileDir);
-				$config_file = $this->ConfCompileDir."/application.config";	
+				$config_file = $this->ConfCompileDir."/application.php";	
 					
 				$config = file_exists($config_file);
 				$src = file_exists($this->ConfigFile);
@@ -271,14 +271,14 @@
 					$service_config = '<?php'."\n";
 					self::_parse_contents($xpath,$servicenode,'self::$_services_["'.$servicenode->getAttribute("name").'"]',$service_config,$objid);
 					$service_config .= '?>';
-					file_put_contents($this->ConfCompileDir."/service.".$servicenode->getAttribute("name").".config",$service_config);
+					file_put_contents($this->ConfCompileDir."/service.".$servicenode->getAttribute("name").".php",$service_config);
 				}
 				
 				if ($default_service)
 					$app_config .= '$this->_default_service_name_ = "'.$default_service.'";'."\n";
 				$app_config .= '?>';	
 					 
-				file_put_contents($this->ConfCompileDir."/application.config",$app_config);
+				file_put_contents($this->ConfCompileDir."/application.php",$app_config);
 				
 				$routs_config = '<?php $this->_service_map_ = new TServiceMap();'."\n";
 				$routs = $xpath->query("/application/requestmap/route");
@@ -308,7 +308,7 @@
 					$routs_config .= '));'."\n";
 				}
 				$routs_config .= '?>';
-				file_put_contents($this->ConfCompileDir."/url.config",$routs_config);
+				file_put_contents($this->ConfCompileDir."/url.php",$routs_config);
 			}
 		}
 		
@@ -476,13 +476,13 @@
 		} 
 		
 		private function _app_run(){
-			include_once $this->ConfCompileDir."/application.config";
+			include_once $this->ConfCompileDir."/application.php";
 			$servicename = "";
 			$this->_call_type_ = isset($_SERVER['HTTP_HOST'])?self::CALL_HTTP:self::CALL_CONSOLE;
 			if ($this->_call_type_ == self::CALL_HTTP) {
 				if (isset($_REQUEST["service"])) $servicename = $_REQUEST["service"];
 				if ($this->Sef){
-					include_once $this->ConfCompileDir."/url.config";
+					include_once $this->ConfCompileDir."/url.php";
 					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
 				}
 				if (!self::$_request_) 
@@ -497,14 +497,14 @@
 			if ($servicename){
 				$this->_current_service_ = self::Service($servicename);
 				if ($this->_current_service_){
-					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".config";
+					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".php";
 					if (file_exists($service_config)) include_once $service_config;
 					$this->_current_service_->Handle(self::Request());	
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
 				foreach (self::$_services_ as $service){
 					$this->_current_service_ = $service;
-					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".config";
+					$service_config = $this->ConfCompileDir."/service.".$this->_current_service_->Name().".php";
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($this->_current_service_->Handle(self::Request())) break;	
 				}
@@ -580,7 +580,7 @@
 			if ((!is_null($service)) || (count(array_values($parameters)) > 0))
 				$url .= "?";
 			if (!is_null($service))
-				$url .= "service=".urlencode($service);
+				$url .= "&service=".urlencode($service);
 				
 			foreach ($parameters as $key=>$value)
 				if ($value)

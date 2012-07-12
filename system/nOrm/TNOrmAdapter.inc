@@ -1065,7 +1065,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param int $count
  */	
 	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){
-		if ($orm = $this->_get_orm_config($dummy)){			
+		if ($orm = $this->_get_orm_config($dummy)){
 			$join = array(); 
 			$tables = array();
 			$fields = array();	
@@ -1073,11 +1073,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$break = !empty($assume_descendants);
 			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
-			
 			if (is_object($dummy)){
 				$filter = $this->_filter_from_object($orm, $dummy, $tables);
 			}
-								
+
 			$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
 			
 			$ds->Filter = $filter;
@@ -1103,12 +1102,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$total = $cnt['cnt'];
 					break;
 				}
-			}			
+			}	
 			
 			$ds->Fields = $fields;
 			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
 			$ds->Offset = $offset;
-			$ds->Count = $count;	
+			$ds->Count = $count;
 			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants,$assume_classes);
 		}
 		return false;
