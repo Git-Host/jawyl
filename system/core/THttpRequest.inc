@@ -94,7 +94,7 @@
 				else 
         			$value = stripslashes($urldecode?urldecode($value):$value);
 			}
-			if (!empty($value))		
+			if (!is_null($value))		
 				return $value;
 			return null;	
 		}
