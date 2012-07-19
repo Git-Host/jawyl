@@ -76,7 +76,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$v = $name; 
 		if (is_string($name)){
 			$cc = $this->currentContext();
-			if (strtolower($name) == "context")
+			if ($name == "context")
 				$v = $cc;
 			else if (method_exists($cc,$name))
 				$v = call_user_func(array($cc,$name));
@@ -106,7 +106,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	protected function evalContextTag($name,$get_self = false){
 		$cc = $this->currentContext();
 		$n = trim($name);
-		if (strtolower($n) == "context")
+		if ($n == "context")
 			return $cc;
 		if (method_exists($cc,$n))
 			return call_user_func(array($cc,$n));
