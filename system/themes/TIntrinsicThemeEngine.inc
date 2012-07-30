@@ -446,7 +446,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$this->_global_vars_['SERVICE'] = TApplication::$Application->CurrentService();
 		$this->_global_vars_['PAGE'] = $this->response;
 		$this->_global_vars_['THEME_URL'] = $this->ThemeUrl();
-		$this->_global_vars_['APP_URL'] = TApplication::$Application->Root;
+		$this->_global_vars_['APP_URL'] = TApplication::$Application->Url();
 		$this->_global_vars_['APPLICATION'] = TApplication::$Application;
 		$this->_global_vars_['APPLICATION_SHARED'] = TApplication::$Application->Shared;
 /*		
