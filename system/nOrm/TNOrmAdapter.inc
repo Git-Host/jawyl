@@ -457,9 +457,14 @@ class TNOrmObject implements INOrmObject {
 	
 	private $_was_moved_ = false;
 	
+	private function _property_name_replace($matches){
+		return "_".strtolower($matches[0]);
+	}
+	
+	
 	private function _check_prefixed_property($nm,$prefix){
 		$rc = new ReflectionClass(get_class($this));
-		$prop = '_'.$prefix.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
+		$prop = '_'.$prefix.preg_replace_callback('/([A-Z][a-z\d]*)/',array($this,'_property_name_replace'),$nm).'_';
 		if ($rc->hasProperty($prop)){
 			$p = $rc->getProperty($prop);
 			if (!$p->IsPublic() && !$p->IsStatic())
@@ -1321,7 +1326,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$orm = $this->_get_orm_config($cn);
 				if (!$orm)
 					throw TCoreException(TCoreException::ERR_BAD_VALUE); 
-			}	
+			}
+			
 			$dummy = new $cn();
 	
 			foreach ($orm['keys'] as $key)

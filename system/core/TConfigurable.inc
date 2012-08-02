@@ -248,10 +248,14 @@ interface IConfigurable {
 		return false;
 	}
  	
+	private function _replace_property_name_part($matches){
+		return '_'.strtolower($matches[0]);
+	}
+	
  	private function _check_ioc($nm,&$type,&$is_ioc_array){
  		$type = null;
  		$is_ioc_array = false;
-		$iocname = '_ioc'.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
+		$iocname = '_ioc'.preg_replace_callback('/([A-Z][a-z\d]*)/',array($this,'_replace_property_name_part'),$nm).'_';
  		if ($p = $this->_check_property($iocname)){
 			$type = 'IConfigurable';
 			if (isset(self::$_ioc_types_[get_class($this)]))
@@ -265,7 +269,7 @@ interface IConfigurable {
  	}
  	
  	private function _check_suffix($nm,$suffix){
-		$name = '_'.$suffix.preg_replace_callback('/([A-Z][a-z\d]*)/',create_function('$matches','return "_".strtolower($matches[0]);'),$nm).'_';
+		$name = '_'.$suffix.preg_replace_callback('/([A-Z][a-z\d]*)/',array($this,'_replace_property_name_part'),$nm).'_';
 		if ($p = $this->_check_property($name))
 			return $name;
 		return false;
