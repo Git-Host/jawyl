@@ -464,7 +464,7 @@ class TNOrmObject implements INOrmObject {
 	
 	private function _check_prefixed_property($nm,$prefix){
 		$rc = new ReflectionClass(get_class($this));
-		$prop = '_'.$prefix.preg_replace_callback('/([A-Z][a-z\d]*)/',array($this,'_property_name_replace'),$nm).'_';
+		$prop = '_'.$prefix.strtolower(preg_replace('/([A-Z][a-z\d]*)/','_$1',$nm)).'_';
 		if ($rc->hasProperty($prop)){
 			$p = $rc->getProperty($prop);
 			if (!$p->IsPublic() && !$p->IsStatic())
@@ -526,13 +526,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	private $_use_config_ = 3;
 	
-	private $_bool_emulate_integrity_ = false;
+	protected $_bool_emulate_integrity_ = false;
 	
 	private $_xml_config_path_;
 	private $_script_config_path_;
 	private $_date_format_;
 	
-	private $_bool_unique_objects_;
+	protected $_bool_unique_objects_;
 	
 	private $_loaded_orms_ = array();
 	
