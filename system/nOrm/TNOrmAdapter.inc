@@ -842,15 +842,15 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						$values[] = $value;
 					}
 				
-					$apcent = false;
+					$abcent = false;
 					if (!$emptyid){
 						if ($orm['identity'] == 1){
-							$apcent = true;
+							$abcent = true;
 							$kn = array_keys($table['keys']);
 							$check_exists = new TTable($t,null,array(new TTableField($kn[0])), $filter);
 							$check = $this->_ioc_driver_->FetchRecords($check_exists);
 							foreach ($check as $chk){
-								$apcent = false;
+								$abcent = false;
 								break;
 							}
 						}
@@ -858,7 +858,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				
 					$ds = new TTable($t, null, array(), $filter, array(), array());
 					
-					if ($emptyid || $apcent){
+					if ($emptyid || $abcent){
 						$merged = $table['keys'] + $table['values'];
 						if ($maintable && !empty($orm['nestedsets'])){
 							$parentprop = $orm['nestedsets']['parent'];
@@ -870,7 +870,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							}
 							$ds = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
 							$this->_ioc_driver_->NestedSetAddRecord($ds, $merged,$pk);
-						} else
+						} else 
 							$this->_ioc_driver_->InsertRecords($ds, array(array_values($merged)), array_keys($merged),$pk);
 						
 						if ($emptyid && $orm['identity'] == 0 && $maintable){
@@ -1125,7 +1125,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	public function ProvideUniqueness($object){
 		if ($this->_bool_unique_objects_){
 			if ($orm = $this->_get_orm_config($object)){
-				$id = $this->_get_object_key_values($object);
+				$id = join('|',$this->_get_object_key_values($object));
+				if (!isset($this->_loaded_objects_[$orm['classname']]))
+					$this->_loaded_objects_[$orm['classname']] = array();
 				$this->_loaded_objects_[$orm['classname']][$id] = $object;
 			}
 		}
@@ -1134,7 +1136,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private function _check_loaded($dummy,&$orm){
 		if ($this->_bool_unique_objects_){
 			if (!isset($this->_loaded_objects_[$orm['classname']]))
-				$this->_loaded_objects_[$orm['classname']] = array();
+				return $dummy;
 			$id = $this->_get_object_key_values($dummy);
 			if (empty($id))
 				return $dummy;	
