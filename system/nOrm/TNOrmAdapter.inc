@@ -399,8 +399,8 @@ abstract class TNOrmLoader {
 
 class TNOrmObjectLoader extends TNOrmLoader {
 	protected function load(){
-		$this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants);
-		$this->adapter->ProvideUniqueness($this->value);
+		if ($this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants))
+			$this->adapter->ProvideUniqueness($this->value);
 	}
 }
 
