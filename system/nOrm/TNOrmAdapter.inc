@@ -320,8 +320,10 @@ class TNOrmBranchLoader {
 	}
 	
 	public function Value(){
-		if ($this->value === false)
-			$this->value = $this->adapter->FetchContainers($this->object,$this->assumedDescendants);
+		if ($this->value === false){
+			if ($this->value = $this->adapter->FetchContainers($this->object,$this->assumedDescendants))
+				$this->adapter->ProvideUniqueness($this->value);
+		}
 		return $this->value;
 	}
 }
@@ -398,6 +400,7 @@ abstract class TNOrmLoader {
 class TNOrmObjectLoader extends TNOrmLoader {
 	protected function load(){
 		$this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants);
+		$this->adapter->ProvideUniqueness($this->value);
 	}
 }
 
@@ -966,9 +969,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$item = false;
 			foreach ($ns as $nse){
 				$item = $this->Create($nse,$orm['classname'],$assume_descendants,$assume_classes);
-				if (isset($p))
+				if (isset($p)){
 					$item->$parentprop = $p;
-				else 
+					$this->ProvideUniqueness($p);
+				} else 
 					$item->$parentprop = false;
 				$p = $item;	
 			}
@@ -1116,7 +1120,16 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants,$assume_classes);
 		}
 		return false;
-	} 
+	}
+
+	public function ProvideUniqueness($object){
+		if ($this->_bool_unique_objects_){
+			if ($orm = $this->_get_orm_config($object)){
+				$id = $this->_get_object_key_values($object);
+				$this->_loaded_objects_[$orm['classname']][$id] = $object;
+			}
+		}
+	}
 	
 	private function _check_loaded($dummy,&$orm){
 		if ($this->_bool_unique_objects_){
@@ -1128,8 +1141,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$id = join('|',$id);	
 			if (isset($this->_loaded_objects_[$orm['classname']][$id]))
 				$dummy = $this->_loaded_objects_[$orm['classname']][$id];
+			/*
 			else	
 				$this->_loaded_objects_[$orm['classname']][$id] = $dummy;
+				*/
 		}
 		return $dummy;
 	}
