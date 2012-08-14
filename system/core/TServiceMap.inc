@@ -108,7 +108,7 @@
 					if (!$request->__isset($key))
 						$request->setGetParameter($key,$value);
 				foreach ($qp as $key=>$value)	
-					$request->setGetParameter($key,$value);
+					$request->setGetParameter($key,urldecode($value));
 				return $request;
 			}
 			return null;
