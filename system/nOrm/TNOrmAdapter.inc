@@ -57,7 +57,7 @@ class TClassOrmConfig {
 	
 	public function ParseClass(ReflectionClass $rc){
 		$doc = $rc->getDocComment();
-		$lineend = '(?:\s+[^\r\n]*|\s*)$/m';
+		$lineend = '.*$/m';
 		preg_match_all('/@orm.table\s+([_\w]+)\s*\(((?:\s*[_\w]+\s*,?)+)\)'.$lineend,$doc,$matches);
 		$n = count($matches[1]);
 		for ($i = 0; $i < $n; $i++){
@@ -73,7 +73,6 @@ class TClassOrmConfig {
 			$default_tbl = array_keys($this->_tables_);
 			$default_tbl = $default_tbl[0];
 		}
-		
 		preg_match_all('/@orm.key\s+([_\w]+)'.$lineend,$doc,$matches);
 		if (!empty($matches[1])){
 			$this->_keys_ = array();
