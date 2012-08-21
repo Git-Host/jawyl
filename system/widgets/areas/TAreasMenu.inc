@@ -42,6 +42,8 @@ class TAreasMenu extends TAreasWidget implements IMenu {
  */	
 	protected $_ioc_item_navigator_;
 	
+	protected $_bool_popup_by_click_ = false;
+	
 	public function __get($nm){
 		switch ($nm){
 			case "Items":return $this->Items();break;
@@ -176,9 +178,9 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 		?>
 (function($){
 	$.fn.extend({
-			areasMenu:function(){
+			areasMenu:function(options){
 				this.mousemove(function(e){return false;});
-				$("div.menu-item",this).mouseenter(function(e){
+				var f = function(e){
 						var menu = $(this).closest("div.areas-menu");
 						var dd = $("div.areas-submenu",menu).not($(this).parents("div.areas-submenu").add($(this.parentElement).children("div.areas-submenu")));
 						dd.hide("fast");
@@ -201,13 +203,21 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 								}
 								zi = $(this).css("zIndex")+10;
 								$('#'+this.id+'_sm').css("left",l).css("top",t).css("zIndex",zi).show("fast");
+								$(document.body).one("mousemove",function(e){
+									$("div.areas-submenu").hide("fast");
+								});
+								$(document.body).one("click",function(e){
+									$("div.areas-submenu").hide("fast");
+								});
+								return false;
 							}
 						}
-						$(document.body).one("mousemove",function(e){
-							$("div.areas-submenu").hide("fast");
-						});
-						return false;
-					}).mousemove(function(e){return false});
+					};						
+				
+				if (options && options.PopupByClick)
+				$("div.menu-item",this).click(f).mousemove(function(e){return false});
+				else		
+				$("div.menu-item",this).mouseenter(f).mousemove(function(e){return false});
 					
 				$("div.areas-submenu",this).bind("mousemove",function(){return false;});
 			}
@@ -217,7 +227,7 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 			self::$_menu_script_loaded_ = true;
 		}
 		?>
-		jQuery(document).one("ready",function(e){jQuery("#<?php echo $this->Name(); ?>").areasMenu();})
+		jQuery(document).one("ready",function(e){jQuery("#<?php echo $this->Name(); ?>").areasMenu(<?php if ($this->PopupByClick) echo "{PopupByClick:true}"; ?>);})
 		<?php
 	}
 }
