@@ -80,7 +80,7 @@
 			
 			foreach ($parameters as $key=>$value){
 				$result = preg_replace('/\{:\s*'.$key.'\s*\}/',$value,$result);
-				$result = preg_replace('/\[:\s*'.$key.'\s*\]/',urlencode($value),$result);
+				$result = preg_replace('/\[:\s*'.$key.'\s*\]/',rawurlencode($value),$result);
 			}
 			return $result;
 		}
