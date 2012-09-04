@@ -90,7 +90,7 @@
 		private function _accept_value($value,$urldecode = false){
 			if (get_magic_quotes_gpc()){
 				if (is_array($value))
-					array_walk_recursive($value, create_function('&$item,$key,$urldecode', '$item = stripslashes($urldecode?urldecode($item):$item);'), $urldecode);
+					array_walk_recursive($value, create_function('&$item,$key,$urldecode', '$item = stripslashes($urldecode?rawurldecode($item):$item);'), $urldecode);
 				else 
         			$value = stripslashes($urldecode?urldecode($value):$value);
 			}

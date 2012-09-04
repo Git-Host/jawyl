@@ -567,7 +567,7 @@
 						$url .= "?";
 						foreach ($notapplied as $key)
 						 if ($parameters[$key])
-							$url = $url."&".$key."=".urlencode($parameters[$key]);
+							$url = $url."&".$key."=".rawurlencode($parameters[$key]);
 					}
 					return $pth.$url;
 				}
@@ -580,11 +580,11 @@
 			if ((!is_null($service)) || (count(array_values($parameters)) > 0))
 				$url .= "?";
 			if (!is_null($service))
-				$url .= "&service=".urlencode($service);
+				$url .= "&service=".rawurlencode($service);
 				
 			foreach ($parameters as $key=>$value)
 				if ($value)
-					$url = $url."&".$key."=".urlencode($value);
+					$url = $url."&".$key."=".rawurlencode($value);
 			return $url;
 		}
 		
