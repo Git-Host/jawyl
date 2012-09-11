@@ -102,12 +102,14 @@
 		private $_string_encoding_ = 'UTF-8';
 		private $_call_type_;
 		private $_file_storage_path_;
+		private $_init_folder_ = '';
 /**
  * @var IExceptionHandler
  */		
 		private $_ioc_exception_handler_;
 		
 		public static $CompileAppConfig = false;
+		public static $AllowMultipleConfig = false;
 		public static $ConfigCompileDirectory = 'config';
 		public static $IocTypesCompileDirectory = 'private/ioc';
 		
@@ -142,16 +144,20 @@
 				case "RelativePath":return $this->_relative_path_;break;
 				case "Path":return join(';',self::$_import_paths_);break;
 				case "Host":return $_SERVER["HTTP_HOST"];break;
-				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_;break;
-				case "ConfCompileDir":return $this->AdjustPath(self::$ConfigCompileDirectory);break;
+				case "ConfigDir":return $this->_app_path_."/".$this->_private_dir_.$this->__init_folder($this->_private_dir_?'/':'');break;
+				case "ConfCompileDir":return $this->AdjustPath(self::$ConfigCompileDirectory.$this->__init_folder(self::$ConfigCompileDirectory?'/':''));break;
 				case "IocTypesCompileDir":return $this->AdjustPath(self::$IocTypesCompileDirectory);break;
-				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_."/application.xml";break;
+				case "ConfigFile":return $this->_app_path_."/".$this->_private_dir_.$this->__init_folder($this->_private_dir_?'/':'')."/application.xml";break;
 				case "Sef":return $this->_sef_;break;
 				case "Environment":return self::$Environment;break;
 				case "StringEncoding":return $this->_string_encoding_;break;
 				case "CallType":return $this->_call_type_;break;
 			}
 			return parent::__get($nm);
+		}
+		
+		private function __init_folder($slash = ''){
+			return $this->_init_folder_?($slash.$this->_init_folder_):'';
 		}
 		
 /**
@@ -197,31 +203,48 @@
 				}
 			}
 			else
-				$this->_uri_ = $_SERVER["REQUEST_URI"];				
+				$this->_uri_ = $_SERVER["REQUEST_URI"];
 
 			//$this->_uri_ = strtolower($this->_uri_);	
 
 			$this->_relative_path_ = preg_replace('/\?.*$/','',str_ireplace($this->_root_,"",$this->_uri_));
-			if (!$this->_root_) $this->_root_ = '/'; 
-			
-			parent::__construct('');	
+			if (!$this->_root_) $this->_root_ = '/';
+				
+			parent::__construct('');
+
+			if ($this->_call_type_ == self::CALL_HTTP) {
+				if (self::$AllowMultipleConfig && $_GET['app_conf_name']){
+					$this->_init_folder_ = $_GET['app_conf_name'];
+					unset($_GET['app_conf_name']);
+				}
+			}
+				
 			if (self::$CompileAppConfig){
-				if (!is_dir($this->ConfCompileDir))
-					mkdir($this->ConfCompileDir);
-				$config_file = $this->ConfCompileDir."/application.php";	
+				TFileSystem::ForceDir($this->ConfCompileDir);
+				
+				for ($i = 0; $i < 2; $i++)
+					if (file_exists($this->ConfigDir."/init.$i.xml")){
+						if (!file_exists($this->ConfCompileDir."/init.$i.php"))
+							$this->_compile_init($this->ConfigDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
+						else 	
+							if (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->ConfigDir."/init.$i.xml"))
+								$this->_compile_init($this->ConfigDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
+					}
 					
+				$config_file = $this->ConfCompileDir."/application.php";
+						
 				$config = file_exists($config_file);
 				$src = file_exists($this->ConfigFile);
-			
+						
 				if (!$config){
 					if ($src)
-						$this->_compile_config();
-					else throw new TCoreException(TCoreException::ERR_NO_APPCONF);	
+						$this->_compile_config($this->ConfigFile);
+					else throw new TCoreException(TCoreException::ERR_NO_APPCONF);
 				} else {
-				 	if ($src)
-				 		if (filemtime($config_file) < filemtime($this->ConfigFile))
-				 			$this->_compile_config();
-				}
+					if ($src)
+						if (filemtime($config_file) < filemtime($this->ConfigFile))
+							$this->_compile_config($this->ConfigFile);
+				}						
 			}
 		}
 		
@@ -232,10 +255,14 @@
 				switch (strtolower($node->tagName)){
 					case "component":{
 							$counter++;
-							if ($container)
-								$result .= '$obj'.$counter.' = self::Instantiate("'.$node->getAttribute("classname").'",array("name"=>"'.$node->getAttribute("name").'","container"=>'.$container.'));'."\n";
-							else 
-								$result .= '$obj'.$counter.' = self::Instantiate("'.$node->getAttribute("classname").'",array("name"=>"'.$node->getAttribute("name").'"));'."\n";
+							if ($node->getAttribute("classname")){
+								if ($container)
+									$result .= '$obj'.$counter.' = self::Instantiate("'.$node->getAttribute("classname").'",array("name"=>"'.$node->getAttribute("name").'","container"=>'.$container.'));'."\n";
+								else 
+									$result .= '$obj'.$counter.' = self::Instantiate("'.$node->getAttribute("classname").'",array("name"=>"'.$node->getAttribute("name").'"));'."\n";
+							} else {
+								$result .= '$obj'.$counter.' = self::Instance("'.$node->getAttribute("name").'");'."\n";
+							}
 							if ($node->getAttribute("membername"))	
 								$result .= $container.'->__set("'.$node->getAttribute("membername").'",$obj'.$counter.');'."\n";
 							self::_parse_contents($xpath,$node,'$obj'.$counter,$result,$counter);
@@ -243,13 +270,29 @@
 					case "setting":$result .= $container.'->'.$node->getAttribute("name").' = "'.addcslashes($node->nodeValue,'"').'";'."\n";break;
 				}
 			}
-		}		
-		
-		private function _compile_config(){
-			if (file_exists($this->ConfigFile)){
+		}
+
+		private function _compile_init($inputfile,$outputfile){
+			if (file_exists($inputfile)){
 				$configXml = new DOMDocument();
 				$configXml->preserveWhiteSpace = false;
-				$configXml->Load($this->ConfigFile);
+				$configXml->Load($inputfile);
+				if (!$configXml->schemaValidate(self::$SystemPath."/schemas/init.xsd"))
+					throw new TCoreException(TCoreException::ERR_APPCONF_INCORRECT);
+				$app_config = '<?php'."\n";
+				$xpath = new DOMXPath($configXml);
+				$objid = 0;
+				self::_parse_contents($xpath,$configXml->firstChild,'$this',$app_config,$objid);			
+				$app_config .= '?>';
+				file_put_contents($outputfile,$app_config);
+			}
+		}
+		
+		private function _compile_config($file){
+			if (file_exists($file)){
+				$configXml = new DOMDocument();
+				$configXml->preserveWhiteSpace = false;
+				$configXml->Load($file);
 				if (!$configXml->schemaValidate(self::$SystemPath."/schemas/application.xsd"))
 					throw new TCoreException(TCoreException::ERR_APPCONF_INCORRECT);
 				$app_config = '<?php'."\n";
@@ -476,7 +519,11 @@
 		} 
 		
 		private function _app_run(){
+			if (file_exists($this->ConfCompileDir."/init.0.php"))
+				include_once $this->ConfCompileDir."/init.0.php";
 			include_once $this->ConfCompileDir."/application.php";
+			if (file_exists($this->ConfCompileDir."/init.1.php"))
+				include_once $this->ConfCompileDir."/init.1.php";
 			$servicename = "";
 			$this->_call_type_ = isset($_SERVER['HTTP_HOST'])?self::CALL_HTTP:self::CALL_CONSOLE;
 			if ($this->_call_type_ == self::CALL_HTTP) {
@@ -486,10 +533,11 @@
 					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
 				}
 				if (!self::$_request_) 
-					self::$_request_ = new THttpRequest($servicename);		
+					self::$_request_ = new THttpRequest($servicename);
 			} else {
 				self::$_request_ = new TConsoleCall();
 			}
+						
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
@@ -546,6 +594,8 @@
  * @see TService 
  */						
 		public function MakeUrl($service = null,array $parameters = array()){
+			if ($this->_init_folder_)
+				$parameters['app_conf_name'] = $this->_init_folder_;
 			$dr = preg_replace("/[\\/\\\\]/","|",realpath($_SERVER['DOCUMENT_ROOT']));
 			$rp = preg_replace("/[\\/\\\\]/","|",realpath($this->RequestPath));		
 			

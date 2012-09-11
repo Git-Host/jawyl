@@ -128,12 +128,21 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function NumberFormat(){
-		if (!key_exists("number",$this->formats)) return "";
-		$format = $this->formats["number"];
-		$format = preg_replace('/\\{dig\\}/',$this->symbols["digseparator"],$format);
-		$format = preg_replace('/\\{dec\\}/',$this->symbols["decseparator"],$format);
-		return $format;
+            if (!key_exists("number",$this->formats)) return "";
+            $format = $this->formats["number"];
+            $format = str_replace('{dig}',$this->symbols["digseparator"],$format);
+            $format = str_replace('{dec}',$this->symbols["decseparator"],$format);
+            return $format;
 	}
+        
+        /**
+         * @param string $str
+         * @return float
+         */                
+         public function StrToFloat($str){
+             return floatval(preg_replace('/[^\d\.]/','',str_replace($this->symbols["decseparator"],'.',$str))); 
+         }
+
 
 	/**
 	 * @see ILocale::CurrencyFormat()

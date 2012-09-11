@@ -162,6 +162,11 @@
  */		
 		public function NumberFormat();
 /**
+ * @param string $str
+ * @return float
+ */                
+                public function StrToFloat($str);
+/**
  * gets locale currency format
  * @return string 
  */		
@@ -172,6 +177,8 @@
  * @return string 
  */		
 		public function FormatNumber($number);
+                
+                
 /**
  * formats date according to locale date format
  * @param int|TDate $date datetime value
@@ -257,6 +264,8 @@
  * @ignore
  */		
 		public function NumberFormat(){return "";}
+                
+                public function StrToFloat($str){return (float)$str;}
 /**
  * @ignore
  */		
