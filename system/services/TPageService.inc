@@ -352,10 +352,12 @@ abstract class TPageService extends TService {
 	public final function Url($page,$controller = null,$method = null, array $parameters = array()){
 		if (is_null($page))
 			$page = $this->page->Name();
-		if ($page != $this->page->Name()) {
-			if (!$this->_check_page_access($page))
-				return null;
-		}	
+		if ($this->page){
+			if ($page != $this->page->Name())
+				if (!$this->_check_page_access($page))
+					return null;
+		} else if (!$this->_check_page_access($page))
+			return null;	
 		
 		return TApplication::Url($this->name,$this->formAppUrlParameters($page, $controller, $method, $parameters));
 	}

@@ -1033,8 +1033,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							case 'scalar':
 							default: $operands[] = $this->_create_field($orm['properties'][$o]['field']['name'], $tables[$orm['properties'][$o]['field']['table']], ($tables[$orm['properties'][$o]['field']['table']] instanceof TNestedSets)?1:0);
 						}
-					} else 	
-						$operands[] = $o;
+					} else {
+						if ($o instanceof IIdentity)
+							$operands[] = $o->ItemId();
+						else	
+							$operands[] = $o;
+					}
 								
 				$filter[] = new TCondition($condition->Type, $operands);
 			} else if ($condition instanceof TOperation){
