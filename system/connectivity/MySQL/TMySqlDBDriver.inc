@@ -494,7 +494,9 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		if (is_bool($value)) return $value?"1":"0";
 		if (is_int($value) || is_float($value)) return $value;
 		if ($value instanceof TDate)
-			$value = $value->ToString("Y-m-d H:i:s");	  
+			$value = $value->ToString("Y-m-d H:i:s");
+		else
+			$value = (string)$value;
 		if (is_string($value)){
 			if ($value == "")
 		  		return "Null";
@@ -502,7 +504,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		  		return $this->quoteValue(TConvertions::ConvertToBoolean($value));	
 			return "'" . mysql_real_escape_string($value,$this->connection) . "'";
 		}
-		return $value;
+		throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 	}
 		
 	protected function scalarValue($q, $row = 0, $field = 0){

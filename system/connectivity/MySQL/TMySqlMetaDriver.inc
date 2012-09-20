@@ -1,5 +1,6 @@
 <?php
 TApplication::import("connectivity::MySQL::TMySqlDBDriver");
+TApplication::import("common::metastorage");
 
 /**
  * 
@@ -460,6 +461,12 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 			default:return parent::transformColType($type);break;
 		}
 	}	
+	
+	protected function quoteValue($value){
+		if ($value instanceof IInstancet) 
+			$value = $value->Id();
+		return parent::quoteValue($value);
+	}
 	
 	private function _define_attribute(TDBAttributeDefinition $a){
 		if ($a->Class instanceof TDBDefinedClass){
