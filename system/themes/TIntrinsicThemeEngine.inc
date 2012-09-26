@@ -336,9 +336,9 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 				else
 					return '<?php if (!@'.$this->_compile_expression($matches[2]).') { ?>';
 			}break;
-			case 'is':return '<?php $__c__n__ = '.$this->_compile_expression($matches[2],true).'; if ($this->CurrentContext() instanceof $__c__n__) { ?>';break;
-			case 'switch':return '<?php switch ('.$this->_compile_expression($matches[2]).') { ?>';break;
-			case 'case':return '<?php case '.$this->_compile_expression($matches[2],true).':{ ?>';break;
+			case 'is':return '<?php $__c__n__ = '.$this->_compile_expression($matches[2],true).'; if ($this->CurrentContext() instanceof $__c__n__) { ?> ';break;
+			case 'switch':return '<?php switch ('.$this->_compile_expression($matches[2]).') {';break;
+			case 'case':return ' case '.$this->_compile_expression($matches[2],true).':{ ?>';break;
 			case 'with':return '<?php $this->pushContext('.$this->_compile_expression($matches[2]).'); ?>';break;
 		}
 	}
@@ -377,20 +377,20 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace_callback('/{%(switch)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		$text = preg_replace_callback('/{%(case)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		
-		$text = preg_replace('/{%default%}/','<?php default:{ ?>',$text);		
+		$text = preg_replace('/{%default%}/',' default:{ ?>',$text);		
 		$text = preg_replace('/{%else%}/','<?php } else { ?>',$text);
 		$text = preg_replace('/{%endis%}/','<?php } ?>',$text);
 		$text = preg_replace('/{%endif%}/','<?php } ?>',$text);
 		$text = preg_replace('/{%endodd%}/','<?php } ?>',$text);
-		$text = preg_replace('/{%endcase%}/','<?php }break; ?>',$text);
-		$text = preg_replace('/{%endswitch%}/','<?php } ?>',$text);
+		$text = preg_replace('/{%endcase%}/','<?php }break; ',$text);
+		$text = preg_replace('/{%endswitch%}/',' } ?>',$text);
 		$text = preg_replace('/{%endwith%}/','<?php $this->popContext(); ?>',$text);
 		
 		$text = preg_replace_callback('/{%assign\\s+([_\w]+)(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?\s+('.$expr.')\s*%}/',array(&$this,"_assign_compile"),$text);
 		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?('.$expr.')\s*%}/',array(&$this,"_varout_compile"),$text);
 		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)(.*?)\s*%}/',array(&$this,"_rawout_compile"),$text);
 		$text = preg_replace('/{%\s*(.*?)\s*%}/','<?php echo $1; ?>',$text);
-		$text = preg_replace('/\?>\s*<\?php/m','',$text);
+		/* $text = preg_replace('/\?>\s*<\?php/m','',$text); */
 		return $text;
 	}
 	
