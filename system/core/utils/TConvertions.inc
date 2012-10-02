@@ -49,22 +49,24 @@
 	  	}
 
 	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
-	  		$temp = explode($separators[$separator],$v);
+	  		if (@$separators[$separator])
+	  			$temp = explode(@$separators[$separator],$v);
+	  		else 
+	  			return $v;		
+	  			
 	  		array_walk($temp, create_function('&$item', '$item = trim($item);'));
 	  		$temp = array_filter($temp,create_function('$item','return $item;'));
 	  		$result = array();
 	  		if ($separator < count($separators) - 1){
 	  			foreach ($temp as $t){
-	  				$t1 = self::_str_array_parse($t, $separator + 1, $separators, $keyval);
-	  				if (!empty($t1)){
-	  					if ((@$keyval[$separator + 1]) && is_array($t1) && (count($t1) > 1))
-	  						if (is_array($t1[0]))
-	  							$result[$t1[0][0]] = $t1[1];
-	  						else 	
-	  							$result[$t1[0]] = $t1[1];
+	  				if (@$keyval[$separator + 1]){
+	  					$t1 = explode(@$separators[$separator + 1],$t);
+	  					if (is_array($t1) && (count($t1) > 1))
+	  						$result[$t1[0]] = self::_str_array_parse($t1[1], $separator + 2, $separators, $keyval);
 	  					else
-	  						$result[] = $t1;
-	  				}	 
+	  						$result[] = self::_str_array_parse($t1[0], $separator + 2, $separators, $keyval);
+	  				} else 
+	  					$result[] = self::_str_array_parse($t, $separator + 1, $separators, $keyval);
 	  			}
 	  		}
 	  		else $result = $temp;	
