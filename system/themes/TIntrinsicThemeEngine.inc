@@ -103,7 +103,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		array_pop($this->_context_stack_);
 	}
 	
-	protected function evalContextTag($name,$get_self = false){
+	protected function evalContextTag($name,$get_self = false,$bubble = true){
 		$cc = $this->currentContext();
 		$n = trim($name);
 		if ($n == "context")
@@ -119,21 +119,24 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$v = @$cc->$n;
 		if (!is_null($v))
 			return $v;
-		if ($this->response){	
-			if (isset($this->response->$n))
-				return $this->response->$n;
-			if (method_exists($this->response,$n))
-				return $this->response->$n();
-		}				
-		if (isset(TApplication::CurrentService()->$n))
-			return TApplication::CurrentService()->$n;
-		if (method_exists(TApplication::CurrentService(),$n))
-			return TApplication::CurrentService()->$n();			
-		if (isset(TApplication::$Application->$n))
-			return TApplication::$Application->$n;
-		if (method_exists(TApplication::$Application,$n))
-			return TApplication::$Application->$n();			
-			
+		
+		if ($bubble){
+			if ($this->response){	
+				if (isset($this->response->$n))
+					return $this->response->$n;
+				if (method_exists($this->response,$n))
+					return $this->response->$n();
+			}				
+			if (isset(TApplication::CurrentService()->$n))
+				return TApplication::CurrentService()->$n;
+			if (method_exists(TApplication::CurrentService(),$n))
+				return TApplication::CurrentService()->$n();			
+			if (isset(TApplication::$Application->$n))
+				return TApplication::$Application->$n;
+			if (method_exists(TApplication::$Application,$n))
+				return TApplication::$Application->$n();			
+		}
+		
 		if (class_exists($n))
 			return $n;			
 		if ($get_self)	
@@ -151,7 +154,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return '[$this->evalContextTag(\''.$expr.'\',true)]';		
 	}
 	
-	private function _compile_expression($expr,$get_self = false){
+	private function _compile_expression($expr,$get_self = false,$bubble = true){
 		$expr = trim($expr);
 		if ($expr[0] == '`')
 			return str_replace('`','"',addslashes($expr));
@@ -169,7 +172,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if (strpos($expr,'::') !== false)
 			return $expr;
 		
-		return '$this->evalContextTag("'.$expr.'"'.($get_self?',true':'').')';
+		return '$this->evalContextTag("'.$expr.'",'.($get_self?'true':'false').((!$bubble)?',false':'').')';
 	}
 	
 	protected function getContextIterator($name){
@@ -275,10 +278,10 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _varout_compile($matches){
 		$result = '<?php echo ';
-		$filters = explode('<', $matches[1]);
+		$filters = explode('<', $matches[2]);
 		$result .= $this->_compile_filters_open($filters);
-		$val = trim($matches[2]); 
-		$result .= $this->_compile_expression($val,false); 
+		$val = trim($matches[3]); 
+		$result .= $this->_compile_expression($val,false,$matches[1] != "@"); 
 		$result .= $this->_compile_filters_close($filters);
 		return $result.'; ?>';
 	}
@@ -387,7 +390,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace('/{%endwith%}/','<?php $this->popContext(); ?>',$text);
 		
 		$text = preg_replace_callback('/{%assign\\s+([_\w]+)(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?\s+('.$expr.')\s*%}/',array(&$this,"_assign_compile"),$text);
-		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?('.$expr.')\s*%}/',array(&$this,"_varout_compile"),$text);
+		$text = preg_replace_callback('/{(@?)%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?('.$expr.')\s*%}/',array(&$this,"_varout_compile"),$text);
 		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)(.*?)\s*%}/',array(&$this,"_rawout_compile"),$text);
 		$text = preg_replace('/{%\s*(.*?)\s*%}/','<?php echo $1; ?>',$text);
 		/* $text = preg_replace('/\?>\s*<\?php/m','',$text); */
