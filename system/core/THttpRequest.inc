@@ -67,9 +67,26 @@
 			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
 	
 			foreach ($_FILES as $key=>$file)
-				if ($file && ($file['error'] == 0)){
-					$this->_file_parameters_[$key] = new TUploadedFile($file);
-					$orig[$key] = $file["name"];
+				if (is_array($file) && (($file['error'] == 0) || is_array($file['error']))){
+					if (is_array($file["name"])){
+						$files = array();
+						$n = count($file["name"]);
+						$orig[$key] = '';
+						for ($i = 0; $i < $n; $i++)
+							if ($file["error"][$i] == 0){
+								$orig[$key] .= @$file["name"][$i].';';
+								$files[] = new TUploadedFile(array(
+									"name"=>@$file["name"][$i],
+									"tmp_name"=>@$file["tmp_name"][$i],
+									"type"=>@$file["type"][$i],
+									"size"=>@$file["size"][$i]
+								));
+							}
+						$this->_file_parameters_[$key] = $files;
+					} else {
+						$this->_file_parameters_[$key] = new TUploadedFile($file);
+						$orig[$key] = $file["name"];
+					}
 				}
 
 			$t = null;
