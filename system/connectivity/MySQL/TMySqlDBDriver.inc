@@ -1065,7 +1065,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			
 			$destination->Filter(new TCondition(TConditionType::C_EQUAL, array(new TNestedSetsField(TMySqlDBDriver::NS_DELETED_FIELD,TNestedSetsField::SUBSET_FIELD,null,$dest_target),0)));
 			list($plk,$prk,$plevel) = $this->_ns_findparent($dest_target, $destination);
-			var_dump($plk);
+			
 			if (is_null($plk)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 			
 			$delta = 0;
