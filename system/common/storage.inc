@@ -391,7 +391,7 @@ class TNestedSets extends TTable {
 	}
 	
 	public function AttachField(IDataSourceField $fld){
-		if (!(($fld instanceof TNestedSetsField) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
+		if (!(($fld instanceof TTableField) || ($fld instanceof TExpressionField) || ($fld instanceof TAllField)))
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		if ($fld instanceof TNestedSetsField)	
 			if ($fld->Type == TNestedSetsField::BASE_FIELD)

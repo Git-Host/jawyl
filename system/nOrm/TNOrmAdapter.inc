@@ -886,12 +886,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						$this->_ioc_driver_->UpdateRecords($ds, $fields, $values);
 						if ($object instanceof INOrmObject){
 							if (!empty($orm['nestedsets']) && $object->WasMoved() && $maintable){
-								$src = new TNestedSets($table, array(), $filter, array(), array());
+								$src = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
 								$parentprop = $orm['nestedsets']['parent'];
 								$filter = array();
 								if (is_object($object->$parentprop))
 									$filter = $this->_filter_from_object($orm, $object->$parentprop, $tables);
-								$dest = new TNestedSets($table, array(), $filter, array(), array());
+								$dest = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
 								$this->_ioc_driver_->NestedSetBranchesMove($src,$dest);
 							}
 						}
@@ -1195,7 +1195,21 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			}break;
 		}
 	}
-
+	
+	public function ParentProperty($object){
+		if ($orm = $this->_get_orm_config($object))
+			if (isset($orm['nestedsets']))
+				return @$orm['nestedsets']['parent'];
+		return false;
+	}
+	
+	public function ChildrenProperty($object){
+		if ($orm = $this->_get_orm_config($object))
+			if (isset($orm['nestedsets']))
+				return @$orm['nestedsets']['children'];
+		return false;
+	}
+	
 	public function Properties($dummy){
 		if ($orm = $this->_get_orm_config($dummy)){
 			$result = array();
@@ -1237,7 +1251,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	public function Put($object,$container){
 		$p = $this->_get_ns_property_name($object, 'parent');
+		$old = $object->$p;
 		$object->$p = $container;
+		$this->Save($object);
 	}
 	
 	public function Container($object){
