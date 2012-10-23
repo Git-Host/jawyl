@@ -1062,9 +1062,10 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->BeginTransaction();
 		try {
 			$ranges = $this->_ns_eject_branches($tname, $branches);
-			$destination->Filter(new TCondition(TCondition::C_EQUAL, array(new TNestedSetsField(TMySqlDBDriver::NS_DELETED_FIELD,TNestedSetsField::BASE_FIELD,null,$dest_target),1)));
-			list($plk,$prk,$plevel) = $this->_ns_findparent($dest_target, $destination);
 			
+			$destination->Filter(new TCondition(TConditionType::C_EQUAL, array(new TNestedSetsField(TMySqlDBDriver::NS_DELETED_FIELD,TNestedSetsField::SUBSET_FIELD,null,$dest_target),0)));
+			list($plk,$prk,$plevel) = $this->_ns_findparent($dest_target, $destination);
+			var_dump($plk);
 			if (is_null($plk)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 			
 			$delta = 0;
@@ -1075,7 +1076,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 				$delta += $r[1] - $r[0] + 1;
 			}
 			
-			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + :delta, ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." >= :lk,".TMySqlDBDriver::NS_LKEY_FIELD." + :delta,".TMySqlDBDriver::NS_LKEY_FIELD.") where (".TMySqlDBDriver::NS_RKEY_FIELD." >= :lk) and (".TMySqlDBDriver::NS_DELETED_FIELD." = 0)", array("lk"=>$plk,"delta"=>$delta));
+			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + :delta, ".TMySqlDBDriver::NS_LKEY_FIELD." = if(".TMySqlDBDriver::NS_LKEY_FIELD." > :lk,".TMySqlDBDriver::NS_LKEY_FIELD." + :delta,".TMySqlDBDriver::NS_LKEY_FIELD.") where (".TMySqlDBDriver::NS_RKEY_FIELD." >= :lk) and (".TMySqlDBDriver::NS_DELETED_FIELD." = 0)", array("lk"=>$plk,"delta"=>$delta));
 			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + :lk, ".TMySqlDBDriver::NS_LKEY_FIELD." = ".TMySqlDBDriver::NS_LKEY_FIELD." + :lk, ".TMySqlDBDriver::NS_LEVEL_FIELD." = ".TMySqlDBDriver::NS_LEVEL_FIELD." + :level, ".TMySqlDBDriver::NS_DELETED_FIELD." = 0 where (".TMySqlDBDriver::NS_DELETED_FIELD." = 1)", array("lk"=>$plk,"level"=>$plevel));
 			
 			$this->CommitTransaction();

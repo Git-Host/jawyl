@@ -131,4 +131,6 @@ interface IORMHierarchyStorage {
 	public function Container($object);
 	public function Contents($object);
 	public function FetchContents($dummy,$direct = true, array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null);
+	public function ParentProperty($object);
+	public function ChildrenProperty($object);
 }
