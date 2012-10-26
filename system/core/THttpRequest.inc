@@ -70,13 +70,12 @@
 				if (is_array($file) && (($file['error'] == 0) || is_array($file['error']))){
 					if (is_array($file["name"])){
 						$files = array();
-						$n = count($file["name"]);
 						$orig[$key] = '';
-						for ($i = 0; $i < $n; $i++)
+						foreach ($file["name"] as $i => $fname)
 							if ($file["error"][$i] == 0){
-								$orig[$key] .= @$file["name"][$i].';';
-								$files[] = new TUploadedFile(array(
-									"name"=>@$file["name"][$i],
+								$orig[$key] .= $fname.';';
+								$files[$i] = new TUploadedFile(array(
+									"name"=>$fname,
 									"tmp_name"=>@$file["tmp_name"][$i],
 									"type"=>@$file["type"][$i],
 									"size"=>@$file["size"][$i]
