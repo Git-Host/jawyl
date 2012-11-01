@@ -18,6 +18,18 @@ interface IPreProcessor {
 	public function PreProcess($text);	
 }
 
+interface IContentFilter {
+/**
+ * @return string
+ */	
+	public function CallName();
+/**
+ * @param string $content
+ * @return string
+ */	
+	public function Filter($content);
+}
+
 interface IOutputCache {
 /** 
  * returns script cached output
