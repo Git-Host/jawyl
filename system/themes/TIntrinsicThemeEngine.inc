@@ -58,7 +58,14 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private $_global_vars_ = array();
 	
-	protected $_ioc_output_cache_; 
+	protected $_ioc_output_cache_;
+
+/**
+ * @var IContentFilter[]
+ */	
+	protected $_ioc_content_filter_ = array();
+	
+	private $_filter_hash_ = null;
 	
 /**
  * @var TResponse
@@ -224,6 +231,18 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return null;
 	}
 	
+	private function _get_content_filter($nm){
+		if (is_null($this->_filter_hash_)){
+			$this->_filter_hash_ = array();
+			foreach ($this->ContentFilter as $f)
+				$this->_filter_hash_[$f->CallName()] = $f;
+		}
+			
+		if (isset($this->_filter_hash_[$nm]))
+			return $this->_filter_hash_[$nm];
+		return null;
+	}
+	
 	private function _compile_filters_open(array $filters){
 		$result ='';
 		foreach ($filters as $f){
@@ -241,10 +260,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 					case 'cap':$result .= 'capitalize(';break;
 					case 'q':$result .= 'htmlentities(';break;
 					default:{
-						if (function_exists($v))
+						if ($this->_get_content_filter($v))
+							$result .= '$this->_get_content_filter("'.$v.'")->Filter(';
+						else if (function_exists($v))
 							$result .= $v.'(';
 						else
-							$result .= '$this->callMethod("'.trim($f).'",'; 	
+							$result .= '$this->callMethod("'.$v.'",'; 	
 					}break;
 				}
 			}
@@ -499,12 +520,6 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 					return $this->_global_vars_[$nm];
 				return parent::__get($nm);
 			}break;
-		}
-	}
-	
-	public function __set($nm,$value){
-		switch ($nm){
-			default:parent::__set($nm,$value);break;
 		}
 	}
 	
