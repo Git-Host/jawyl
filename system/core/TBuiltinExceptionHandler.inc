@@ -204,7 +204,6 @@
 		public function HandleException(Exception $e){
 			switch (TApplication::$Environment){
 				case TApplication::ENV_PRODUCTION:{
-					define_syslog_variables();
 					if (openlog('Jawyl',LOG_NDELAY | LOG_PERROR,LOG_DAEMON)){
 						if ($e instanceof ErrorException)
 							syslog(LOG_ERR, 'error '.$e->getCode().':'.$e->getMessage());
