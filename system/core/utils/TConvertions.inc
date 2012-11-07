@@ -47,6 +47,13 @@
 	  	public static function CheckInteger($v){
 			return (integer)$v == $v;
 	  	}
+	  	
+	  	public static function CheckSequentialArray(array &$a){
+	  		for (reset($a), $base = 0;key($a) === $base++;next($a));
+	  		$result = is_null(key($a));
+	  		reset($a);
+	  		return $result;
+	  	}
 
 	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
 	  		if (@$separators[$separator])
