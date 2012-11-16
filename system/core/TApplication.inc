@@ -106,7 +106,7 @@
 /**
  * @var IExceptionHandler
  */		
-		private $_ioc_exception_handler_;
+		protected $_ioc_exception_handler_;
 		
 		public static $CompileAppConfig = false;
 		public static $AllowMultipleConfig = false;
@@ -213,12 +213,11 @@
 			parent::__construct('');
 
 			if ($this->_call_type_ == self::CALL_HTTP) {
-				if (self::$AllowMultipleConfig && $_GET['app_conf_name']){
+				if (self::$AllowMultipleConfig && isset($_GET['app_conf_name'])){
 					$this->_init_folder_ = $_GET['app_conf_name'];
 					unset($_GET['app_conf_name']);
 				}
 			}
-				
 			if (self::$CompileAppConfig){
 				TFileSystem::ForceDir($this->ConfCompileDir);
 				
@@ -235,15 +234,15 @@
 						
 				$config = file_exists($config_file);
 				$src = file_exists($this->ConfigFile);
-						
 				if (!$config){
-					if ($src)
+					if ($src){
 						$this->_compile_config($this->ConfigFile);
-					else throw new TCoreException(TCoreException::ERR_NO_APPCONF);
+					} else throw new TCoreException(TCoreException::ERR_NO_APPCONF);
 				} else {
-					if ($src)
+					if ($src){
 						if (filemtime($config_file) < filemtime($this->ConfigFile))
 							$this->_compile_config($this->ConfigFile);
+					}
 				}						
 			}
 		}
@@ -293,8 +292,10 @@
 				$configXml = new DOMDocument();
 				$configXml->preserveWhiteSpace = false;
 				$configXml->Load($file);
+				
 				if (!$configXml->schemaValidate(self::$SystemPath."/schemas/application.xsd"))
 					throw new TCoreException(TCoreException::ERR_APPCONF_INCORRECT);
+					
 				$app_config = '<?php'."\n";
 				$app_config .= '$this->name = "'.$configXml->firstChild->getAttribute("name").'";';
 				$xpath = new DOMXPath($configXml);
@@ -306,7 +307,6 @@
 				$servicenodes = $xpath->query("/application/service");
 				if ($servicenodes->length == 0) throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND);
 				$one_service =  $servicenodes->length == 1;
-				
 				foreach ($servicenodes as $servicenode){
 					$app_config .= 'self::$_services_["'.$servicenode->getAttribute("name").'"] = self::Instantiate("'.$servicenode->getAttribute("classname").'",array("name"=>"'.$servicenode->getAttribute("name").'","container"=>$this));'."\n";
 					if (TConvertions::ConvertToBoolean($servicenode->getAttribute("default")) || $one_service)
