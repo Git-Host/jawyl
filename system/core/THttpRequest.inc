@@ -76,9 +76,9 @@
 								$orig[$key] .= $fname.';';
 								$files[$i] = new TUploadedFile(array(
 									"name"=>$fname,
-									"tmp_name"=>@$file["tmp_name"][$i],
-									"type"=>@$file["type"][$i],
-									"size"=>@$file["size"][$i]
+									"tmp_name"=>$file["tmp_name"][$i],
+									"type"=>$file["type"][$i],
+									"size"=>$file["size"][$i]
 								));
 							}
 						$this->_file_parameters_[$key] = $files;

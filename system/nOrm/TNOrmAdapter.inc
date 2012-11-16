@@ -51,8 +51,8 @@ class TClassOrmConfig {
 			$this->_properties_[$name]['type'] = $settings['type'];
 			$this->_properties_[$name]['classname'] = $settings['classname'];
 			$this->_properties_[$name]['defclass'] = $class;
-			$this->_properties_[$name]['mtm'] = explode('.',trim(@$settings['mtm']));
-			$this->_parse_refprop($name,$settings['type'],$settings['fields'],@$settings['sorting'],$default_tbl);
+			$this->_properties_[$name]['mtm'] = explode('.',trim($settings['mtm']));
+			$this->_parse_refprop($name,$settings['type'],$settings['fields'],isset($settings['sorting'])?$settings['sorting']:array(),$default_tbl);
 	}
 	
 	public function ParseClass(ReflectionClass $rc){
@@ -398,8 +398,10 @@ abstract class TNOrmLoader {
 
 class TNOrmObjectLoader extends TNOrmLoader {
 	protected function load(){
+		$this->adapter->LazyLoading = true;
 		if ($this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants))
 			$this->adapter->ProvideUniqueness($this->value);
+		$this->adapter->LazyLoading = false;
 	}
 }
 
@@ -539,6 +541,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private $_loaded_orms_ = array();
 	
 	private $_loaded_objects_ = array();
+	
+	private $_lazy_loading_ = false;
 
 	
 	private function _form_ds_field($orm,$meta,$tables,&$fields){
@@ -753,6 +757,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  */	
 	public function Load($object, array $assume_descendants = array()){
 		if ($orm = $this->_get_orm_config($object)){
+			if ($this->_lazy_loading_ && $this->_bool_unique_objects_){
+				if ($result = $this->_loaded_object($object, $orm))
+					return $result;
+			}
 			$join = array(); 
 			$tables = array();
 			$fields = array();
@@ -779,7 +787,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$n = count($orm['tables'][$table]);
 			if (!empty($keyvalues))
 				for ($i = 0; $i < $n; $i++)
-					$tables[$table]['keys'][$orm['tables'][$table][$i]] = @$keyvalues[$i];
+					$tables[$table]['keys'][$orm['tables'][$table][$i]] = $keyvalues[$i];
 		}
 	}
 	
@@ -865,7 +873,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							if (is_object($object->$parentprop)){
 								$pkeyvalues = $this->_entity_keys($object->$parentprop, $orm,$pemptyid);
 								foreach ($keyfields as $i => $fld)
-									$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TNestedSetsField($fld),@$pkeyvalues[$i]));
+									$filter[] = new TCondition(TConditionType::C_EQUAL, array(new TNestedSetsField($fld),$pkeyvalues[$i]));
 							}
 							$ds = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
 							$this->_ioc_driver_->NestedSetAddRecord($ds, $merged,$pk);
@@ -1131,9 +1139,22 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$id = join('|',$this->_get_object_key_values($object));
 				if (!isset($this->_loaded_objects_[$orm['classname']]))
 					$this->_loaded_objects_[$orm['classname']] = array();
-				$this->_loaded_objects_[$orm['classname']][$id] = $object;
+				if (!isset($this->_loaded_objects_[$orm['classname']][$id]))
+					$this->_loaded_objects_[$orm['classname']][$id] = $object;
 			}
 		}
+	}
+	
+	private function _loaded_object($dummy, &$orm){
+		if (isset($this->_loaded_objects_[$orm['classname']])){
+			$id = $this->_get_object_key_values($dummy);
+			if (!empty($id)){
+				$id = join('|',$id);
+				if (isset($this->_loaded_objects_[$orm['classname']][$id]))
+					return $this->_loaded_objects_[$orm['classname']][$id];
+			}
+		}
+		return null;
 	}
 	
 	private function _check_loaded($dummy,&$orm){
@@ -1199,14 +1220,14 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	public function ParentProperty($object){
 		if ($orm = $this->_get_orm_config($object))
 			if (isset($orm['nestedsets']))
-				return @$orm['nestedsets']['parent'];
+				return $orm['nestedsets']['parent'];
 		return false;
 	}
 	
 	public function ChildrenProperty($object){
 		if ($orm = $this->_get_orm_config($object))
 			if (isset($orm['nestedsets']))
-				return @$orm['nestedsets']['children'];
+				return $orm['nestedsets']['children'];
 		return false;
 	}
 	
@@ -1408,6 +1429,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			case 'XmlConfigPath':$this->_xml_config_path_ = TApplication::$Application->AdjustPath($value);break;
 			case 'ScriptConfigPath':$this->_script_config_path_ = TApplication::$Application->AdjustPath($value);break;
 			case 'DateFormat':$this->_date_format_ = $value;break;
+			case 'LazyLoading':$this->_lazy_loading_ = TConvertions::ConvertToBoolean($value);break;
 			default:parent::__set($nm,$value);break;
 		}
 	}

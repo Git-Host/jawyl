@@ -56,8 +56,8 @@
 	  	}
 
 	  	private static function _str_array_parse($v,$separator, array $separators, array $keyval){
-	  		if (@$separators[$separator])
-	  			$temp = explode(@$separators[$separator],$v);
+	  		if (isset($separators[$separator]))
+	  			$temp = explode($separators[$separator],$v);
 	  		else 
 	  			return $v;		
 	  			
@@ -66,8 +66,8 @@
 	  		$result = array();
 	  		if ($separator < count($separators) - 1){
 	  			foreach ($temp as $t){
-	  				if (@$keyval[$separator + 1]){
-	  					$t1 = explode(@$separators[$separator + 1],$t);
+	  				if (isset($keyval[$separator + 1])){
+	  					$t1 = explode($separators[$separator + 1],$t);
 	  					if (is_array($t1) && (count($t1) > 1))
 	  						$result[$t1[0]] = self::_str_array_parse($t1[1], $separator + 2, $separators, $keyval);
 	  					else
