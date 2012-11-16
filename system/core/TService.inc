@@ -170,12 +170,6 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
 		if (!$result) $result = TApplication::$Application->__isset($nm);
 		return $result; 
 	}
-/**
- * gets service name
- * @return string
- * @see IService::Name()
- */	
-	//public function Name(){return $this->name;}
 	
 	protected abstract function handleRequest(TRequest $request);
 	
