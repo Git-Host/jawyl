@@ -111,6 +111,7 @@
 		protected $_ioc_exception_handler_;
 		
 		public static $CompileAppConfig = false;
+		public static $ErrorsCapture = true;
 		public static $ConfigCompileDirectory = 'config';
 		public static $IocTypesCompileDirectory = 'private/ioc';
 		
@@ -146,7 +147,7 @@
 				case 'RelativePath':return $this->_relative_path_;break;
 				case 'Path':return join(';',self::$_import_paths_);break;
 				case 'Host':return $_SERVER['HTTP_HOST'];break;
-				case 'ConfigDir':return $this->AdjustPath($this->_app_path_.'/'.$this->_private_dir_);break;
+				case 'ConfigDir':return $this->AdjustPath($this->_private_dir_);break;
 				case 'ConfCompileDir':return $this->AdjustPath(self::$ConfigCompileDirectory);break;
 				case 'IocTypesCompileDir':return $this->AdjustPath(self::$IocTypesCompileDirectory);break;
 				case 'ConfigFile':return $this->_app_path_.'/'.$this->_private_dir_.'/application.xml';break;
@@ -418,7 +419,7 @@
 		
 		public function AdjustPath($path){
 			$trimmed = trim($path);
-			if (preg_match('/^(https?:\/\/|\/|[a-zA-Z]:\\\).*$/',$trimmed))
+			if (preg_match('/^(https?:\/\/|\/|[a-zA-Z]:\\).*$/',$trimmed))
 				return $this->_canonical_path($trimmed);
 			return $this->_canonical_path($this->_app_path_.'/'.$trimmed);
 		}
@@ -756,8 +757,10 @@
 		public static function Run($callerPath){
 			global $Application;
 			self::_adjust_environment();
-			set_error_handler(array('TApplication','AppErrorHandler'));
-			set_exception_handler(array('TApplication','AppExceptionHandler'));
+			if (self::$ErrorsCapture){
+				set_error_handler(array('TApplication','AppErrorHandler'));
+				set_exception_handler(array('TApplication','AppExceptionHandler'));
+			}
 			$Application = new TApplication(realpath(dirname($callerPath)));
 			$Application->_app_run();
 		}
