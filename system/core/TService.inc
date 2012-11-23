@@ -183,7 +183,7 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
 	public final function Handle(TRequest $request){
 		$this->request = $request;
 		if (!$this->checkRequest($request))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+			return false;
 		return $this->handleRequest($request);
 	}
 }
