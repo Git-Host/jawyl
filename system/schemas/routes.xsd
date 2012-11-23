@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+<xsd:complexType name="t_route">
+	<xsd:sequence>
+	<xsd:element name="regexp" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+	<xsd:element name="request" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+	<xsd:element name="service" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+	<xsd:element name="parameter" minOccurs="0" maxOccurs="unbounded">
+		<xsd:complexType>
+			<xsd:simpleContent>
+				<xsd:extension base="xsd:string">
+					<xsd:attribute name="name" type="xsd:string" use="required" />
+				</xsd:extension>
+			</xsd:simpleContent>
+		</xsd:complexType>
+	</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+
+
+<xsd:element name="requestmap">
+	<xsd:complexType>
+		<xsd:sequence>
+			<xsd:element name="route" type="t_route" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:element>
+</xsd:schema>

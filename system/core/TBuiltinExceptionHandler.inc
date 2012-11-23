@@ -133,7 +133,7 @@
 						?>(<?php
 						$args = array(); 
 						if (isset($call['args']))
-							foreach ($call['args'] as $arg) $args[] = is_object($arg)?(get_class($arg)):(is_numeric($arg)?$arg:(is_null($arg)?'null':("'".(string)$arg."'")));
+							foreach ($call['args'] as $arg) $args[] = is_object($arg)?(get_class($arg)):(is_numeric($arg)?$arg:(is_null($arg)?'null':("'".(is_array($arg)?'Array':$arg)."'")));
 						echo join(',', $args); 
 						?>)</td>
 						<td style="text-align: right;"><?php if (isset($call['line'])) echo $call['line']; ?></td>
