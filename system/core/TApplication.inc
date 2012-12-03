@@ -85,16 +85,26 @@
 		
 		const CALL_HTTP = 0;
 		const CALL_CONSOLE = 1;
-		
-		
+				
 		private $_request_path_;
 /**
  * @var string stores local path where Jawyl framework is placed
  */
 		public static $SystemPath;
 		private $_app_path_;
-		private $_private_dir_ = 'private';
-		private $_override_dir_ = 'override';
+		
+		private $_prev_private_dir_;
+		private $_prev_override_dir_;
+		
+		private $_private_dir_;
+		private $_override_dir_;
+
+		private $_prev_configcompile_dir_;
+		private $_prev_ioccompile_dir_;
+		
+		private $_configcompile_dir_;
+		private $_ioccompile_dir_;
+		
 		private $_shared_ = '/shared';
 		private $_uri_;
 		private $_root_;
@@ -114,6 +124,8 @@
 		public static $ErrorsCapture = true;
 		public static $ConfigCompileDirectory = 'config';
 		public static $IocTypesCompileDirectory = 'private/ioc';
+		public static $PrivateDirectory = 'private';
+		public static $OverrideDirectory = 'override';
 		
 		public static $Environment = self::ENV_PRODUCTION;
 		
@@ -138,8 +150,21 @@
 			switch ($nm){
 				case 'RequestPath':return $this->_request_path_;break;
 				case 'AppPath':return $this->_app_path_;break;
-				case 'PrivateDir':return $this->_private_dir_;break;
-				case 'OverrideDir':return $this->AdjustPath($this->_app_path_.'/'.$this->_override_dir_);break;
+				case 'PrivateDir':{
+					if ($this->_prev_private_dir_ != self::$PrivateDirectory){
+						$this->_private_dir_ = $this->AdjustPath(self::$PrivateDirectory);
+						$this->_prev_private_dir_ = self::$PrivateDirectory;
+					}
+					return $this->_private_dir_;
+				}break;
+				case 'OverrideDir':{
+					if ($this->_prev_override_dir_ != self::$OverrideDirectory){
+						$this->_override_dir_ = $this->AdjustPath(self::$OverrideDirectory);
+						$this->_prev_override_dir_ = self::$OverrideDirectory;
+					}
+						
+					return $this->_override_dir_;
+				}break;
 				case 'FileStoragePath':return $this->_file_storage_path_;break;
 				case 'Shared':return $this->_shared_;break;
 				case 'URI':return $this->_uri_;break;
@@ -147,10 +172,21 @@
 				case 'RelativePath':return $this->_relative_path_;break;
 				case 'Path':return join(';',self::$_import_paths_);break;
 				case 'Host':return $_SERVER['HTTP_HOST'];break;
-				case 'ConfigDir':return $this->AdjustPath($this->_private_dir_);break;
-				case 'ConfCompileDir':return $this->AdjustPath(self::$ConfigCompileDirectory);break;
-				case 'IocTypesCompileDir':return $this->AdjustPath(self::$IocTypesCompileDirectory);break;
-				case 'ConfigFile':return $this->_app_path_.'/'.$this->_private_dir_.'/application.xml';break;
+				case 'ConfCompileDir':{
+					if ($this->_prev_configcompile_dir_ != self::$ConfigCompileDirectory){
+						$this->_configcompile_dir_ = $this->AdjustPath(self::$ConfigCompileDirectory);
+						$this->_prev_configcompile_dir_ = self::$ConfigCompileDirectory;
+					}
+					return $this->_configcompile_dir_;
+				}break;
+				case 'IocTypesCompileDir':{
+					if ($this->_prev_ioccompile_dir_ != self::$IocTypesCompileDirectory){
+						$this->_ioccompile_dir_ = $this->AdjustPath(self::$IocTypesCompileDirectory);
+						$this->_prev_ioccompile_dir_ = self::$IocTypesCompileDirectory;
+					}
+					return $this->_ioccompile_dir_;
+				}break;
+				case 'ConfigFile':return $this->PrivateDir.'/application.xml';break;
 				case 'Sef':return $this->_sef_;break;
 				case 'Environment':return self::$Environment;break;
 				case 'StringEncoding':return $this->_string_encoding_;break;
@@ -215,16 +251,16 @@
 				for ($i = 0; $i < 2; $i++){
 					
 					
-					if (file_exists($this->ConfigDir."/init.$i.xml") || file_exists($this->OverrideDir."/init.$i.xml")){
+					if (file_exists($this->PrivateDir."/init.$i.xml") || file_exists($this->OverrideDir."/init.$i.xml")){
 						if (!file_exists($this->ConfCompileDir."/init.$i.php"))
-							$this->_compile_init($this->ConfigDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
+							$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
 						else 	
 							if (
-									(file_exists($this->ConfigDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->ConfigDir."/init.$i.xml")))
+									(file_exists($this->PrivateDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->PrivateDir."/init.$i.xml")))
 									||
 									(file_exists($this->OverrideDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->OverrideDir."/init.$i.xml")))
 								)
-								$this->_compile_init($this->ConfigDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
+								$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
 					}
 				}
 					
@@ -243,13 +279,13 @@
 					}
 				}						
 				
-				if (file_exists($this->ConfigDir.'/routes.xml') || file_exists($this->OverrideDir.'/routes.xml')){
+				if (file_exists($this->PrivateDir.'/routes.xml') || file_exists($this->OverrideDir.'/routes.xml')){
 					if (
-							(file_exists($this->ConfigDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->ConfigDir.'/routes.xml')))
+							(file_exists($this->PrivateDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->PrivateDir.'/routes.xml')))
 							||
 							(file_exists($this->OverrideDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->OverrideDir.'/routes.xml')))
 					)
-					$this->_compile_routes($this->ConfigDir.'/routes.xml');
+					$this->_compile_routes($this->PrivateDir.'/routes.xml');
 				}
 			}
 		}
@@ -370,12 +406,21 @@
 				$servicenodes = $xpath->query('/application/service');
 				if ($servicenodes->length == 0) throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND);
 				$one_service =  $servicenodes->length == 1;
+				$sconfigXml = new DOMDocument();
+				$sconfigXml->preserveWhiteSpace = false;
+				
 				foreach ($servicenodes as $servicenode){
 					$app_config .= 'self::$_services_["'.$servicenode->getAttribute('name').'"] = self::Instantiate("'.$servicenode->getAttribute('classname').'",array("name"=>"'.$servicenode->getAttribute('name').'","container"=>$this));'."\n";
 					if (TConvertions::ConvertToBoolean($servicenode->getAttribute('default')) || $one_service)
 						$default_service = $servicenode->getAttribute('name');
 					$service_config = '<?php'."\n";
 					self::_parse_contents($xpath,$servicenode,'self::$_services_["'.$servicenode->getAttribute('name').'"]',$service_config,$objid);
+					$serv_override_file = $this->OverrideDir.'/'.$servicenode->getAttribute('name').'.service.xml';
+					if (file_exists($serv_override_file)){
+						$sconfigXml->Load($serv_override_file);
+						$sxpath = new DOMXPath($sconfigXml);
+						self::_parse_contents($sxpath,$sconfigXml->firstChild,'self::$_services_["'.$servicenode->getAttribute('name').'"]',$service_config,$objid);
+					}
 					$service_config .= '?>';
 					file_put_contents($this->ConfCompileDir.'/service.'.$servicenode->getAttribute('name').'.php',$service_config);
 				}
@@ -419,7 +464,7 @@
 		
 		public function AdjustPath($path){
 			$trimmed = trim($path);
-			if (preg_match('/^(https?:\/\/|\/|[a-zA-Z]:\\).*$/',$trimmed))
+			if (preg_match('/^(https?:\/\/|\/|[a-zA-Z]:\\\\).*$/',$trimmed))
 				return $this->_canonical_path($trimmed);
 			return $this->_canonical_path($this->_app_path_.'/'.$trimmed);
 		}
@@ -444,7 +489,7 @@
 			}			
 			
 			if (!$located){
-				$filename = self::$Application->AppPath.'/'.self::$Application->PrivateDir.'/code/'.$path;
+				$filename = self::$Application->PrivateDir.'/code/'.$path;
 				$located = self::_check_path($filename);
 			}
 			
@@ -630,9 +675,13 @@
  * @returns string
  * @see TService 
  */						
-		public function MakeUrl($service = null,array $parameters = array()){
+		public function MakeUrl($service = null,array $parameters = array(),$base = null){
 			$dr = preg_replace('/[\\/\\\\]/','|',realpath($_SERVER['DOCUMENT_ROOT']));
-			$rp = preg_replace('/[\\/\\\\]/','|',realpath($this->RequestPath));		
+			
+			if ($base)
+				$rp = preg_replace('/[\\/\\\\]/','|',realpath($this->AdjustPath($base)));
+			else	
+				$rp = preg_replace('/[\\/\\\\]/','|',realpath($this->RequestPath));		
 			
 			$pth = str_ireplace($dr,'',$rp);	
 			$pth = str_replace('|','/',$pth);
@@ -658,8 +707,6 @@
 				}
 			}
 			
-			
-			
 			$url = $pth;
 			
 			if ((!is_null($service)) || (count(array_values($parameters)) > 0))
@@ -680,8 +727,8 @@
  * @returns string
  * @see TApplication::MakeUrl() 
  */						
-		public static function Url($service = null,array $parameters = array()){
-			return self::$Application->MakeUrl($service,$parameters);
+		public static function Url($service = null,array $parameters = array(),$base = null){
+			return self::$Application->MakeUrl($service,$parameters,$base);
 		}
 		
 		public static function FileStoragePath(){
@@ -726,8 +773,6 @@
 					else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 				}break;
 				case 'Path':self::$_import_paths_ = explode(';',$value);break;
-				case 'PrivateDir':$this->_private_dir_ = $value;break;
-				case 'OverrideDir':$this->_override_dir_ = $value;break;
 				case 'FileStoragePath':$this->_file_storage_path_ = $this->AdjustPath($value);break;
 				case 'ImportPath':self::AddImportPath($value);break;
 				case 'Sef':$this->_sef_ = TConvertions::ConvertToBoolean($value);break;

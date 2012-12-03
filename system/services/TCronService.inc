@@ -30,7 +30,7 @@ class TCronService extends TService {
 			return $result;
 		}
 		
-		$joblist = TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/jobs.xml";
+		$joblist = TApplication::$Application->PrivateDir."/jobs.xml";
 		
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = false;

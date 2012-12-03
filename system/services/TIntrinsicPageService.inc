@@ -199,9 +199,10 @@ class TIntrinsicPage extends TPage {
 			$text .= '$this->templateName = "'.$v.'";'."\n";
 
 		
-		self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes);
 		if ($override)
 			self::_compile_elements($odom->firstChild, $real_classname, '$this', new DOMXPath($odom), $text, $counter,$classes);
+		else
+			self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes);
 		return $classname;
 	}
 	
@@ -410,7 +411,7 @@ abstract class TIntrinsicPageService extends TPageService {
 	}
 	
 	public function PageIdToFileName($id){
-		if (is_dir(TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id))
+		if (is_dir(TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id))
 			$filename = $id.($id?"/":"")."default";
 		else 	
 			$filename = $id;
@@ -436,7 +437,7 @@ abstract class TIntrinsicPageService extends TPageService {
 	public function PageConfigFiles($id){
 		$filename = $this->PageIdToFileName($id);
 		return array(
-					TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name()."/".$filename.".xml",
+					TApplication::$Application->PrivateDir."/".$this->Name()."/".$filename.".xml",
 					TApplication::$Application->ConfCompileDir."/".$this->Name()."/".$filename,
 					TApplication::$Application->OverrideDir."/".$this->Name()."/".$filename.".xml"
 					);
@@ -474,7 +475,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		$request->IsAjax = $request->IsAjax || ($request->ajaxcall == "on");
 		unset($request->ajaxcall);
 		if ($request->path){
-			$base_path = TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->Name()."/";
+			$base_path = TApplication::$Application->PrivateDir."/".$this->Name()."/";
 			$path_parts = array_filter(preg_split('/[\\\\\\/]/',$request->path));
 			$cnt = count($path_parts);
 			$ptr = $cnt;
