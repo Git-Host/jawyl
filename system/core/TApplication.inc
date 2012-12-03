@@ -172,6 +172,8 @@
 				case 'RelativePath':return $this->_relative_path_;break;
 				case 'Path':return join(';',self::$_import_paths_);break;
 				case 'Host':return $_SERVER['HTTP_HOST'];break;
+				case 'Port':return $_SERVER['SERVER_PORT'];break;
+				case 'Domain':return $this->Host.($this->Port?(($this->Port != '80')?':'.$this->Port:''):'');
 				case 'ConfCompileDir':{
 					if ($this->_prev_configcompile_dir_ != self::$ConfigCompileDirectory){
 						$this->_configcompile_dir_ = $this->AdjustPath(self::$ConfigCompileDirectory);
@@ -675,7 +677,7 @@
  * @returns string
  * @see TService 
  */						
-		public function MakeUrl($service = null,array $parameters = array(),$base = null){
+		public function MakeUrl($service = null,array $parameters = array(),$base = null, $force_absolute = false){
 			$dr = preg_replace('/[\\/\\\\]/','|',realpath($_SERVER['DOCUMENT_ROOT']));
 			
 			if ($base)
@@ -717,6 +719,8 @@
 			foreach ($parameters as $key=>$value)
 				if ($value)
 					$url = $url.'&'.$key.'='.rawurlencode($value);
+			if ($force_absolute)
+				$url = 'http://'.$this->Domain.$url;
 			return $url;
 		}
 		
@@ -727,8 +731,8 @@
  * @returns string
  * @see TApplication::MakeUrl() 
  */						
-		public static function Url($service = null,array $parameters = array(),$base = null){
-			return self::$Application->MakeUrl($service,$parameters,$base);
+		public static function Url($service = null,array $parameters = array(),$base = null, $force_absolute = false){
+			return self::$Application->MakeUrl($service,$parameters,$base,$force_absolute);
 		}
 		
 		public static function FileStoragePath(){
