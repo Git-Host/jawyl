@@ -1454,7 +1454,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 
 		if (!isset($this->_loaded_orms_[$cn])){
 			if (!$this->_script_config_path_)
-				$this->_script_config_path_ = TApplication::$Application->AdjustPath('private/orm');
+				$this->_script_config_path_ = TApplication::$Application->PrivateDir.'/orm';
 				
 			TFileSystem::ForceDir($this->_script_config_path_);	
 				
@@ -1466,7 +1466,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$src_time = 0;	
 				
 				if (!$this->_xml_config_path_)
-					$this->_xml_config_path_ = TApplication::$Application->AdjustPath('private/orm');
+					$this->_xml_config_path_ = TApplication::$Application->PrivateDir.'/orm';
 				
 					
 				$classes = array();	

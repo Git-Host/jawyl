@@ -71,7 +71,7 @@ class TXmlSiteNavigation extends TXmlMenuSource {
 	public function Roots(){
 		$result = array();
 		if ($this->response->Service() instanceof TIntrinsicPageService){
-			$file = TApplication::$Application->AppPath."/".TApplication::$Application->PrivateDir."/".$this->response->Service()->Name()."/navigation.xml";
+			$file = TApplication::$Application->PrivateDir."/".$this->response->Service()->Name()."/navigation.xml";
 			if (file_exists($file)){
 				$dom = new DOMDocument();
         		$dom->Load($file);

@@ -41,10 +41,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
  * @var string
  */	
 	public $ThemeName;
-/**
- * @var string
- */	
-	public $ThemesDir;
+	
+	private $_themes_dir_;
 	
 	private $_context_stack_ = array();
 	
@@ -511,8 +509,18 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return $this->TemplateDir;
 	}
 	
+	public function __set($nm,$value){
+		switch ($nm){
+			case 'ThemesDir':{
+				$this->_themes_dir_ = TApplication::$Application->AdjustPath($value);
+			}break;
+			default:parent::__set($nm,$value);break;
+		}
+	}
+	
 	public function __get($nm){
 		switch ($nm){
+			case 'ThemesDir':return $this->_themes_dir_;break;
 			case "TemplateDir":return $this->ThemeDir().'/templates';break;
 			case "CompileDir":return $this->ThemeDir().'/compile';break;
 			default:{
@@ -526,14 +534,13 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	public function ThemeUrl(){
 		$theme_dir = $this->ThemeDir();
 		$theme_dir = preg_replace('/[\\\\\\/]/','|',$theme_dir);
-		$apppath = preg_replace('/[\\\\\\/]/','|',TApplication::$Application->AppPath);
-		$theme_url = str_replace('|','/',str_ireplace($apppath,'',$theme_dir));
-		return (TApplication::$Application->Root == '/')?$theme_url:TApplication::$Application->Root.$theme_url;
+		$docroot = preg_replace('/[\\\\\\/]/','|',realpath($_SERVER['DOCUMENT_ROOT']));
+		return str_replace('|','/',str_ireplace($docroot,'',$theme_dir));
 	}
 	
 	public function ThemeDir(){
 		$themes_dir = TApplication::$Application->AppPath.'/themes';
-		if (isset($this->ThemesDir))
+		if ($this->ThemesDir)
 			$themes_dir = $this->ThemesDir; 
 		if (!is_dir($themes_dir))
 			mkdir($themes_dir);	
