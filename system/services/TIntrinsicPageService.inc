@@ -427,7 +427,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		if (is_null($id)) $id = 'default';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$conffiles =  $this->PageConfigFiles($id);
-		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php')){			
+		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php') || is_file($conffiles[2])){			
 			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id,$this);
 			return $this->PAGES[$id];
 		}
