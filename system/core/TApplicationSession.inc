@@ -239,7 +239,7 @@
 		public function SessOpen($sess_path, $sess_name){
 			if (!$this->savePath)
 				$this->savePath = realpath($sess_path);
-			if (!$this->callHandlers("open",array("sess_path"=>$sess_path,"sess_name"=>$sess_name))) return false;
+			if (!$this->callHandlers("open",array("sess_path"=>$this->savePath,"sess_name"=>$sess_name))) return false;
 			return true;
 		}
 		
@@ -316,7 +316,10 @@
 
 		public function __set($nm,$value){
 			switch ($nm){
-				case 'SavePath':$this->savePath = TApplication::$Application->AdjustPath($value);break;
+				case 'SavePath':{
+					$this->savePath = TApplication::$Application->AdjustPath($value);
+					TFileSystem::ForceDir($this->savePath);
+				}break;
 				default:parent::__set($nm, $value);break;
 			}
 		}
