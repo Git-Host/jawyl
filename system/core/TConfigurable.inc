@@ -84,7 +84,7 @@ interface IConfigurable {
 					$iocname = $p->getName();
  					if (preg_match('/^_ioc_[a-z_]*[a-z]_$/', $iocname)){
 						if ($dc = $p->getDocComment()){
-							preg_match('/@var\s+(\w*)(\[\s*\])?/',$dc,$matches);
+							preg_match('/@var\s+([\w_]*)(\[\s*\])?/',$dc,$matches);
 							if (isset($matches[1])){
 								$needsave = true;
 								$types[$iocname] = '"'.$iocname.'"=>array("type"=>"'.$matches[1].'","is_array"=>'.(isset($matches[2])?'true':'false').')';
