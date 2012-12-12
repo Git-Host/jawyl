@@ -2,7 +2,7 @@
 TApplication::import("core::TService");
 TApplication::import("common::mvp");
 TApplication::import("common::storage");
-TApplication::import("common::model::installable");
+TApplication::import("common::component::installable");
 
 
 abstract class TDataModel extends TModel implements IInstallable {
