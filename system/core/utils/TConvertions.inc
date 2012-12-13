@@ -62,7 +62,7 @@
 	  			return $v;		
 	  			
 	  		array_walk($temp, create_function('&$item', '$item = trim($item);'));
-	  		$temp = array_filter($temp,create_function('$item','return $item;'));
+	  		$temp = array_filter($temp,create_function('$item','return $item !== "";'));
 	  		$result = array();
 	  		if ($separator < count($separators) - 1){
 	  			foreach ($temp as $t){
