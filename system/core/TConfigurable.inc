@@ -55,7 +55,7 @@ interface IConfigurable {
  				self::CompileIocTypes(get_class($this),$filename,true);
  			if (file_exists($filename)){
  				require_once($filename);
- 				self::$_ioc_types_[get_class($this)] = $ioctypes;
+ 				//self::$_ioc_types_[get_class($this)] = $ioctypes;
  			}
  		}
  	}
@@ -95,7 +95,7 @@ interface IConfigurable {
  			}
  			if ($needsave){
  				TFileSystem::ForceDir(dirname($filename));	
-				file_put_contents($filename, '<?php $ioctypes = array('.join(',', array_values($types)).'); ?>');
+				file_put_contents($filename, '<?php self::$_ioc_types_[get_class($this)] = array('.join(',', array_values($types)).'); ?>');
  			}
 		} 		
  	}
@@ -112,7 +112,7 @@ interface IConfigurable {
  			if ($com !== $exclude)
  				if ($inst = $com->component($name,$exclude))
  					return $inst;
- 		return null;		
+ 		return $inst;		
  	}
  	
  	public function Locate($name,IConfigurable $exclude = null){
