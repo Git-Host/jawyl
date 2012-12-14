@@ -412,7 +412,7 @@
 				$sconfigXml->preserveWhiteSpace = false;
 				
 				foreach ($servicenodes as $servicenode){
-					$app_config .= 'self::$_services_["'.$servicenode->getAttribute('name').'"] = self::Instantiate("'.$servicenode->getAttribute('classname').'",array("name"=>"'.$servicenode->getAttribute('name').'","container"=>$this));'."\n";
+					$app_config .= 'self::$_services_["'.$servicenode->getAttribute('name').'"] = "'.$servicenode->getAttribute('classname').'";'."\n";
 					if (TConvertions::ConvertToBoolean($servicenode->getAttribute('default')) || $one_service)
 						$default_service = $servicenode->getAttribute('name');
 					$service_config = '<?php'."\n";
@@ -478,6 +478,10 @@
  * @see TApplication::AddImportPath()
 */					
 		public static function Import($classname,$root = null){
+			if (isset(self::$_classes_[$classname])) return;
+			$parts = explode('::',$classname);
+			if (class_exists($parts[count($parts)-1])) return;
+			
 			$path = str_replace('::','/',$classname);
 			$located = false;
 			if (!is_null($root)){
@@ -508,7 +512,6 @@
 			ob_start();
 			if (is_file($filename)){
 				require_once $filename;
-				$parts = explode('::',$classname);
 				if (class_exists($parts[count($parts)-1]))
 					self::$_classes_[$classname] = $parts[count($parts)-1];
 			}
@@ -585,6 +588,8 @@
  * @see TApplication::Service()
 */					
 		public function GetService($name){
+			if (is_string(self::$_services_[$name]))
+				self::$_services_[$name] = self::Instantiate(self::$_services_[$name],array("name"=>$name,"container"=>$this));
 			return self::$_services_[$name];
 		}
 
@@ -632,8 +637,8 @@
 					$handled = $this->_current_service_->Handle(self::Request());	
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
-				foreach (self::$_services_ as $service){
-					$this->_current_service_ = $service;
+				foreach (self::$_services_ as $servicename=>$serviceclass){
+					$this->_current_service_ = self::Service($servicename);
 					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($handled = $this->_current_service_->Handle(self::Request())) break;	
