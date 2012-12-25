@@ -491,8 +491,7 @@ class TNOrmObject implements INOrmObject {
 				$this->_loaders_[$n] = $value;
 				$this->$n = null;
 			} else if (($value === false) || (is_object($value) && (get_class($this) == get_class($value)))){
-				if (!is_null($this->$n))
-					$this->_was_moved_ = $this->$n != $value;
+				$this->_was_moved_ = $this->$n != $value;
 				$this->$n = $value;
 			} else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		} 
@@ -1253,6 +1252,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					} 
 				}
 			}
+			
+			if (!empty($orm['nestedsets']))
+				$result[$orm['nestedsets']['parent']] = new TOrmReferencePropertyMeta($orm['nestedsets']['parent'], $orm['nestedsets']['parent'], $orm['classname']);
+			
 			return $result;
 		}
 		return false;
