@@ -616,10 +616,12 @@ class TSorting {
 final class TDBActionParameter {
 	private $_name_ = "";
 	private $_value_ = null;
+	
 	public function __construct($name,$value = null){
 		$this->_name_ = $name;
 		$this->_value_ = $value;
 	}
+	
 	public function __get($nm){
 		switch ($nm){
 			case "Name":return $this->_name_;break;
