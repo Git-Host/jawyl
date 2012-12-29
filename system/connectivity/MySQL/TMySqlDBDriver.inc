@@ -646,20 +646,21 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		
 	public function BeginTransaction(){
 		$this->_auto_connect();
-		$this->query("start transaction");
+		$this->query("begin");
+		//$this->query('start transaction');
 	}
 		
-	public function CommitTransaction(){$this->query("commit");}
+	public function CommitTransaction(){$this->query('commit');}
 		
-	public function RollbackTransaction(){$this->query("rollback");}
+	public function RollbackTransaction(){$this->query('rollback');}
 		
 	protected static function transformColType(TDataType $type){
 		switch ($type->TypeCode) {
 			case TDataType::PASSWORD:
 			case TDataType::IMAGELINK:
 			case TDataType::FILELINK:
-			case TDataType::STRING:return ($type->VarLength?"var":"")."char".($type->Length?("(".$type->Length.")"):"");break;
-			case TDataType::GUID:return "char(".($type->Length).")";break;
+			case TDataType::STRING:return ($type->VarLength?'var':'').'char'.($type->Length?('('.$type->Length.')'):'');break;
+			case TDataType::GUID:return 'char('.($type->Length).')';break;
 			case TDataType::BIGINT:return "bigint".($type->Size?("(".$type->Size.")"):"");break;
 			case TDataType::BOOLEAN:return "bit";break;
 			case TDataType::DATETIME:return "datetime";break;

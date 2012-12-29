@@ -311,6 +311,8 @@ interface IConfigurable {
 			|| ($n = $this->_check_suffix($nm, 'int'))
 			|| ($n = $this->_check_suffix($nm, 'conf')))
 			return $this->$n;
+		if (isset($this->_components_[$nm]))
+			return $this->_components_[$nm];
 		return null;
 	}
 	
