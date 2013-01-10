@@ -12,9 +12,9 @@
 /**
  * @ignore
  */
-TApplication::import("core::TService");
-TApplication::import("common::service::navigation");
-TApplication::import("common::soap");
+require_once 'core/TService.inc';
+require_once 'common/service/navigation.inc';
+require_once 'common/soap.inc';
 
 
 class TSOAPService extends TService {
@@ -25,7 +25,7 @@ class TSOAPService extends TService {
 	protected function handleRequest(TRequest $request){
 		$com = null;
 		if ($request->component)
-			$com = TApplication::$Application->Instance($request->component);
+			$com = $this->Application()->Instance($request->component);
 		if ($com instanceof ISoapServer){
 			if ($request->wsdl){
 				echo $com->WSDL();

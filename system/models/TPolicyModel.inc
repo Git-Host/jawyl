@@ -12,8 +12,8 @@
 /**
  * @ignore
  */
-TApplication::import("core::security::policy");
-TApplication::import("models::TMetaModel");
+require_once 'core/security/policy.inc';
+require_once 'models/TMetaModel.inc';
 
 /**
  * @package Components

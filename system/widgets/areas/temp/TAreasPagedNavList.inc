@@ -1,5 +1,5 @@
 <?php
-	TApplication::import("widgets::TAreasNestings");
+	require_once 'widgets/TAreasNestings.inc';
 
 	class TAreasPagedNavList extends TAreasWidget {
 /**

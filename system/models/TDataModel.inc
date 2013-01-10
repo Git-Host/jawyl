@@ -1,8 +1,8 @@
 <?php
-TApplication::import("core::TService");
-TApplication::import("common::mvp");
-TApplication::import("common::storage");
-TApplication::import("common::component::installable");
+require_once 'core/TService.inc';
+require_once 'common/mvp.inc';
+require_once 'common/storage.inc';
+require_once 'common/component/installable.inc';
 
 
 abstract class TDataModel extends TModel implements IInstallable {

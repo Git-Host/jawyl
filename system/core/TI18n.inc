@@ -226,9 +226,7 @@
  * @uses TConfigurable
  */	
 	abstract class TLocale extends TConfigurable implements ILocale {
-		public function __construct($name, IConfigurable $container = null){
-			parent::__construct($name,$container);
-		}
+
 	}
 	
 /**
@@ -334,12 +332,7 @@
  * @uses ITranslator
  */	
 	abstract class TTranslator extends TConfigurable implements ITranslator {
-/**
- * @param string $name
- */
-		public function __construct($name, IConfigurable $container = null){
-			parent::__construct($name,$container);
-		}	
+	
 	}
 	
 /**

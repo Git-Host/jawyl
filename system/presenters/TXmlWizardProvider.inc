@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("services::TIntrinsicPageService");
+require_once 'services/TIntrinsicPageService.inc';
 
 /**
  * @package Presenters
@@ -68,7 +68,7 @@ class TXmlWizardProvider extends TPresenter implements IWizardProvider {
 		$xpath = new DOMXPath($this->_dom_);
 		$params = $xpath->query("step[position()=$this->_current_step_]/parameter");
 		
-		$stored = TApplicationSession::Get($this->Name().'_wizparams');
+		$stored = $this->Application()->Session()->Get($this->Name().'_wizparams');
 		$needperform = false;
 		
 		foreach ($params as $p)
@@ -77,7 +77,7 @@ class TXmlWizardProvider extends TPresenter implements IWizardProvider {
 				$stored[$p->getAttribute('action')][$p->getAttribute('name')] = $parameters[$p->getAttribute('action').'_'.$p->getAttribute('name')];
 			}
 			
-		TApplicationSession::Set($this->Name().'_wizparams',$stored);
+		$this->Application()->Session()->Set($this->Name().'_wizparams',$stored);
 		
 		if ($needperform){
 			$perform = $xpath->query("step[position()=$this->_current_step_]");
@@ -101,7 +101,7 @@ class TXmlWizardProvider extends TPresenter implements IWizardProvider {
 	public function StepParameters(){
 		$xpath = new DOMXPath($this->_dom_);
 		$params = $xpath->query("step[position()=$this->_current_step_]/parameter");
-		$stored = TApplicationSession::Get($this->Name().'_wizparams');
+		$stored = $this->Application()->Session()->Get($this->Name().'_wizparams');
 		$result = array();
 		foreach ($params as $p){
 			$action = $this->response->Instance($p->getAttribute('action'));

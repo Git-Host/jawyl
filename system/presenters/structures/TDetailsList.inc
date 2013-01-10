@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TReferedList");
+require_once 'presenters/TReferedList.inc';
 
 /**
  * @package Presenters

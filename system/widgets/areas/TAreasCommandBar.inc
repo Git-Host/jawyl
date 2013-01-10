@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasWidget");
+require_once 'widgets/areas/TAreasWidget.inc';
 
 /**
  * @package View

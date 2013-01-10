@@ -72,10 +72,10 @@
  */			
 		public function SetLanguage($language){
 			$dirs = array();
-			if (is_dir(TApplication::$SystemPath."/languages/".$language))
-				$dirs[] = TApplication::$SystemPath."/languages/".$language;
-			if (is_dir(TApplication::$Application->PrivateDir."/languages/".$language))
-				$dirs[] = TApplication::$Application->PrivateDir."/languages/".$language;
+			if (is_dir($this->Application()->SysPath()."/languages/".$language))
+				$dirs[] = $this->Application()->SysPath()."/languages/".$language;
+			if (is_dir($this->Application()->PrivateDir()."/languages/".$language))
+				$dirs[] = $this->Application()->PrivateDir()."/languages/".$language;
 			$this->domains = array();
 			foreach ($dirs as $dir)
 			if (is_dir($dir)) {

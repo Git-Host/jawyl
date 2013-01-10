@@ -1,6 +1,6 @@
 <?php
-TApplication::Import('common::orm');
-TApplication::Import('common::acid');
+require_once 'common/orm.inc';
+require_once 'common/acid.inc';
 
 class TClassOrmConfig {
 	private $_classname_;
@@ -130,7 +130,7 @@ class TClassOrmConfig {
 		$xml = new DOMDocument();
 		$xml->preserveWhiteSpace = false;
 		$xml->Load($filename);
-		if (!$xml->schemaValidate(TApplication::$SystemPath."/schemas/norm.xsd"))
+		if (!$xml->schemaValidate($this->Application()->SysPath()."/schemas/norm.xsd"))
 			throw new TNOrmException(TNOrmException::ERR_INVALID_ORM_CONFIG);
 		$xpath = new DOMXPath($xml);
 		
@@ -1429,8 +1429,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				else 
 					$this->_use_config_ = $this->_use_config_ | (int)$value;
 			}break;
-			case 'XmlConfigPath':$this->_xml_config_path_ = TApplication::$Application->AdjustPath($value);break;
-			case 'ScriptConfigPath':$this->_script_config_path_ = TApplication::$Application->AdjustPath($value);break;
+			case 'XmlConfigPath':$this->_xml_config_path_ = $this->Application()->AdjustPath($value);break;
+			case 'ScriptConfigPath':$this->_script_config_path_ = $this->Application()->AdjustPath($value);break;
 			case 'DateFormat':$this->_date_format_ = $value;break;
 			case 'LazyLoading':$this->_lazy_loading_ = TConvertions::ConvertToBoolean($value);break;
 			default:parent::__set($nm,$value);break;
@@ -1457,7 +1457,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 
 		if (!isset($this->_loaded_orms_[$cn])){
 			if (!$this->_script_config_path_)
-				$this->_script_config_path_ = TApplication::$Application->PrivateDir.'/orm';
+				$this->_script_config_path_ = $this->Application()->PrivateDir().'/orm';
 				
 			TFileSystem::ForceDir($this->_script_config_path_);	
 				
@@ -1469,7 +1469,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$src_time = 0;	
 				
 				if (!$this->_xml_config_path_)
-					$this->_xml_config_path_ = TApplication::$Application->PrivateDir.'/orm';
+					$this->_xml_config_path_ = $this->Application()->PrivateDir().'/orm';
 				
 					
 				$classes = array();	

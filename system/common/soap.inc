@@ -2,8 +2,8 @@
 /**
  * @ignore 
  */
-TApplication::import("core::utils::THttpMeta");
-TApplication::import("common::xml");
+require_once 'core/utils/THttpMeta.inc';
+require_once 'common/xml.inc';
 
 /**
  * @package Common
@@ -298,7 +298,7 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'WSDL':$this->wsdl = TApplication::$Application->AdjustPath($value);break;
+			case 'WSDL':$this->wsdl = $this->Application()->AdjustPath($value);break;
 			case 'HttpHeaders':$this->httpMeta->Headers = $value;break;
 			default:{
 					if ($this->options->IsOption($nm))
@@ -323,10 +323,10 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 			if ($this->_ioc_xsl_pre_processor_ instanceof IXSLTransformer){
 				global $HTTP_RAW_POST_DATA;
 				if ($this->_ioc_xsl_post_processor_ instanceof IXSLTransformer)
-					TOutputBuffer::StartRecording();
+					$this->Application()->Buffer()->StartRecording();
 				$server->handle($this->_ioc_xsl_pre_processor_->TransformXML($HTTP_RAW_POST_DATA));
 				if ($this->_ioc_xsl_post_processor_ instanceof IXSLTransformer)
-					echo $this->_ioc_xsl_post_processor_->TransformXML(TOutputBuffer::StopRecording());
+					echo $this->_ioc_xsl_post_processor_->TransformXML($this->Application()->Buffer()->StopRecording());
 			} else
 				$server->handle();
 		} catch (Exception $e) {

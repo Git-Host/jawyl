@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("common::ajax");
+require_once 'common/ajax.inc';
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasNestedTable");
+require_once 'widgets/areas/TAreasNestedTable.inc';
 
 /**
  * @package View

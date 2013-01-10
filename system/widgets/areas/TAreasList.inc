@@ -12,19 +12,19 @@
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("common::widget::lists");
+require_once 'common/widget/lists.inc';
 /**
  * @ignore
  */
-TApplication::import("common::service::navigation");
+require_once 'common/service/navigation.inc';
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasWidget");
+require_once 'widgets/areas/TAreasWidget.inc';
 
 
 /**

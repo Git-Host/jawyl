@@ -66,27 +66,30 @@
 			$this->_accept_query_params($_GET, true, $this->_get_parameters_, $orig);
 			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
 	
-			foreach ($_FILES as $key=>$file)
-				if (is_array($file) && (($file['error'] == 0) || is_array($file['error']))){
-					if (is_array($file["name"])){
-						$files = array();
-						$orig[$key] = '';
-						foreach ($file["name"] as $i => $fname)
-							if ($file["error"][$i] == 0){
-								$orig[$key] .= $fname.';';
-								$files[$i] = new TUploadedFile(array(
-									"name"=>$fname,
-									"tmp_name"=>$file["tmp_name"][$i],
-									"type"=>$file["type"][$i],
-									"size"=>$file["size"][$i]
-								));
-							}
-						$this->_file_parameters_[$key] = $files;
-					} else {
-						$this->_file_parameters_[$key] = new TUploadedFile($file);
-						$orig[$key] = $file["name"];
+			if ($this->fileStorage instanceof IFileStorage)
+			{
+				foreach ($_FILES as $key=>$file)
+					if (is_array($file) && (($file['error'] == 0) || is_array($file['error']))){
+						if (is_array($file["name"])){
+							$files = array();
+							$orig[$key] = '';
+							foreach ($file["name"] as $i => $fname)
+								if ($file["error"][$i] == 0){
+									$orig[$key] .= $fname.';';
+									$files[$i] = new TUploadedFile($this->fileStorage,array(
+										"name"=>$fname,
+										"tmp_name"=>$file["tmp_name"][$i],
+										"type"=>$file["type"][$i],
+										"size"=>$file["size"][$i]
+									));
+								}
+							$this->_file_parameters_[$key] = $files;
+						} else {
+							$this->_file_parameters_[$key] = new TUploadedFile($this->fileStorage,$file);
+							$orig[$key] = $file["name"];
+						}
 					}
-				}
+			}
 
 			$t = null;
 			$this->_accept_query_params($_COOKIE, false, $t, $orig);

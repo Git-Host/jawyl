@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-	TApplication::import("widgets::TXmlWidgetContainer");
+	require_once 'widgets/TXmlWidgetContainer.inc';
 
 /**
  * @package View

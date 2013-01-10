@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("services::TPageService");
+require_once 'services/TPageService.inc';
 /**
  * @ignore
  */
-TApplication::import("core::utils::TConvertions");
+require_once 'core/utils/TConvertions.inc';
 
 /**
  * @package Services
@@ -64,7 +64,7 @@ class TIntrinsicPage extends TPage {
 		return var_export($result,true);
 	}
 
-	private static function _compile_page_element(DOMNode $node, DOMXPath $xpath, $container_class, $compiled_container, &$result,&$counter,&$classes){
+	private static function _compile_page_element(DOMNode $node, DOMXPath $xpath, $container_class, $compiled_container, &$result,&$counter,&$classes, TService $service){
 		if ($node->tagName == "setting"){ 
 			if (!is_subclass_of($container_class,"TResponseElement"))
 				$result .= $compiled_container.'->'.$node->getAttribute("name").' = "'.addcslashes($node->nodeValue,'"').'";'."\n";
@@ -84,7 +84,7 @@ class TIntrinsicPage extends TPage {
 			else {
 				$varname = '$obj'.$counter;
 				$counter++;
-				$c = TApplication::GetClass($node->getAttribute("classname"));
+				$c = $service->Application()->GetClass($node->getAttribute("classname"));
 				if (!$c) throw new TCoreException(TCoreException::ERR_NOT_CLASS,array('class'=>$node->getAttribute("classname")));
 				$classes[$node->getAttribute("name")] = array($node->getAttribute("classname"),$varname,$c->getName());
 				if (!$c->implementsInterface("IConfigurable")) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
@@ -114,7 +114,7 @@ class TIntrinsicPage extends TPage {
 				};
 				if ($_container)
 					$result .= '$params["container"] = '.$_container.';'."\n";	
-				$result .= $varname.' = TApplication::Instantiate("'.$node->getAttribute("classname").'",$params);'."\n";	
+				$result .= $varname.' = $service->Application()->Instantiate("'.$node->getAttribute("classname").'",$params);'."\n";	
 				if (is_subclass_of($c->getName(),"TWidget")){
 					$result .= '$this->AddWidget('.$varname.');'."\n";
 					if ($_container)
@@ -126,15 +126,15 @@ class TIntrinsicPage extends TPage {
 			
 			if ($node->getAttribute("membername"))
 				$result .= $compiled_container.'->'.$node->getAttribute("membername").' = '.$varname.';'."\n";
-			self::_compile_elements($node,$classes[$node->getAttribute("name")][2],$varname,$xpath,$result,$counter,$classes);
+			self::_compile_elements($node,$classes[$node->getAttribute("name")][2],$varname,$xpath,$result,$counter,$classes,$service);
 			$result .= " }\n";
 		}
 	}
  	
-	private static function _compile_elements(DOMNode $node, $container_class, $compiled_container, DOMXPath $xpath, &$result, &$counter,&$classes){
+	private static function _compile_elements(DOMNode $node, $container_class, $compiled_container, DOMXPath $xpath, &$result, &$counter,&$classes, TService $service){
 		$nodes = $xpath->query("setting|component",$node);
 		foreach ($nodes as $n)
-			self::_compile_page_element($n,$xpath,$container_class, $compiled_container, $result,$counter,$classes);
+			self::_compile_page_element($n,$xpath,$container_class, $compiled_container, $result,$counter,$classes,$service);
 	}
 	
 	private static function _compile_page_contents($filenames,TIntrinsicPageService $service, &$counter, &$classes, &$text){
@@ -142,7 +142,7 @@ class TIntrinsicPage extends TPage {
 		$dom->preserveWhiteSpace = false;
 		$dom->Load($filenames[0]);
 		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
-			if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
+			if (!$dom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 		
 		$override = false;
@@ -152,7 +152,7 @@ class TIntrinsicPage extends TPage {
 			$odom->preserveWhiteSpace = false;
 			$odom->Load($filenames[2]);
 			if (TConvertions::ConvertToBoolean($service->ValidateConfig))
-				if (!$odom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
+				if (!$odom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
 					throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 		}
 
@@ -167,7 +167,7 @@ class TIntrinsicPage extends TPage {
 			$classname = "TIntrinsicPage";
 			$real_classname = $classname;
 		} else {
-			$c = TApplication::GetClass($classname);
+			$c = $service->Application()->GetClass($classname);
 			if (is_null($c))
 				throw new TCoreException(TCoreException::ERR_NOT_CLASS, array('class'=>$classname));	
 			$real_classname = $c->getName();
@@ -200,9 +200,9 @@ class TIntrinsicPage extends TPage {
 
 		
 		if ($override)
-			self::_compile_elements($odom->firstChild, $real_classname, '$this', new DOMXPath($odom), $text, $counter,$classes);
+			self::_compile_elements($odom->firstChild, $real_classname, '$this', new DOMXPath($odom), $text, $counter,$classes,$service);
 		else
-			self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes);
+			self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes,$service);
 		return $classname;
 	}
 	
@@ -222,7 +222,7 @@ class TIntrinsicPage extends TPage {
 		if ($classname == "TIntrinsicPage")
 			$text .= '$result = new TIntrinsicPage($path,"'.$filenames[1].'.php",$service);'."\n";
 		else 
-			$text .= 'if (is_subclass_of(TApplication::GetClass("'.$classname.'")->getName(),"TIntrinsicPage")) $result = TApplication::Instantiate("'.$classname.'",array("path"=>$path,"filename"=>"'.$filenames[1].'.php","service"=>$service)); else throw new TCoreException(TCoreException::ERR_BAD_TYPE);'."\n";
+			$text .= 'if (is_subclass_of($service->Application()->GetClass("'.$classname.'")->getName(),"TIntrinsicPage")) $result = $service->Application()->Instantiate("'.$classname.'",array("path"=>$path,"filename"=>"'.$filenames[1].'.php","service"=>$service)); else throw new TCoreException(TCoreException::ERR_BAD_TYPE);'."\n";
 		$text .= "?>";	
 		file_put_contents($filenames[1]."_loader.php", $text);
 	} 
@@ -240,7 +240,7 @@ class TIntrinsicPage extends TPage {
 			$dom->Load($config[2]);
 			
 			if (TConvertions::ConvertToBoolean($service->ValidateConfig))
-				if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
+				if (!$dom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 
 			if ($dom->firstChild->getAttribute("parent")){
@@ -257,7 +257,7 @@ class TIntrinsicPage extends TPage {
 		$dom->Load($config[0]);
 		
 		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
-			if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/page.xsd"))
+			if (!$dom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 				
 		if ($dom->firstChild->getAttribute("parent")){
@@ -282,8 +282,10 @@ class TIntrinsicPage extends TPage {
 				}
 			}
 		}
+		
 		if (is_file($conffiles[1]."_loader.php"))
 			include $conffiles[1]."_loader.php";
+		
 		return $result;
 	}
 	
@@ -411,7 +413,7 @@ abstract class TIntrinsicPageService extends TPageService {
 	}
 	
 	public function PageIdToFileName($id){
-		if (is_dir(TApplication::$Application->PrivateDir."/".$this->Name().($id?"/":"").$id))
+		if (is_dir($this->Application()->PrivateDir()."/".$this->Name().($id?"/":"").$id))
 			$filename = $id.($id?"/":"")."default";
 		else 	
 			$filename = $id;
@@ -427,8 +429,8 @@ abstract class TIntrinsicPageService extends TPageService {
 		if (is_null($id)) $id = 'default';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$conffiles =  $this->PageConfigFiles($id);
-		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php') || is_file($conffiles[2])){			
-			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id,$this);
+		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php') || is_file($conffiles[2])){
+			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id, $this);
 			return $this->PAGES[$id];
 		}
 		return null;
@@ -437,9 +439,9 @@ abstract class TIntrinsicPageService extends TPageService {
 	public function PageConfigFiles($id){
 		$filename = $this->PageIdToFileName($id);
 		return array(
-					TApplication::$Application->PrivateDir."/".$this->Name()."/".$filename.".xml",
-					TApplication::$Application->ConfCompileDir."/".$this->Name()."/".$filename,
-					TApplication::$Application->OverrideDir."/".$this->Name()."/".$filename.".xml"
+					$this->Application()->PrivateDir()."/".$this->Name()."/".$filename.".xml",
+					$this->Application()->ConfCompileDir()."/".$this->Name()."/".$filename,
+					$this->Application()->OverrideDir()."/".$this->Name()."/".$filename.".xml"
 					);
 	}
 	
@@ -475,7 +477,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		$request->IsAjax = $request->IsAjax || ($request->ajaxcall == "on");
 		unset($request->ajaxcall);
 		if ($request->path){
-			$base_path = TApplication::$Application->PrivateDir."/".$this->Name()."/";
+			$base_path = $this->Application()->PrivateDir()."/".$this->Name()."/";
 			$path_parts = array_filter(preg_split('/[\\\\\\/]/',$request->path));
 			$cnt = count($path_parts);
 			$ptr = $cnt;
@@ -488,7 +490,7 @@ abstract class TIntrinsicPageService extends TPageService {
 	}
 	
 	protected function formAppUrlParameters($page,$controller = null,$method = null,array $parameters = array()){
-		if (TConvertions::ConvertToBoolean(TApplication::$Application->sef)){
+		if (TConvertions::ConvertToBoolean($this->Application()->Sef())){
 			$path = $page;
 			if ($controller)
 				$path .= "/".$controller;

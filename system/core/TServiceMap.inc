@@ -91,7 +91,7 @@
  * @return THttpRequest
  * @see THttpRequest
 */			
-		public function GetRequest($uri){
+		public function GetRequest($uri, IApplication $application){
 			preg_match($this->_regexp_,$uri,$params);
 			if (count($params) > 0){
 				$service = $this->_service_;
@@ -103,7 +103,7 @@
 				 	else
 				 		$qp[$this->_request_params_[$i-1]] = $params[$i];
 
-				$request = new THttpRequest($service);
+				$request = new THttpRequest($service, $application);
 				foreach ($this->_defaults_ as $key=>$value)
 					if (!$request->__isset($key))
 						$request->setGetParameter($key,$value);
@@ -145,10 +145,10 @@
  * @return THttpRequest
  * @see THttpRequest
 */			
-		public function ParseUri($uri){
+		public function ParseUri($uri, IApplication $application){
 			$request = null;
 			foreach ($this->_routs_ as $route){
-				$request = $route->GetRequest($uri);
+				$request = $route->GetRequest($uri, $application);
 				if (!is_null($request)) break; 
 			}
 			return $request;	

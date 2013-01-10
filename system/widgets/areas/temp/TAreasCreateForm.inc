@@ -1,5 +1,5 @@
 <?php
-	TApplication::import("widgets::TAreasEditForm");
+	require_once 'widgets/TAreasEditForm.inc';
 
 	class TAreasCreateForm extends TAreasEditForm {		
 		public function Create(){
@@ -17,8 +17,7 @@
 					$attrvalues[$p->Name()] = $request->__get($p->Name());
 				}	
 				$item = $this->Source->CreateContentItem($request->contentclass,$attrvalues);
-				TApplication::Redirect($this->response->ItemEditUrl($item));
-				die;	
+				$this->Application()->Redirect($this->response->ItemEditUrl($item));
 			} else throw new TCoreException(TCoreException::ERR_ACCESS_DENIED);
 		}
 		

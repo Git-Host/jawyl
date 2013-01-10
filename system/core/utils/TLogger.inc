@@ -5,7 +5,7 @@ class TLogger extends TConfigurable {
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'LogFile':$this->_filename_ = TApplication::$Application->AdjustPath($value);break;
+			case 'LogFile':$this->_filename_ = $this->Application()->AdjustPath($value);break;
 			case 'Format':$this->_format_ = $value;break;
 			default:parent::__set($nm,$value);break;
 		}
@@ -14,7 +14,7 @@ class TLogger extends TConfigurable {
 	public function Put(){
 		$fn = $this->_filename_;
 		if (!$fn)
-			$fn = TApplication::$Application->PrivateDir.'/log/'.$this->Name().'.log';
+			$fn = $this->Application()->PrivateDir().'/log/'.$this->Name().'.log';
 	
 		TFileSystem::ForceDir($fn);
 		

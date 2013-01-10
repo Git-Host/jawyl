@@ -12,18 +12,22 @@
 /**
  * @ignore
  */
-TApplication::import("core::TConfigurable");
+require_once 'core/TConfigurable.inc';
 /**
  * @ignore
  */
-TApplication::import("common::theme::engine");
+require_once 'common/theme/engine.inc';
 /**
  * @ignore
  */
-TApplication::import("services::TPageService");
+require_once 'services/TPageService.inc';
 
 function capitalize($str){
 	return mb_strtoupper(mb_substr($str,0,1)).mb_strtolower(mb_substr($str, 1));
+}
+
+function html_obfuscate($str){
+	return $str;
 }
 
 /**
@@ -74,7 +78,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	private $_current_cache_lifetime_ = array();
 	
 	public function Soid(){
-		return TApplication::$Application->Name()."::".$this->Name();
+		return $this->Application()->Name()."::".$this->Name();
 	}
 		
 	protected function processTag($name){
@@ -132,18 +136,16 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 				if (method_exists($this->response,$n))
 					return $this->response->$n();
 			}				
-			if (isset(TApplication::CurrentService()->$n))
-				return TApplication::CurrentService()->$n;
-			if (method_exists(TApplication::CurrentService(),$n))
-				return TApplication::CurrentService()->$n();			
-			if (isset(TApplication::$Application->$n))
-				return TApplication::$Application->$n;
-			if (method_exists(TApplication::$Application,$n))
-				return TApplication::$Application->$n();			
+			if (isset($this->Application()->CurrentService()->$n))
+				return $this->Application()->CurrentService()->$n;
+			if (method_exists($this->Application()->CurrentService(),$n))
+				return $this->Application()->CurrentService()->$n();			
+			if (isset($this->Application()->$n))
+				return $this->Application()->$n;
+			if (method_exists($this->Application(),$n))
+				return $this->Application()->$n();			
 		}
-		
-		if (class_exists($n))
-			return $n;			
+								
 		if ($get_self)	
 			return $name;
 		return null;
@@ -222,8 +224,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			if (method_exists($this->response,$method))
 				return $this->response->$method($var);
 		}	
-		if (method_exists(TApplication::CurrentService(),$method))
-			return TApplication::CurrentService()->$method($var);
+		if (method_exists($this->Application()->CurrentService(),$method))
+			return $this->Application()->CurrentService()->$method($var);
 		if (function_exists($method))
 			return  $method($var);
 		return null;
@@ -256,6 +258,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 					case 'u':$result .= 'mb_strtoupper(';break;
 					case 'l':$result .= 'mb_strtolower(';break;
 					case 'cap':$result .= 'capitalize(';break;
+					case 'obf':$result .= 'html_obfuscate(';break;
 					case 'q':$result .= 'htmlentities(';break;
 					default:{
 						if ($this->_get_content_filter($v))
@@ -465,19 +468,19 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if ($cachelifetime > 0)
 			if (!$this->startCache($filename,$cachelifetime)) return;
 			
-		$this->_global_vars_['SERVICE'] = TApplication::$Application->CurrentService();
+		$this->_global_vars_['SERVICE'] = $this->Application()->CurrentService();
 		$this->_global_vars_['PAGE'] = $this->response;
 		$this->_global_vars_['THEME_URL'] = $this->ThemeUrl();
-		$this->_global_vars_['APP_URL'] = TApplication::$Application->Url();
-		$this->_global_vars_['APPLICATION'] = TApplication::$Application;
-		$this->_global_vars_['APPLICATION_SHARED'] = TApplication::$Application->Shared;
+		$this->_global_vars_['APP_URL'] = $this->Application()->Url();
+		$this->_global_vars_['APPLICATION'] = $this->Application();
+		$this->_global_vars_['APPLICATION_SHARED'] = $this->Application()->Shared();
 /*		
 		$this->_global_vars_['CONTEXT'] = $context;
 		$this->_global_vars_['WIDGET'] = $this->CurrentWidget();
-*/
+*/	
 		include $this->getCompiledFile($filename,$preprocessor);
 		if ($cachelifetime > 0)
-			$this->stopCache(); 
+			$this->stopCache();
 	}
 
 /**
@@ -512,7 +515,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	public function __set($nm,$value){
 		switch ($nm){
 			case 'ThemesDir':{
-				$this->_themes_dir_ = TApplication::$Application->AdjustPath($value);
+				$this->_themes_dir_ = $this->Application()->AdjustPath($value);
 			}break;
 			default:parent::__set($nm,$value);break;
 		}
@@ -539,7 +542,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	}
 	
 	public function ThemeDir(){
-		$themes_dir = TApplication::$Application->AppPath.'/themes';
+		$themes_dir = $this->Application()->AppPath().'/themes';
 		if ($this->ThemesDir)
 			$themes_dir = $this->ThemesDir; 
 		if (!is_dir($themes_dir))

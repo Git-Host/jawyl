@@ -9,7 +9,7 @@
 */
 
 
-TApplication::import("common::cache");
+require_once 'common/cache.inc';
 
 /**
  * @package Caching

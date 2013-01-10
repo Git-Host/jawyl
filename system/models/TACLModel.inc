@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("models::TMetaModel");
+require_once 'models/TMetaModel.inc';
 
 /**
  * @package Components
@@ -285,14 +285,14 @@ class TACLModel extends TMetaModel implements IInstallable, IACLManager {
 		if ($id){
 			$this->currentUID = $id;
 			if ($this->Persistance){
-				TApplicationSession::ResetId();
-				TApplicationSession::Set("current_uid",$this->currentUID);
+				$this->Application()->Session()->ResetId();
+				$this->Application()->Session()->Set("current_uid",$this->currentUID);
 			}
 		}
 		else {
 			$this->currentUID = null;
 			if ($this->Persistance)
-				TApplicationSession::Set("current_uid",null);
+				$this->Application()->Session()->Set("current_uid",null);
 		}
 	}
 	
@@ -302,7 +302,7 @@ class TACLModel extends TMetaModel implements IInstallable, IACLManager {
 	public function Logout(){
 		$this->currentUID = null;
 		if ($this->Persistance)
-			TApplicationSession::Set("current_uid",null);
+			$this->Application()->Session()->Set("current_uid",null);
 	}
 	
 /**
@@ -312,7 +312,7 @@ class TACLModel extends TMetaModel implements IInstallable, IACLManager {
 	public function CurrentUser(){
 		if (is_null($this->currentUID))
 			if ($this->Persistance)
-				$this->currentUID = TApplicationSession::Get("current_uid");
+				$this->currentUID = $this->Application()->Session()->Get("current_uid");
 		if ($this->currentUID)		
 			return $this->GetItem($this->currentUID);
 		return null;

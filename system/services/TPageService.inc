@@ -12,10 +12,10 @@
 /**
  * @ignore
  */
-TApplication::import("core::TService");
-TApplication::import("common::ajax");
-TApplication::import("common::service::navigation");
-TApplication::import("common::mvp");
+require_once 'core/TService.inc';
+require_once 'common/ajax.inc';
+require_once 'common/service/navigation.inc';
+require_once 'common/mvp.inc';
 
 
 class TPagePolicy extends TPolicy {
@@ -26,7 +26,7 @@ class TPagePolicy extends TPolicy {
 	}
 	
 	public function Descendants(){
-		return array(new TServiceRole(TServiceRole::ANONYMOUS));
+		return array(new TServiceRole(TServiceRole::ANONYMOUS,$this->sobj->Service()));
 	}
 } 
 
@@ -193,8 +193,9 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  */		
 	public function LoadResources(){
 		$widgets = $this->Widgets();
-		foreach ($widgets as $w) 
+		foreach ($widgets as $w){
 			$w->LoadResources();
+		}
 	}
 /**
  * sends page output to client
@@ -217,15 +218,17 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		$this->denyCallClean = $this->isAjax; 
 		
 		if ($this->isAjax)
-			TOutputBuffer::StartRecording();
+			$this->Application()->Buffer()->StartRecording();
 			
 		try {	
 			$this->exception = null;
 			$result = parent::Handle($request);
 		} catch (Exception $e){
+			echo $this->Application()->Buffer()->Flush();
 			$this->exception = $e;
-			if ($this->BuiltinErrorHandling)
+			if ($this->BuiltinErrorHandling){
 				throw $e;
+			}
 /*
  * @todo: implement exception preprocessing
  */				
@@ -237,7 +240,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		if (!$this->isAjax)
 			return $this->respond($request);
 			
-		$content = TOutputBuffer::StopRecording();
+		$content = $this->Application()->Buffer()->StopRecording();
 		$this->SendHeaders();
 		$this->AjaxEngine->StartResponse($this,$this->request);
 		echo $content;
@@ -359,16 +362,15 @@ abstract class TPageService extends TService {
 					return null;
 		} else if (!$this->_check_page_access($page))
 			return null;	
-		
-		return TApplication::Url($this->name,$this->formAppUrlParameters($page, $controller, $method, $parameters));
+		return $this->Application()->Url($this->name,$this->formAppUrlParameters($page, $controller, $method, $parameters));
 	}
 	
 	public function RedirectToNotFound(){
-		TApplication::Redirect($this->Url($this->getNotFoundPage()->Name()));
+		$this->Application()->Redirect($this->Url($this->getNotFoundPage()->Name()));
 	}
 	
 	public function RedirectToAccessDenied(){
-		TApplication::Redirect($this->Url($this->getAccessDeniedPage()->Name()));
+		$this->Application()->Redirect($this->Url($this->getAccessDeniedPage()->Name()));
 	}
 	
 	private function _check_page_access($page){
@@ -385,7 +387,7 @@ abstract class TPageService extends TService {
 			if (!$u instanceof ISecuritySubject)
 				$u = TAnonymousUser::Instance();
 			return $policy->CheckPolicy($u,new TPagePolicy(TPagePolicy::PAGE_ACCESS,$page));
-		}			
+		}	
 		return true;
 	}
 	

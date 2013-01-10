@@ -2,7 +2,16 @@
 	require_once 'TException.inc';
 	
 	class TBuiltinExceptionHandler implements IExceptionHandler {
+		private $_application_;
+		
+		public function __construct(IApplication $application){
+			$this->_application_ = $application;
+		}
+		
 		private function _exception_header(Exception $e){
+			if (!headers_sent()){
+				header("Content-Type:text/html; charset=utf8");
+			}
 					?>
 					<style>
 						.error {
@@ -139,10 +148,10 @@
 						<td style="text-align: right;"><?php if (isset($call['line'])) echo $call['line']; ?></td>
 						<td><?php if (isset($call['file'])) {
 								$file = str_replace('\\', '/', $call['file']);
-								if (stristr($file,TApplication::$SystemPath))
-									echo str_ireplace(TApplication::$SystemPath, '<span class="syspath">SYS_PATH</span>', $file);
-								else if (stristr($file,TApplication::$Application->AppPath))
-									echo str_ireplace(TApplication::$Application->AppPath, '<span class="syspath">APP_PATH</span>', $file);
+								if (stristr($file,$this->_application_->SysPath()))
+									echo str_ireplace($this->_application_->SysPath(), '<span class="syspath">SYS_PATH</span>', $file);
+								else if (stristr($file,$this->_application_->AppPath))
+									echo str_ireplace($this->_application_->AppPath, '<span class="syspath">APP_PATH</span>', $file);
 								else 
 									echo $file;	
 						} ?></td>
@@ -151,8 +160,6 @@
 						$n--;
 					}
 					?></table><?php
-					die;
- 
 		}
 		
 	private function _console_exception_header(Exception $e){
@@ -182,10 +189,10 @@
 				?>) on line <?php if (isset($call['line'])) echo $call['line']; ?> in <?php 
 						if (isset($call['file'])) {
 								$file = str_replace('\\', '/', $call['file']);
-								if (stristr($file,TApplication::$SystemPath))
-									echo str_ireplace(TApplication::$SystemPath, 'SYS_PATH', $file);
-								else if (stristr($file,TApplication::$Application->AppPath))
-									echo str_ireplace(TApplication::$Application->AppPath, 'APP_PATH', $file);
+								if (stristr($file,$this->_application_->SysPath()))
+									echo str_ireplace($this->_application_->SysPath(), 'SYS_PATH', $file);
+								else if (stristr($file,$this->_application_->AppPath))
+									echo str_ireplace($this->_application_->AppPath, 'APP_PATH', $file);
 								else 
 									echo $file;	
 						}
@@ -212,7 +219,7 @@
 					}
 				}break;
 				case TApplication::ENV_TESTING:{
-					if (TApplication::$Application->CallType == TApplication::CALL_CONSOLE){
+					if ($this->_application_->CallType == TApplication::CALL_CONSOLE){
 						$this->_console_exception_header($e);
 					} else {
 						$this->_exception_header($e);
@@ -222,7 +229,7 @@
 					}
 				}break;
 				case TApplication::ENV_DEVELOPING:{
-					if (TApplication::$Application->CallType == TApplication::CALL_CONSOLE){
+					if ($this->_application_->CallType == TApplication::CALL_CONSOLE){
 						$this->_console_exception_header($e);
 					} else {
 					$this->_exception_header($e);

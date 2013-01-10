@@ -10,8 +10,14 @@ abstract class TRequest {
  */	
 	protected $service;
 	
-	public function __construct($service = null){
-			$this->service = $service;
+/**
+ * @var IFileStorage
+ */	
+	protected $fileStorage;
+	
+	public function __construct($service = null, IFileStorage $file_storage = null){
+		$this->service = $service;
+		$this->fileStorage = $file_storage;
 	}
 	
 	public function __get($nm){

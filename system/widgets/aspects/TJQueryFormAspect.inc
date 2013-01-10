@@ -1,7 +1,7 @@
 <?php
-	TApplication::import("common::item");
-	TApplication::import("common::mvp");
-	TApplication::import("widgets::TJQueryWidget");
+	require_once 'common/item.inc';
+	require_once 'common/mvp.inc';
+	require_once 'widgets/TJQueryWidget.inc';
 
 	final class TFormFieldType {
 		const BOOL = "bool";

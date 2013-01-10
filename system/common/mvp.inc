@@ -12,29 +12,29 @@
 /**
  * @ignore 
  */
-TApplication::import("common::eventsystem");
+require_once 'common/eventsystem.inc';
 /**
  * @ignore 
  */
-TApplication::import("common::iterator");
+require_once 'common/iterator.inc';
 /**
  * @ignore 
  */
-TApplication::import("core::TConfigurable");
+require_once 'core/TConfigurable.inc';
 /**
  * @ignore 
  */
-TApplication::import("core::utils::TConvertions");
+require_once 'core/utils/TConvertions.inc';
 /**
  * @ignore 
  */
-TApplication::import("core::utils::THttpMeta");
+require_once 'core/utils/THttpMeta.inc';
 /**
  * @ignore 
  */
-TApplication::import("common::theme::engine");
+require_once 'common/theme/engine.inc';
 
-TApplication::import("common::enum");
+require_once 'common/enum.inc';
 
 /**
  * @package Common
@@ -269,10 +269,10 @@ abstract class TModel extends TConfigurable {
 	public function __get($nm){
 		if ($nm == "Name") return $this->name;
 		$result = parent::__get($nm);
-		if (!$result && !is_null(TApplication::CurrentService()))
-			$result = TApplication::CurrentService()->__get($nm);
+		if (!$result && !is_null($this->Application()->CurrentService()))
+			$result = $this->Application()->CurrentService()->__get($nm);
 		if (!$result)
-			$result = TApplication::$Application->__get($nm);
+			$result = $this->Application()->$nm;
 		return $result;
 	}
 /**
@@ -280,17 +280,13 @@ abstract class TModel extends TConfigurable {
  */	
  	public function __isset($nm){
 		$result = parent::__isset($nm);
-		if (!$result) $result = TApplication::$Application->__isset(get_class($this).".".$nm);
+		// if (!$result) $result = $this->Application()->__isset(get_class($this).".".$nm);
 		if (!$result) {
-			$service = TApplication::CurrentService();
-			$result = $service->__isset($nm);
+			$service = $this->Application()->CurrentService();
+			$result = isset($service->$nm);
 		}
-		if (!$result) $result = TApplication::$Application->__isset($nm);
+		if (!$result) $result = isset($this->Application()->$nm);
 		return $result; 
-	}
-	
-	public static function Instanciate($name,$classname){
-		return TApplication::Instantiate($classname,array("name"=>$name));
 	}
 
 	public function __toString(){
@@ -422,13 +418,13 @@ abstract class TResponseElement extends TMVPObject implements IResponseElement {
 		$value = null;
 		switch ($this->SaveState){
 			case self::SS_SESSION:{
-				$ss = TApplicationSession::Get(self::SESS_STATE_SAVER);
+				$ss = $this->Application()->Session()->Get(self::SESS_STATE_SAVER);
 				if (!is_null($ss))
 					if (key_exists($this->UniqueId(),$ss))
 						if (key_exists($name,$ss[$this->UniqueId()]))
 							$value = $ss[$this->UniqueId()][$name];
 			}break;
-			case self::SS_COOKIE:$value = TApplication::Request()->Cookie(urlencode($this->UniqueId().$name));break;
+			case self::SS_COOKIE:$value = $this->Application()->Request()->Cookie(urlencode($this->UniqueId().$name));break;
 		}
 		if ($value == "none") $value = null;
 		if ($value == "") $value = null;
@@ -440,7 +436,7 @@ abstract class TResponseElement extends TMVPObject implements IResponseElement {
 	protected function saveStateParameter($name,$value){
 		switch ($this->SaveState){
 			case self::SS_SESSION:{
-				$ss = TApplicationSession::Get(self::SESS_STATE_SAVER);
+				$ss = $this->Application()->Session()->Get(self::SESS_STATE_SAVER);
 				if (is_null($ss)) $ss = array();
 				if (!key_exists($this->UniqueId(),$ss)) $ss[$this->UniqueId()] = array();
 				
@@ -448,7 +444,7 @@ abstract class TResponseElement extends TMVPObject implements IResponseElement {
 					$ss[$this->UniqueId()][$name] = $value;
 				else if (isset($ss[$this->UniqueId()][$name]))
 					unset($ss[$this->UniqueId()][$name]);	
-				TApplicationSession::Set(self::SESS_STATE_SAVER,$ss);
+				$this->Application()->Session()->Set(self::SESS_STATE_SAVER,$ss);
 			}break;
 			case self::SS_COOKIE:$this->response->SetCookie(urlencode($this->UniqueId().$name), $value);break;
 		}
@@ -725,7 +721,7 @@ abstract class TWidget extends TResponseElement {
 	protected function startCache(IThemeEngine $engine, $cachename, $lifetime){
 		if ($engine->OutputCache){
 			if (!$engine->OutputCache->CachedOutput($cachename,$lifetime)){
-				TOutputBuffer::StartRecording();
+				$this->Application()->Buffer()->StartRecording();
 				return true;
 			}
 			return false;
@@ -735,7 +731,7 @@ abstract class TWidget extends TResponseElement {
 	
 	protected function stopCache(IThemeEngine $engine,$cachename,$lifetime){
 		if ($engine->OutputCache){
-			$contents = TOutputBuffer::StopRecording();
+			$contents = $this->Application()->Buffer()->StopRecording();
 			$engine->OutputCache->SaveCache($cachename,$contents,$lifetime);
 			echo $contents;
 		}		
@@ -897,7 +893,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 		if (is_null($value))
 			$expire = time()-86400;
 			
-		$oldval = TApplication::Request()->Cookie($name);
+		$oldval = $this->Application()->Request()->Cookie($name);
 		if (is_array($oldval) || is_array($value)){
 			if (empty($value))
 				$unset = array_keys($oldval);
@@ -966,7 +962,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  */	
 	public function CleanCall(){
 		if (!$this->denyCallClean)
-			TApplication::Redirect($this->Url());
+			$this->Application()->Redirect($this->Url());
 	}
 	
 	protected function PreHandle(THttpRequest $request){return true;}

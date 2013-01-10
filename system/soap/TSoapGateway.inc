@@ -1,5 +1,5 @@
 <?php
-TApplication::Import('common::soap');
+require_once 'common/soap.inc';
 
 /**
  * 
@@ -27,7 +27,7 @@ final class TSoapGateway extends TSoapServer {
 		switch ($nm){
 			case 'Endpoint':{
 				if (is_string($value)){
-					$com = TApplication::$Application->Instance($value);
+					$com = $this->Application()->Instance($value);
 					if ($com instanceof TSoapClient)
 						$value = $com;
 					else {

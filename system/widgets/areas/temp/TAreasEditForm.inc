@@ -1,5 +1,5 @@
 <?php
-	TApplication::import("widgets::TAreasWidget");
+	require_once 'widgets/TAreasWidget.inc';
 
 	class TAreasEditForm extends TAreasWidget {
 		protected $hideProperties;

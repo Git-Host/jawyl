@@ -1,6 +1,6 @@
 <?php
-TApplication::import("common::meta");
-TApplication::import("common::storage");
+require_once 'common/meta.inc';
+require_once 'common/storage.inc';
 
 /**
  * @package Common

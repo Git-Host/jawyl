@@ -13,7 +13,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TXmlMenuSource");
+require_once 'presenters/TXmlMenuSource.inc';
 
 
 /**
@@ -26,7 +26,7 @@ class TXmlStrictLinkMenuItem extends TXmlLinkMenuItem  {
 	public function Url(){
 		$page = $this->node->getAttribute("page");
 		if ($page)
-			return TApplication::CurrentService()->Url($page,$this->node->getAttribute("controller"),$this->node->getAttribute("method"),$this->Parameters());
+			return $this->source->Application()->CurrentService()->Url($page,$this->node->getAttribute("controller"),$this->node->getAttribute("method"),$this->Parameters());
 		return $this->node->getAttribute("url");
 	}
 	
@@ -71,11 +71,11 @@ class TXmlSiteNavigation extends TXmlMenuSource {
 	public function Roots(){
 		$result = array();
 		if ($this->response->Service() instanceof TIntrinsicPageService){
-			$file = TApplication::$Application->PrivateDir."/".$this->response->Service()->Name()."/navigation.xml";
+			$file = $this->Application()->PrivateDir()."/".$this->response->Service()->Name()."/navigation.xml";
 			if (file_exists($file)){
 				$dom = new DOMDocument();
         		$dom->Load($file);
-	        	//if ($dom->schemaValidate(TApplication::$SystemPath."/schemas/navigation.xsd")){
+	        	//if ($dom->schemaValidate($this->Application()->SysPath()."/schemas/navigation.xsd")){
     	        $xpath = new DOMXPath($dom);
 				$links = $xpath->query("/root/link|group");
 				foreach ($links as $link)

@@ -6,7 +6,7 @@
  * item selection event
 */
 
-TApplication::import("common::mvpEvents");
+require_once 'common/mvpEvents.inc';
 
 class TPresenterEvent extends TMvpEvent {
 	const SELECT_EVENT_NAME = "select";

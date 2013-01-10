@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasNestings");
+require_once 'widgets/areas/TAreasNestings.inc';
 
 
 class TAreasTableColumn {

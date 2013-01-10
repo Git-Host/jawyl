@@ -9,15 +9,15 @@
 */
 
 
-TApplication::import("core::security::policy");
+require_once 'core/security/policy.inc';
 /**
  * @ignore
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenters::interfaces");
+require_once 'common/presenters/interfaces.inc';
 
 /**
  * @package Presenters
@@ -32,8 +32,8 @@ abstract class TSecuredPresenter extends TPresenter {
  * @return IPolicyChecker
  */
 	protected function getPolicyChecker(){
-		if (TApplication::CurrentService() instanceof ISecuredService)
-			return TApplication::CurrentService()->Policy();
+		if ($this->Application()->CurrentService() instanceof ISecuredService)
+			return $this->Application()->CurrentService()->Policy();
 		return null;
 	}
 	
@@ -61,8 +61,8 @@ abstract class TSecuredPresenter extends TPresenter {
 			return false;
 		$policy_manager = $this->getPolicyManager();
 		if ($policy_manager){
-			if (TApplication::CurrentService() instanceof ISecuredService){
-				$acl = TApplication::CurrentService()->ACL();
+			if ($this->Application()->CurrentService() instanceof ISecuredService){
+				$acl = $this->Application()->CurrentService()->ACL();
 				if ($acl)
 					return $policy_manager->CheckPolicy($acl->CurrentUser(),$policy);
 			}

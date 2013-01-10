@@ -1,6 +1,6 @@
 <?php
-TApplication::Import('common::storage');
-TApplication::Import('common::item');
+require_once 'common/storage.inc';
+require_once 'common/item.inc';
 
 /**
  * @author dkrasilnikov@gmail.com

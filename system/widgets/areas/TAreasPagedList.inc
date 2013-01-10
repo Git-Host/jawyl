@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasList");
+require_once 'widgets/areas/TAreasList.inc';
 
 /**
  * @package View

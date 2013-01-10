@@ -1,7 +1,7 @@
 <?php
-TApplication::import("core::security::acl");
-TApplication::import("core::security::policy");
-TApplication::import("core::TService");
+require_once 'core/security/acl.inc';
+require_once 'core/security/policy.inc';
+require_once 'core/TService.inc';
 
 class TJobPolicy extends TPolicy {
 	const JOB_EXECUTE = "job.exec"; 
@@ -15,8 +15,8 @@ class TJobPolicy extends TPolicy {
 	}
 
 	public function Descendants(){
-		if ($this->type == self::JOB_EXECUTE)
-			return array(new TServiceRole(TServiceRole::ADMIN));
+		if (($this->type == self::JOB_EXECUTE) && ($this->sobj instanceof IConfigurable))
+			return array(new TServiceRole(TServiceRole::ADMIN,$this->sobj->Application()->CurrentService()));
 		return array();
 	}
 } 

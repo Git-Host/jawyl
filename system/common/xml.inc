@@ -40,7 +40,7 @@ class TXSLTransformer extends TConfigurable implements IXSLTransformer {
 	public function __set($nm,$value){
 		switch ($nm){
 			case 'XSL':{  
-				$this->_xsl_->load(TApplication::$Application->AdjustPath($value));
+				$this->_xsl_->load($this->Application()->AdjustPath($value));
 			}break;
 			case 'Parameters':{
 				if (is_string($value))

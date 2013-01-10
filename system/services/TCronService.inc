@@ -12,9 +12,9 @@
 /**
  * @ignore
  */
-TApplication::import("core::TService");
-TApplication::import("common::service::navigation");
-TApplication::import("core::utils::TScheduleHandler");
+require_once 'core/TService.inc';
+require_once 'common/service/navigation.inc';
+require_once 'core/utils/TScheduleHandler.inc';
 
 
 class TCronService extends TService {
@@ -30,14 +30,14 @@ class TCronService extends TService {
 			return $result;
 		}
 		
-		$joblist = TApplication::$Application->PrivateDir."/jobs.xml";
+		$joblist = $this->Application()->PrivateDir()."/jobs.xml";
 		
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = false;
 		$dom->Load($joblist);
 		
 		if (TConvertions::ConvertToBoolean($this->ValidateConfig))
-			if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/joblist.xsd"))
+			if (!$dom->schemaValidate($this->Application()->SysPath()."/schemas/joblist.xsd"))
 				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT); 
 		
 		$xpath = new DOMXPath($dom);
@@ -45,7 +45,7 @@ class TCronService extends TService {
 		$jobs = $xpath->query("/jobs/list[@name='".$request->list."']/job");
 		
 		foreach ($jobs as $job){
-			$item = TApplication::$Application->Instance($job->getAttribute("component"));
+			$item = $this->Application()->Instance($job->getAttribute("component"));
 			if ($item instanceof IScheduleHandler){
 				$parameters = array();
 				$params = $xpath->query("parameter",$job);

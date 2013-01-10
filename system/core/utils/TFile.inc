@@ -36,17 +36,23 @@
    	protected $size;
    	
 /**
+ * @var IFileStorage
+ */   	
+   	protected $storage;
+   	
+/**
  * constructor. fills file object attributes.
  * @param string $name file name
  * @param string $path file path
  * @param string $type optional mime type
  * @param int $size optional size
  */   	
-   	public function __construct($name,$path,$type = null,$size = null){
+   	public function __construct(IFileStorage $storage,$name,$path,$type = null,$size = null){
    		$this->Name = $name;
    		$this->MimeType = $type;
+   		$this->storage = $storage;
    		if (!TFileSystem::IsAbsolute($path))
-   			$path = TApplication::FileStoragePath().'/'.$path;
+   			$path = $this->storage->FileStoragePath().'/'.$path;
    		$this->path = $path;
    		$this->size = $size;
    	}
@@ -101,11 +107,11 @@
    		protected $thumbnail;
    		protected $imageType;
 	
-   		public function __construct($name,$path,$thumbnail = null,$type = null,$size = null){
-   			parent::__construct($name, $path,$type,$size);
+   		public function __construct(IFileStorage $storage, $name, $path, $thumbnail = null, $type = null, $size = null){
+   			parent::__construct($storage, $name, $path,$type,$size);
    			if ($thumbnail){
    				if (!TFileSystem::IsAbsolute($thumbnail))
-   					$thumbnail = TApplication::FileStoragePath().'/'.$thumbnail;
+   					$thumbnail = $this->storage->FileStoragePath().'/'.$thumbnail;
    				$this->thumbnail = $thumbnail;
    			} else $this->thumbnail = $this->path;
    		}   
@@ -137,7 +143,7 @@
    			if (!(file_exists($this->path) && is_file($this->path)))
    				throw new TCoreException(TCoreException::ERR_FILE_MISSING,array('file'=>$this->path));
    			if (!TFileSystem::IsAbsolute($filename))
-   				$filename = TApplication::FileStoragePath().'/'.$filename;		
+   				$filename = $this->storage->FileStoragePath().'/'.$filename;		
    			if (file_exists($filename))
    				unlink($filename);
    			TFileSystem::ForceDir(dirname($filename));
@@ -181,8 +187,8 @@
  * constructor
  * @param array $file php uploaded file structure
  */   		
-   		public function __construct(array $file){
-   			parent::__construct($file["name"],$file["tmp_name"],$file["type"],$file["size"]);
+   		public function __construct(IFileStorage $storage, array $file){
+   			parent::__construct($storage, $file["name"],$file["tmp_name"],$file["type"],$file["size"]);
    		}
 
 /**
@@ -195,10 +201,10 @@
    			if ($this->_stored_) return $this->path;
    			if ($filename){
    				if (!TFileSystem::IsAbsolute($filename))
-   					$filename = TApplication::FileStoragePath().'/'.$filename;
+   					$filename = $this->storage->FileStoragePath().'/'.$filename;
    			}
    			if (!$filename){
-   				$path = TApplication::FileStoragePath();
+   				$path = $this->storage->FileStoragePath();
    				$ts = new TDate();
    				$pi = pathinfo($this->Name);
    				$filename = $path."/".str_ireplace(".".$pi["extension"],"",$pi["basename"])."[".$ts->TimeStamp()."]".($pi["extension"]?".".$pi["extension"]:"");
@@ -236,10 +242,10 @@
  * @param array XmlRpc uploaded file structure
  * @see TUploadedFile::Store
  */   			
-   		public function __construct($struct){
-   			$path = TApplication::FileStoragePath()."/".$struct["name"];
+   		public function __construct(IFileStorage $storage, $struct){
+   			$path = $storage->FileStoragePath()."/".$struct["name"];
    			file_put_contents($path,$struct["bits"]->scalar);
-   			parent::__construct($struct["name"],$path,$struct["type"],filesize($path));
+   			parent::__construct($storage,$struct["name"],$path,$struct["type"],filesize($path));
    		}
    }
    
@@ -259,7 +265,7 @@
  * constructor.
  * @param string $content - file xml document. 
  */   		
-   		public function __construct($content){
+   		public function __construct(IFileStorage $storage, $content){
    			$xml = new DOMDocument();
    			$xml->loadXML($content);
    			$xpath = new DOMXPath($xml);
@@ -267,7 +273,7 @@
 			$mime = $xpath->query("/file/header/mime");
 			$content = $xpath->query("/file/content");
    			$this->_content_ = $content->item(0)->nodeValue;
-   			parent::__construct($name->item(0)->nodeValue,"",$mime->item(0)->nodeValue,strlen($this->_content_));
+   			parent::__construct($storage, $name->item(0)->nodeValue,"",$mime->item(0)->nodeValue,strlen($this->_content_));
    		}
 
 /**

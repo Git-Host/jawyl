@@ -9,7 +9,7 @@
  * @version 0.0.1 alpha  
 */
 
-TApplication::import("widgets::TSkinnableWidget");
+require_once 'widgets/TSkinnableWidget.inc';
 
 /**
  * @package View
@@ -45,14 +45,14 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	
 	public static $JQueryDragDropLoaded = false;
 
-	public static function JQueryPath(){
-		if (TApplication::CurrentService()->CurrentPage()->JQueryPath)
-			return TApplication::CurrentService()->CurrentPage()->JQueryPath;
-		if (TApplication::CurrentService()->JQueryPath)
-			return 	TApplication::CurrentService()->JQueryPath;
-		if (TApplication::$Application->JQueryPath)
-			return TApplication::$Application->JQueryPath;
-		return TApplication::$Application->Shared."/js/jquery/"; 
+	public function JQueryPath(){
+		if ($this->Application()->CurrentService()->CurrentPage()->JQueryPath)
+			return $this->Application()->CurrentService()->CurrentPage()->JQueryPath;
+		if ($this->Application()->CurrentService()->JQueryPath)
+			return $this->Application()->CurrentService()->JQueryPath;
+		if ($this->Application()->JQueryPath)
+			return $this->Application()->JQueryPath;
+		return $this->Application()->Shared()."/js/jquery/"; 
 	}
 	
 /**
@@ -126,10 +126,10 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	public function LoadResources(){
 		if (!self::$JQueryLoaded){
 		?>
-<script type='text/javascript' src='<?php echo self::JQueryPath(); ?>jquery-min.js'></script>
-<script type='text/javascript' src='<?php echo self::JQueryPath(); ?>jquery.cookie.js'></script>
-<script type='text/javascript' src='<?php echo self::JQueryPath(); ?>jquery-ui-min.js'></script>
-		<?php
+<script type="text/javascript" src="<?php echo $this->JQueryPath(); ?>jquery-min.js"></script>
+<script type="text/javascript" src="<?php echo $this->JQueryPath(); ?>jquery.cookie.js"></script>
+<script type="text/javascript" src="<?php echo $this->JQueryPath(); ?>jquery-ui-min.js"></script>
+		<?php  
 			self::$JQueryLoaded = true;
 		}
 		$this->linkCustomResources();

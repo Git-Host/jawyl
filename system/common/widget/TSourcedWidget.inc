@@ -12,11 +12,11 @@
 /**
  * @ignore 
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 /**
  * @ignore 
  */
-TApplication::import("common::mvpEvents");
+require_once 'common/mvpEvents.inc';
 
 /**
  * @package View

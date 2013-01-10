@@ -1,5 +1,5 @@
 <?php
-TApplication::import('common::enum');
+require_once 'common/enum.inc';
 
 /**
  * @package Common

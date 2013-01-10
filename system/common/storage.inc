@@ -12,10 +12,10 @@
 /**
  * @ignore
  */
-TApplication::import("common::iterator");
-TApplication::import("common::data");
-TApplication::import("common::logic");
-TApplication::import("common::acid");
+require_once 'common/iterator.inc';
+require_once 'common/data.inc';
+require_once 'common/logic.inc';
+require_once 'common/acid.inc';
 
 /**
  * @package Common
@@ -1091,7 +1091,7 @@ abstract class TDBDriver extends TConfigurable implements IDBDriver {
 					return $result;
 				if ($this->_auth_type_ == IDBDriver::AUTH_IMPLICIT_ACL){
 					if (!$result){
-						$service = TApplication::CurrentService();
+						$service = $this->Application()->CurrentService();
 						if ($service instanceof ISecuredService){
 							$result = $service->ACL();
 							if (!($result instanceof IDBACLManager))

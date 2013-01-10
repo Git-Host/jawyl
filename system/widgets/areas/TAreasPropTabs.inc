@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasPropTable");
+require_once 'widgets/areas/TAreasPropTable.inc';
 
 /**
  * @package View

@@ -1,6 +1,6 @@
 <?php
-	TApplication::import("themes::TIntrinsicThemeEngine");
-	TApplication::import("ajax::TAreasEngine");
+	require_once 'themes/TIntrinsicThemeEngine.inc';
+	require_once 'ajax/TAreasEngine.inc';
 	
 	class TAreasThemeEngine extends TIntrinsicThemeEngine {
 		private $_area_stack_ = array();

@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-	TApplication::import("widgets::TJQueryWidget");
+	require_once 'widgets/TJQueryWidget.inc';
 
 /**
  * @package View

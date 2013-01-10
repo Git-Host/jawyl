@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("core::TConfigurable");
+require_once 'core/TConfigurable.inc';
 
 /**
  * @package Common

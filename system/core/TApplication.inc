@@ -12,6 +12,7 @@
 /**
  * @ignore
  */
+	require_once 'core.inc';
 	require_once 'TException.inc';
 	require_once 'utils/TFileSystem.inc';	
 	require_once 'utils/TFile.inc';
@@ -28,7 +29,7 @@
 	require_once 'THttpRequest.inc';
 	require_once 'TService.inc';
 	require_once 'TI18n.inc';
-	require_once 'TApplicationSession.inc';
+	require_once 'session.inc';
 	
 /**
  * Jawyl application is an instance of TApplication class.
@@ -69,7 +70,6 @@
  * @see TI18n::SetTranslator()
  *  
  * @property-write string $SessionHandler sets current session handler by its name, when session is open setting this property leads to exception.
- * @see TApplicationSession
  * 
  * @property string $PrivateDir gets and sets application private directory relative to TApplication::$AppPath. defaults to "private". 
  * @property string $Shared gets and sets application public shared directory relative to TApplication::$Root, used to store client resources such as javascript and css. defaults to "shared".
@@ -78,7 +78,7 @@
  * @property string $OverrideDir
  * 
 */	
-	final class TApplication extends TConfigurable {
+	final class TApplication extends TConfigurable implements IApplication, IFileStorage {
 		const ENV_PRODUCTION = 0;
 		const ENV_TESTING = 1;
 		const ENV_DEVELOPING = 2;
@@ -91,42 +91,118 @@
  * @var string stores local path where Jawyl framework is placed
  */
 		public static $SystemPath;
+
+/**
+ * @var string
+ */		
 		private $_app_path_;
 		
+/**
+ * @var string
+ */		
 		private $_prev_private_dir_;
+/**
+ * @var string
+ */		
 		private $_prev_override_dir_;
 		
+/**
+ * @var string
+ */		
 		private $_private_dir_;
+/**
+ * @var string
+ */		
 		private $_override_dir_;
 
+/**
+ * @var string
+ */		
 		private $_prev_configcompile_dir_;
+/**
+ * @var string
+ */		
 		private $_prev_ioccompile_dir_;
 		
+/**
+ * @var string
+ */		
 		private $_configcompile_dir_;
+/**
+ * @var string
+ */		
 		private $_ioccompile_dir_;
 		
+/**
+ * @var string
+ */		
 		private $_shared_ = '/shared';
+/**
+ * @var string
+ */		
 		private $_uri_;
+/**
+ * @var string
+ */		
 		private $_root_;
+/**
+ * @var string
+ */		
 		private $_relative_path_;
-		private $_ajax_engine_;
+
+/**
+ * @var string
+ */		
 		private $_default_service_name_;
+/**
+ * @var bool
+ */		
 		private $_sef_;
+/**
+ * @var string
+ */		
 		private $_string_encoding_ = 'UTF-8';
+/**
+ * @var int
+ */		
 		private $_call_type_;
+/**
+ * @var string
+ */		
 		private $_file_storage_path_;
 /**
  * @var IExceptionHandler
  */		
 		protected $_ioc_exception_handler_;
 		
+/**
+ * @var bool
+ */		
 		public static $CompileAppConfig = false;
+/**
+ * @var bool
+ */		
 		public static $ErrorsCapture = true;
+/**
+ * @var string
+ */		
 		public static $ConfigCompileDirectory = 'config';
+/**
+ * @var string
+ */		
 		public static $IocTypesCompileDirectory = 'private/ioc';
+/**
+ * @var string
+ */		
 		public static $PrivateDirectory = 'private';
+/**
+ * @var string
+ */		
 		public static $OverrideDirectory = 'override';
 		
+/**
+ * @var int
+ */		
 		public static $Environment = self::ENV_PRODUCTION;
 		
 /**
@@ -134,20 +210,38 @@
  */
 		public static $Application;
 		
+/**
+ * @var TServiceMap
+ */		
 		private $_service_map_;
+		
+/**
+ * @var IService
+ */		
 		private $_current_service_;
+
+/**
+ * @var ISessionHandler
+ */		
+		private $_session_;
+/**
+ * @var IOutputBuffer
+ */		
+		private $_buffer_;
 		
-		private static $_import_paths_ = array();
-		
+/**
+ * @var TRequest
+ */
 		private static $_request_;
-		private static $_classes_ = array();
-		private static $_services_ = array(); 
+		private static $_services_ = array();
 		
 /**
 * @ignore
 * */		
 		public function __get($nm){
 			switch ($nm){
+				case 'SessionHandler':return $this->Session();break;
+				case 'SysPath':return $this->SysPath();break;
 				case 'RequestPath':return $this->_request_path_;break;
 				case 'AppPath':return $this->_app_path_;break;
 				case 'PrivateDir':{
@@ -170,7 +264,7 @@
 				case 'URI':return $this->_uri_;break;
 				case 'Root':return $this->_root_;break;
 				case 'RelativePath':return $this->_relative_path_;break;
-				case 'Path':return join(';',self::$_import_paths_);break;
+				case 'Path':return get_include_path();break;
 				case 'Host':return $_SERVER['HTTP_HOST'];break;
 				case 'Port':return $_SERVER['SERVER_PORT'];break;
 				case 'Domain':return $this->Host.($this->Port?(($this->Port != '80')?':'.$this->Port:''):'');
@@ -207,7 +301,8 @@
 			mb_internal_encoding($this->_string_encoding_);
 			self::$Application = $this;
 			self::$SystemPath = str_replace('\\','/',realpath(dirname(__FILE__).'/../'));
-			$this->_ioc_exception_handler_ = new TBuiltinExceptionHandler();
+			$this->_ioc_exception_handler_ = new TBuiltinExceptionHandler($this);
+			$this->_buffer_ = new TOutputBuffer();
 			$this->_request_path_ = str_replace('\\','/',$requestPath);
 			$this->_app_path_ = $this->_request_path_;
 			$docroot = str_ireplace('\\','/',realpath($_SERVER['DOCUMENT_ROOT']));
@@ -292,6 +387,54 @@
 			}
 		}
 		
+/**
+ * @return string
+ */		
+		public function Uri(){
+			return $this->_uri_;
+		}
+		
+		public function Host(){return $this->Host;}
+		
+		public function AppPath(){return $this->AppPath;}
+		
+		public function PrivateDir(){return $this->PrivateDir;}
+		
+		public function IocTypesCompileDir(){return $this->IocTypesCompileDir;}
+		
+		public function ConfCompileDir(){return $this->ConfCompileDir;}
+		
+		public function OverrideDir(){return $this->OverrideDir;}
+		
+		public function Sef(){return $this->Sef;}
+		
+		public function Shared(){return $this->Shared;}
+		
+		public function Root(){return $this->Root;}
+
+/**
+ * @return IOutputBuffer
+ */		
+		public function Buffer(){
+			return $this->_buffer_;
+		}
+
+/**
+ * @return ISessionHandler
+ */
+		public function Session(){
+			if (!$this->_session_ instanceof ISessionHandler)
+				$this->_session_ = new TSessionHandler('default_session_handler',$this,$this);
+			return $this->_session_;	
+		}
+		
+		public function SysPath(){
+			return self::$SystemPath;
+		}
+		
+		public function Application(){
+			return $this;
+		}
 		
 		private static function _parse_contents(DOMXPath $xpath, DOMNode $n, $container, &$result, &$counter){
 			$nodes = $xpath->query('component|setting',$n);
@@ -452,8 +595,8 @@
  * @param string $path a path to be added
  * @see TApplication::Import()
 */					
-		public static function AddImportPath($path){
-			self::$_import_paths_[] = $path;
+		public function AddImportPath($path){
+			set_include_path(get_include_path().PATH_SEPARATOR.$this->AdjustPath($path));
 		}
 		
 		private function _canonical_path($path){
@@ -472,77 +615,22 @@
 		}
 		
 /**
- * Imports a class or a library. Search is made relative to passed $root, then application import paths, then application private dir, then framework root dir.
- * @param string $classname a valid class or library name (with namespaces) to be imported 
- * @param string $root optional additional path relative to which class or library should be searched  
- * @see TApplication::AddImportPath()
-*/					
-		public static function Import($classname,$root = null){
-			if (isset(self::$_classes_[$classname])) return;
-			$parts = explode('::',$classname);
-			if (class_exists($parts[count($parts)-1])) return;
-			
-			$path = str_replace('::','/',$classname);
-			$located = false;
-			if (!is_null($root)){
-				$filename = $root.'/'.$path;
-				$located = self::_check_path($filename);
-			}		
-
-			if (!$located){
-				$filename = self::$SystemPath.'/'.$path;
-				$located = self::_check_path($filename);
-			}			
-			
-			if (!$located){
-				$filename = self::$Application->PrivateDir.'/code/'.$path;
-				$located = self::_check_path($filename);
-			}
-			
-			if (!$located){
-				foreach (self::$_import_paths_ as $ipath){
-					$filename = $ipath.'/'.$path;	
-					$located = self::_check_path($filename);
-					if ($located) break;
-				}
-			}
-			
-			if (!$located) return;
-			
-			ob_start();
-			if (is_file($filename)){
-				require_once $filename;
-				if (class_exists($parts[count($parts)-1]))
-					self::$_classes_[$classname] = $parts[count($parts)-1];
-			}
-			else if (is_dir($filename)){
-				$files = scandir($filename);
-				foreach ($files as $file){
-					if (is_file($file)){
-						$parts = explode('.',$file);
-						require_once $path.'/'.$file;
-						if (class_exists($parts[0]))
-							self::$_classes_[$classname.'::'.$parts[0]] = $parts[0];
-					}
-				}
-			}
-			ob_end_clean();
-		}
-/**
  * Gets a specified class Reflection object, if class does not exist tries to import it
  * @param string $classname a valid class name (with namespaces) 
  * @returns ReflectionClass   
  * @see TApplication::import()
 */					
-		public static function GetClass($classname){
-			$result = null;
-			if (class_exists($classname))
-				return new ReflectionClass($classname);
-			if (!key_exists($classname,self::$_classes_))
-				self::Import($classname);
-			if (!key_exists($classname,self::$_classes_))
-				return $result;
-			$result = new ReflectionClass(self::$_classes_[$classname]);
+		public function GetClass($classname){
+			$result = null;	
+			if (!class_exists($classname)){	
+				self::_autoloader($classname);
+				if (!class_exists($classname)){
+					$parts = explode('/',$classname);
+					if (class_exists($parts[count($parts) - 1]))
+						$classname = $parts[count($parts) - 1];
+				}
+			}
+			$result = new ReflectionClass($classname);
 			return $result;
 		}
 
@@ -554,14 +642,10 @@
  * @see TApplication::import()
  * @see TApplication::getClass()
 */					
-		public static function Instantiate($classname,array $arguments = array()){
+		public function Instantiate($classname,array $arguments = array()){
 			$i = null;
-			if (class_exists($classname))
-				$c = new ReflectionClass($classname);
-			else 
-				$c = self::GetClass($classname);
 				
-			if ($c){
+			if ($c = $this->GetClass($classname)){
 				if (count($arguments) == 0)	
 					$i = $c->newInstance();
 				else {
@@ -576,17 +660,7 @@
  * Gets a service with a specified name
  * @param string $name service name 
  * @returns TService  
- * @see TApplication::getService()
-*/					
-		public static function Service($name){
-			return self::$Application->GetService($name);
-		}
-/**
- * Gets a service with a specified name
- * @param string $name service name 
- * @returns TService  
- * @see TApplication::Service()
-*/					
+ */					
 		public function GetService($name){
 			if (is_string(self::$_services_[$name]))
 				self::$_services_[$name] = self::Instantiate(self::$_services_[$name],array("name"=>$name,"container"=>$this));
@@ -597,8 +671,8 @@
  * Makes a 302 redirect to a specified URL
  * @param string $url url where to redirect 
  */						
-		public static function Redirect($url){
-			TApplicationSession::Close();
+		public function Redirect($url){
+			$this->Session()->Close();
 			header('Location:'.$url);
 			die;
 		} 
@@ -615,10 +689,10 @@
 				if (isset($_REQUEST['service'])) $servicename = $_REQUEST['service'];
 				if ($this->Sef){
 					include_once $this->ConfCompileDir.'/url.php';
-					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath);
+					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath,$this);
 				}
 				if (!self::$_request_) 
-					self::$_request_ = new THttpRequest($servicename);
+					self::$_request_ = new THttpRequest($servicename,$this);
 			} else {
 				self::$_request_ = new TConsoleCall();
 			}
@@ -630,7 +704,8 @@
 			$handled = false;
 			
 			if ($servicename){
-				$this->_current_service_ = self::Service($servicename);
+				$this->_current_service_ = $this->GetService($servicename);
+				
 				if ($this->_current_service_){
 					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
 					if (file_exists($service_config)) include_once $service_config;
@@ -638,7 +713,7 @@
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
 				foreach (self::$_services_ as $servicename=>$serviceclass){
-					$this->_current_service_ = self::Service($servicename);
+					$this->_current_service_ = $this->GetService($servicename);
 					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($handled = $this->_current_service_->Handle(self::Request())) break;	
@@ -646,7 +721,7 @@
 				if (!$handled)
 					throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>'default instance'));
 			}
-			TApplicationSession::Close();	
+			$this->Session()->Close();	
 		}
 		
 /**
@@ -654,7 +729,7 @@
  * @returns string
  * @see THttpRequest 
  */						
-		public static function RequestURI(){
+		public function RequestURI(){
 			if (self::$_request_)
 				return self::$_request_->RequestURI();
 			return false;
@@ -664,7 +739,7 @@
  * Get current request object copy
  * @return THttpRequest
  */		
-		public static function Request(){
+		public function Request(){
 			return clone self::$_request_; 
 		} 
 		
@@ -673,7 +748,7 @@
  * @returns TService
  * @see TService 
  */						
-		public static function CurrentService(){return self::$Application->_current_service_;}
+		public function CurrentService(){return $this->_current_service_;}
 		
 /**
  * Constructs an url to request a specified service
@@ -682,7 +757,7 @@
  * @returns string
  * @see TService 
  */						
-		public function MakeUrl($service = null,array $parameters = array(),$base = null, $force_absolute = false){
+		public function Url($service = null,array $parameters = array(),$base = null, $force_absolute = false){
 			$dr = preg_replace('/[\\/\\\\]/','|',realpath($_SERVER['DOCUMENT_ROOT']));
 			
 			if ($base)
@@ -728,22 +803,11 @@
 				$url = 'http://'.$this->Domain.$url;
 			return $url;
 		}
-		
-/**
- * Static alias for TApplication::MakeUrl()
- * @param string $service service name 
- * @param array $parameters request parameters array  
- * @returns string
- * @see TApplication::MakeUrl() 
- */						
-		public static function Url($service = null,array $parameters = array(),$base = null, $force_absolute = false){
-			return self::$Application->MakeUrl($service,$parameters,$base,$force_absolute);
-		}
-		
-		public static function FileStoragePath(){
-   			$path = self::$Application->FileStoragePath;
+				
+		public function FileStoragePath(){
+   			$path = $this->FileStoragePath;
    			if (!$path)
-   				$path = TApplication::$Application->AppPath.'/files';
+   				$path = $this->AppPath.'/files';
    			if (!is_dir($path))
    				TFileSystem::ForceDir($path);	
    			return $path;
@@ -776,14 +840,14 @@
 				case 'Translator':TI18n::SetTranslator($value);break;
 				case 'SessionHandler':{
 					if (is_string($value))
-						TApplicationSession::SetHandler($this->Instance($value));
+						$this->_session_ = $this->Instance($value);
 					else if ($value instanceof ISessionHandler)
-						TApplicationSession::SetHandler($value);
+						$this->_session_ = $value;
 					else throw new TCoreException(TCoreException::ERR_BAD_VALUE);	
 				}break;
-				case 'Path':self::$_import_paths_ = explode(';',$value);break;
+				case 'Path':set_include_path(str_replace(';', PATH_SEPARATOR, $value));break;
 				case 'FileStoragePath':$this->_file_storage_path_ = $this->AdjustPath($value);break;
-				case 'ImportPath':self::AddImportPath($value);break;
+				case 'ImportPath':$this->AddImportPath($value);break;
 				case 'Sef':$this->_sef_ = TConvertions::ConvertToBoolean($value);break;
 				case 'Environment':{
 					if (!is_numeric($value)){
@@ -805,17 +869,23 @@
 			}
 		}
 		
+		private static function _autoloader($class){
+			require_once $class.'.inc';
+		}
+		
 /**
 * Application main method, which launches runtime. Called once in the initial script. 
 */		
 		public static function Run($callerPath){
 			global $Application;
+			spl_autoload_register(array("TApplication","_autoloader"));
 			self::_adjust_environment();
 			if (self::$ErrorsCapture){
 				set_error_handler(array('TApplication','AppErrorHandler'));
 				set_exception_handler(array('TApplication','AppExceptionHandler'));
 			}
 			$Application = new TApplication(realpath(dirname($callerPath)));
+			set_include_path(get_include_path().PATH_SEPARATOR.self::$SystemPath.PATH_SEPARATOR.$Application->PrivateDir.'/code');
 			$Application->_app_run();
 		}
 		
@@ -828,8 +898,9 @@
 		}
 		
 		public static function AppExceptionHandler(Exception $e){
-			if (self::$Application->_ioc_exception_handler_ instanceof IExceptionHandler)
+			if (self::$Application->_ioc_exception_handler_ instanceof IExceptionHandler){
 				return self::$Application->_ioc_exception_handler_->HandleException($e);
+			}
 			return false;	
 		}
 	}

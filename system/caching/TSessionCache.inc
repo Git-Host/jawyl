@@ -8,7 +8,7 @@
  * @version 0.0.1 alpha  
 */
 
-TApplication::import("common::cache");
+require_once 'common/cache.inc';
 
 /**
  * @package Caching
@@ -16,16 +16,15 @@ TApplication::import("common::cache");
  * @category System
  * Session cache. Holds cache values for current application session.
  * @see TCache
- * @see TApplicationSession
  */
 class TSessionCache extends TCache {
 	
 	protected function &loadStorage(){
-		return TApplicationSession::Get($this->name);
+		return $this->Application()->Session()->Get($this->name);
 	}
 	
 	protected function saveStorage(array &$storage){
-		TApplicationSession::Set($this->name,$storage);
+		$this->Application()->Session()->Set($this->name,$storage);
 	}	
 }
 ?>

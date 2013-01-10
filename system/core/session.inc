@@ -106,12 +106,7 @@
  * @var array associative array of event handlers
  */		
 		protected static $handlers = array();
-/**
- * @param string $name
- */		
-		public function __construct($name){
-			parent::__construct($name);
-		}
+
 		
 /**
  * Adds a handler of specified type to handlers array
@@ -207,14 +202,17 @@
 		public function ResetId(){
 			if ($this->isOpen)
 				return session_regenerate_id(true);
+			else throw new TCoreException(TCoreException::ERR_SESS_CLOSED);
 			return false;
 		}
 		
 		public function Soid(){
-			return TApplication::$Application->Name()."::".$this->Name();
+			return $this->Application()->Name()."::".$this->Name();
 		}
 		
 		public function Open(){
+			if ($this->isOpen)
+				$this->Close();
 			if (!$this->isOpen){
 				session_set_save_handler(array(&$this,"SessOpen"), array(&$this,"SessClose"), array(&$this,"SessRead"), array(&$this,"SessWrite"), array(&$this,"SessDestroy"), array(&$this,"GarbageCollection"));
 				session_start();
@@ -223,9 +221,12 @@
 		}
 		
 		public function Close(){
-			session_commit();
-			$this->isOpen = false;	
-			return true;
+			if ($this->isOpen){
+				session_commit();
+				$this->isOpen = false;	
+				return true;
+			}
+			return false;
 		}
 		
 		public function Destroy(){
@@ -303,183 +304,27 @@
 		}
 	
 		public function Get($nm){
-			if (isset($_SESSION))
-				if (key_exists($nm,$_SESSION))
-					return $_SESSION[$nm];
+			if (!isset($_SESSION))
+				$this->Open();
+			if (key_exists($nm,$_SESSION))
+				return $_SESSION[$nm];
 			return null;
 		}
 	
 		public function Set($nm,$value){
-			if (isset($_SESSION))
-				$_SESSION[$nm] = $value;
+			if (!isset($_SESSION))
+				$this->Open();
+			$_SESSION[$nm] = $value;
 		}	
 
 		public function __set($nm,$value){
 			switch ($nm){
 				case 'SavePath':{
-					$this->savePath = TApplication::$Application->AdjustPath($value);
+					$this->savePath = $this->Application()->AdjustPath($value);
 					TFileSystem::ForceDir($this->savePath);
 				}break;
 				default:parent::__set($nm, $value);break;
 			}
-		}
-	}
-	
-/**
- * Class providing static access to application session.  
- * @package CoreRuntimeClasses
- * @subpackage Application
- * @category Core
- * @see ISessionHandler
- * @see TConfigurableSessionHandler
- * */	
-	
-	final class TApplicationSession {
-/**
- * @var ISessionHandler current session handler object
- * @see ISessionHandler
- */		
-		protected static $session;
-
-/**
- * Gets current session handler object.
- * @returns ISessionHandler
- */		
-		public static function Handler(){
-			if (self::$session instanceof ISessionHandler)
-				return self::$session;
-			return null;
-		} 
-		
-/**
- * Gets current session id. Returns null for closed session.
- * @return string
- */		
-		public static function SessionId(){
-			if (self::Handler())
-				return self::Handler()->Id();
-			return null; 
-		}
-/**
- * resets session id to a new generated value
- * @return boolean
- */		
-		public static function ResetId(){
-			if (!self::SessionId())
-				throw new TCoreException(TCoreException::ERR_SESS_CLOSED);
-			return self::Handler()->ResetId();
-		} 
-		
-/**
- * Gets session variable by name.
- * @param string $nm name of variable
- */		
-		public static function Get($nm){
-			if (!self::SessionId()) self::Open();
-			/*if (!self::Handler()){
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-				return null;
-			}*/	
-			return self::Handler()->Get($nm);
-		}
-		
-/**
- * Sets session variable by name.
- * @param string $nm name of variable
- * @param mixed $value value of variable 
- */		
-		public static function Set($nm,$value){	
-			if (!self::SessionId()) self::Open();
-			/*if (!self::Handler())
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);*/
-			self::Handler()->Set($nm,$value);
-		}
-		
-/**
- * Sets current session handler. When session is open calling this methods throws exception.
- * Passing null forces setting handler to default. 
- * @param ISessionHandler $handler session handler 
- */		
-		public static function SetHandler(ISessionHandler $handler = null){
-			if (self::SessionId()){
-				throw new TCoreException(TCoreException::ERR_SESS_OPEN);
-				return;
-			}
-			if (!is_null($handler))
-				self::$session = $handler;
-			else
-				self::$session = new TSessionHandler("default_session_handler");
-		} 
-
-/**
- * opens session 
- */
-		public static function Open(){
-			self::Close();
-			if (!self::Handler())
-				self::SetHandler();
-			return self::Handler()->Open();
-		}
-		 
-/**
- * closes session 
- */
-		public static function Close(){
-			if (self::SessionId())
-				return self::Handler()->Close();
-		}
-		 
-/**
- * destroys session 
- */
-		public static function Destroy(){
-			if (!self::Handler())
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-			return self::Handler()->Destroy();
-		} 
-
-/**
- * adds handler to session destroy event 
- * @param callback $callback
- * @see ISessionHandler
- */
-		public static function AddOnDestroy($callback){
-			if (!self::Handler())
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-			self::Handler()->AddOnDestroy($callback);
-		}
-		
-/**
- * adds handler to session open event 
- * @param callback $callback
- * @see ISessionHandler
- */
-		public static function AddOnOpen($callback){
-			if (!self::Handler())
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-			self::Handler()->AddOnOpen($callback);
-		}
-		
-/**
- * adds handler to session close event
- * @param callback $callback 
- * @see ISessionHandler
- */
-		public static function AddOnClose($callback){
-			if (!self::Handler())
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-			self::Handler()->AddOnClose($callback);
-		}
-		
-/**
- * adds handler to session garbage collection event 
- * @param callback $callback
- * @see ISessionHandler 
- */
-		public static function AddOnGarbageCollection($callback){
-			if (!self::Handler())
-				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-			self::Handler()->AddOnGarbageCollection($callback);
 		}
 	}
 ?>

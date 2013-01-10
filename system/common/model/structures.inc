@@ -1,8 +1,25 @@
 <?php
-TApplication::import('common::item');
-TApplication::import('common::logic');
+require_once 'common/item.inc';
+require_once 'common/logic.inc';
 
-class TClassPermission extends TPolicy {
+class TMetaPolicy extends TPolicy {
+/**
+ * @var IApplication
+ */	
+	protected $application;
+	/**
+	 * permission constructor
+	 * @param string $type permission type
+	 * @param ISecurityObject $so optional security object
+	 */
+	public function __construct($type, IApplication $application, ISecurityObject $so = null){
+		$this->application = $application;
+		parent::__construct($type,$so);
+	}	
+}
+
+
+class TClassPermission extends TMetaPolicy {
 	const INSTANCIATE = "item.instant";
 	const INSTLIST = "item.instlist";
 	
@@ -13,13 +30,13 @@ class TClassPermission extends TPolicy {
 	public function Descendants(){
 		switch ($this->type){
 			case self::INSTANCIATE:
-			case self::INSTLIST:return array(new TServiceRole(TServiceRole::USER));break;
+			case self::INSTLIST:return array(new TServiceRole(TServiceRole::USER,$this->application->CurrentService()));break;
 		}
 		return array();
 	}	
 }
 
-class TItemRole extends TPolicy {
+class TItemRole extends TMetaPolicy {
 	const OWNER = "item.owner";
 	
 	protected function checkType($type){
@@ -28,7 +45,7 @@ class TItemRole extends TPolicy {
 	
 	public function Descendants(){
 		switch ($this->type){
-			case self::OWNER:return array(new TServiceRole(TServiceRole::ADMIN));break;
+			case self::OWNER:return array(new TServiceRole(TServiceRole::ADMIN,$this->application->CurrentService()));break;
 		}
 		return array();
 	}
@@ -42,7 +59,7 @@ class TItemRole extends TPolicy {
 	}
 }
 
-class TItemPermission extends TPolicy {
+class TItemPermission extends TMetaPolicy {
 	const DELETE = "item.delete";
 	const RELATE = "item.relate";
 	const LST = "item.list";
@@ -58,16 +75,16 @@ class TItemPermission extends TPolicy {
 		switch ($this->type){
 			case self::ACL:
 			case self::DELETE:
-			case self::MODIFY:return array(new TServiceRole(TServiceRole::ADMIN),new TMetaItemRole(TMetaItemRole::OWNER,$this->sobj));break;
-			case self::RELATE:return array(new TServiceRole(TServiceRole::USER),new TMetaItemRole(TMetaItemRole::OWNER,$this->sobj));break;
+			case self::MODIFY:return array(new TServiceRole(TServiceRole::ADMIN,$this->application->CurrentService()),new TMetaItemRole(TMetaItemRole::OWNER,$this->sobj));break;
+			case self::RELATE:return array(new TServiceRole(TServiceRole::USER,$this->application->CurrentService()),new TMetaItemRole(TMetaItemRole::OWNER,$this->sobj));break;
 			case self::VIEW:
-			case self::LST:return array(new TServiceRole(TServiceRole::ANONYMOUS),new TMetaItemRole(TMetaItemRole::OWNER,$this->sobj));break;
+			case self::LST:return array(new TServiceRole(TServiceRole::ANONYMOUS,$this->application->CurrentService()),new TMetaItemRole(TMetaItemRole::OWNER,$this->sobj));break;
 		}
 		return array();
 	}	
 }
 
-class TPropertyPermission extends TPolicy {
+class TPropertyPermission extends TMetaPolicy {
 	const READ = "item.read";
 	const WRITE = "item.write";
 	
@@ -76,7 +93,7 @@ class TPropertyPermission extends TPolicy {
 	}
 	
 	public function Descendants(){
-		$result = array(new TServiceRole(TServiceRole::USER));
+		$result = array(new TServiceRole(TServiceRole::USER,$this->application->CurrentService()));
 		$item = $this->sobj->Item();
 		switch ($this->type){
 			case self::READ:$result[] = new TMetaItemPermission(TMetaItemPermission::VIEW,$item);break;

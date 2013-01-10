@@ -12,17 +12,17 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenter::TItemsSource");
+require_once 'common/presenter/TItemsSource.inc';
 
-TApplication::import("model::structures");
+require_once 'model/structures.inc';
 
 /**
  * @package Presenters
@@ -181,7 +181,7 @@ class TList extends TItemsSource implements ISortableItems, IFilterableItems, IP
 				if ($this->DataSource && key_exists(TList::AN_SORT,$this->_actions_))
 					$this->setupAction($this->_actions_[TList::AN_SORT]);
 			}break;			
-			//case "ExcludeClasses":{$this->class_filter = explode(";",$value);TApplicationSession::Set($this->UniqueId()."_items_count",null);}break;
+			//case "ExcludeClasses":{$this->class_filter = explode(";",$value);$this->Application()->Session()->Set($this->UniqueId()."_items_count",null);}break;
 			case "PageSize":$this->page_size = $value;break;
 			default: parent::__set($nm,$value);break;
 		}
@@ -409,7 +409,7 @@ class TList extends TItemsSource implements ISortableItems, IFilterableItems, IP
  */	
 	protected function resetPageInfo(){
 		$this->PAGE = 0;
-		TApplicationSession::Set($this->UniqueId()."_items_count",null);
+		$this->Application()->Session()->Set($this->UniqueId()."_items_count",null);
 	}
 
 /**
@@ -517,7 +517,7 @@ class TList extends TItemsSource implements ISortableItems, IFilterableItems, IP
  * @return int 
  */	
 	protected function getItemsCount(){
-		return TApplicationSession::Get($this->UniqueId()."_items_count");
+		return $this->Application()->Session()->Get($this->UniqueId()."_items_count");
 	}
 	
 /**
@@ -565,7 +565,7 @@ class TList extends TItemsSource implements ISortableItems, IFilterableItems, IP
 		$c = $this->DataSource->GetClass($this->BaseClass);
 		$ss = $this->DataSource->GetItems($c,$this->getFilter(),$this->getSorting());
 		if (!is_null($pagesize)){
-			TApplicationSession::Set($this->UniqueId()."_items_count",$ss->ItemCount());
+			$this->Application()->Session()->Set($this->UniqueId()."_items_count",$ss->ItemCount());
 			if ($page)
 				return new TPagedIterator($ss,$page,$pagesize);
 		}	
@@ -689,7 +689,7 @@ class TList extends TItemsSource implements ISortableItems, IFilterableItems, IP
 	protected function getPolicyProvider(){
 		if ($this->__datasource__ instanceof IPolicyProvider)
 			return $this->__datasource;
-		$provider = TApplication::$Application->Instance($this->PolicyProvider);
+		$provider = $this->Application()->Instance($this->PolicyProvider);
 		if ($provider instanceof IPolicyProvider)
 			return $provider;
 		return null;

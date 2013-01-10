@@ -1,6 +1,6 @@
 <?php
-TApplication::import("common::service::navigation");
-TApplication::import("common::item");
+require_once 'common/service/navigation.inc';
+require_once 'common/item.inc';
 /**
  * @package View
  * @subpackage Widgets
@@ -204,8 +204,14 @@ class TMenuItem implements IIdentity {
 }
 
 class TLinkMenuItem extends TMenuItem implements INavigable {
-	public function __construct(ILink $link, IMenu $menu){
+/**
+ * @var IApplication
+ */	
+	private $_application_;
+	
+	public function __construct(ILink $link, IMenu $menu, IApplication $application){
 		parent::__construct($link, $menu);
+		$this->_application_ = $application;
 	}
 	
 	public function __toString(){
@@ -215,12 +221,12 @@ class TLinkMenuItem extends TMenuItem implements INavigable {
 	public function Link(){
 		$service = $this->base->Service();
 		if ($service == "self")
-			$service = TApplication::$Application->CurrentService()->Name();
+			$service = $this->_application_->CurrentService()->Name();
 		if ($this->base->Url())
 			return $this->base->Url();
-		return TApplication::$Application->Url($service,$this->base->Parameters()); 
+		return $this->_application_->Url($service,$this->base->Parameters()); 
 	}
-} 
+}
 
 class TActionMenuItem extends TMenuItem implements ISelectable {
 	public function __construct(IAction $base, IMenu $menu){

@@ -8,7 +8,7 @@
  * @version 0.0.1 alpha  
 */
 
-TApplication::import("common::cache");
+require_once 'common/cache.inc';
 
 /**
  * @package Caching
@@ -43,7 +43,7 @@ class TTextChangeLog extends TChangeLog {
 		if (is_null($this->records) || (!$this->_store_log_)){
 			$this->records = array();
 			$fn = $this->LogFile;
-			if (is_null($fn)) $fn = TApplication::$Application->AppPath."/changelog.txt";
+			if (is_null($fn)) $fn = $this->Application()->AppPath()."/changelog.txt";
 			if (!file_exists($fn)) return $this->records;
 			$recs = explode("\n",file_get_contents($fn));
 			foreach ($recs as $rec)
@@ -95,7 +95,7 @@ class TTextChangeLog extends TChangeLog {
 		foreach ($this->records as $obj=>$dt)
 			$cnt .= $obj.":".$dt->TimeStamp()."\n";
 		$fn = $this->LogFile;
-		if (is_null($fn)) $fn = TApplication::$Application->AppPath."/changelog.txt";
+		if (is_null($fn)) $fn = $this->Application()->AppPath()."/changelog.txt";
 		file_put_contents($fn,$cnt);	
 	}		
 }

@@ -1,5 +1,5 @@
 <?php
-TApplication::import("common::theme::engine");
+require_once 'common/theme/engine.inc';
 
 class TIntrinsicOutputCache extends TConfigurable implements IOutputCache {
 	private $_cache_dir_;
@@ -30,7 +30,7 @@ class TIntrinsicOutputCache extends TConfigurable implements IOutputCache {
  * @return boolean
  */	
 	public function CachedOutput($name,$lifetime = null){
-		$fn = $this->CacheDir."/".$name."_".TApplication::RequestURI().".cache"; 
+		$fn = $this->CacheDir."/".$name."_".$this->Application()->RequestURI().".cache"; 
 		if (file_exists($fn)){
 			if (is_null($lifetime)){
 				$cache = file_get_contents($fn);
@@ -54,7 +54,7 @@ class TIntrinsicOutputCache extends TConfigurable implements IOutputCache {
  */	
 	public function SaveCache($name,$output,$lifetime){
 		if (!file_exists($this->CacheDir)) mkdir($this->CacheDir);
-		file_put_contents($this->CacheDir."/".$name."_".TApplication::RequestURI().".cache",'<?php /*expires:'.(time()+$lifetime*60).';*/ ?>'.$output);
+		file_put_contents($this->CacheDir."/".$name."_".$this->Application()->RequestURI().".cache",'<?php /*expires:'.(time()+$lifetime*60).';*/ ?>'.$output);
 	}
 	
 	public function __set($nm,$value){
@@ -66,7 +66,7 @@ class TIntrinsicOutputCache extends TConfigurable implements IOutputCache {
 	
 	public function __get($nm){
 		switch ($nm){
-			case "CacheDir":return $this->_cache_dir_?$this->_cache_dir_:TApplication::$Application->AppPath.'/cache';break;
+			case "CacheDir":return $this->_cache_dir_?$this->_cache_dir_:$this->Application()->AppPath().'/cache';break;
 			default:return parent::__get($nm);break;
 		}
 	}

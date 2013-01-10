@@ -12,11 +12,11 @@
 /**
  * @ignore
  */
-TApplication::import("common::eventsystem");
+require_once 'common/eventsystem.inc';
 /**
  * @ignore
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 
 
 /**

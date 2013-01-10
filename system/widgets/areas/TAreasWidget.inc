@@ -1,7 +1,7 @@
 <?php
-	TApplication::import("ajax::TAreasEngine");
-	TApplication::import("widgets::TJQueryWidget");
-	TApplication::import("common::theme::engine");
+	require_once 'ajax/TAreasEngine.inc';
+	require_once 'widgets/TJQueryWidget.inc';
+	require_once 'common/theme/engine.inc';
 
 	class TWidgetArea implements IArea {
 /**
@@ -172,7 +172,7 @@ jQuery.areas_OnDatePicker = function (inputs){
 				$context = $area->Context();
 				if (is_null($context)) $context = $this;
 
-				TOutputBuffer::StartRecording();
+				$this->Application()->Buffer()->StartRecording();
 				$skinfile = $this->Skin($this->currentEngine,$area->Skin());
 				if ($skinfile) 
 					$this->currentEngine->ProcessTemplate($context,$skinfile);
@@ -188,7 +188,7 @@ jQuery.areas_OnDatePicker = function (inputs){
 						if ($skincache > 0)
 							$this->stopCache($this->currentEngine, $cachename, $skincache);	
 					}
-				$html = TOutputBuffer::StopRecording();
+				$html = $this->Application()->Buffer()->StopRecording();
 					
 				$skipwrapper = false;
 				if ($area instanceof TWidgetArea)

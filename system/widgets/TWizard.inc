@@ -9,7 +9,7 @@
  * @version 0.0.1 alpha  
 */
 
-TApplication::import('common/interfaces');
+require_once 'common/interfaces.inc';
 
 /**
  * @package View
@@ -41,7 +41,7 @@ TApplication::import('common/interfaces');
 			$this->Source->StepNext($parameters);
 			if ($this->Source->Finished())
 				if ($this->FinalRedirect)
-					TApplication::Redirect($this->FinalRedirect);
+					$this->Application()->Redirect($this->FinalRedirect);
 		}
 		
 /**

@@ -9,8 +9,8 @@
  * @version 0.0.1 alpha  
 */
 
-TApplication::import("common::iterator");
-TApplication::import("common::data");
+require_once 'common/iterator.inc';
+require_once 'common/data.inc';
 
 /**
  * @package Common
@@ -313,13 +313,13 @@ class TMetaException extends TException {
  */		
 		protected $value;
 		
-		public static function InstanceAttribute(IInstance $instance,IAttributeDefinition $definition){
+		public static function InstanceAttribute(IInstance $instance,IAttributeDefinition $definition, IFileStorage $file_storage = null){
 			switch ($definition->Type()->TypeCode){
 				case TDataType::DATETIME:return new TInstanceDateTimeAttribute($instance,$definition);break;
 				case TDataType::IMAGE:
-				case TDataType::FILE:return new TInstanceFileAttribute($instance,$definition);
+				case TDataType::FILE:return new TInstanceFileAttribute($instance,$definition,$file_storage);
 				case TDataType::IMAGELINK:
-				case TDataType::FILELINK:return new TInstanceFileLinkAttribute($instance,$definition);break;
+				case TDataType::FILELINK:return new TInstanceFileLinkAttribute($instance,$definition,$file_storage);break;
 				case TDataType::BOOLEAN:return new TInstanceBooleanAttribute($instance,$definition);break;
 				case TDataType::GUID:return new TInstanceGuidAttribute($instance,$definition);break;
 				case TDataType::SET:return new TInstanceSetAttribute($instance,$definition);break;
@@ -432,17 +432,26 @@ class TMetaException extends TException {
  */	
 	class TInstanceFileAttribute extends TInstanceAttribute {
 /**
+ * @var IFileStorage
+ */		
+		private $_file_storage_;
+		
+		public function __construct(IInstance $instance,IAttributeDefinition $definition, IFileStorage $storage){
+			parent::__construct($instance,$definition);
+			$this->_file_storage_ = $storage;
+		}		
+/**
  * @see IInstanceAttribute::SetValue()
  */		
 		public function SetValue($value,$needsave = true){
 			if ($value instanceof TFile){
-				$v = new TDBStoredFile('<file><header><name>'.$value->Name.'</name><mime>'.$value->MimeType.'</mime></header><content><![CDATA['.$value->GetContents().']]></content></file>');
+				$v = new TDBStoredFile($this->_file_storage_,'<file><header><name>'.$value->Name.'</name><mime>'.$value->MimeType.'</mime></header><content><![CDATA['.$value->GetContents().']]></content></file>');
 				parent::SetValue($v,$needsave);
 			}
 			else if (is_string($value)){
 				$v = null;
 				if ($value != "")
-					$v = new TDBStoredFile($value);
+					$v = new TDBStoredFile($this->_file_storage_,$value);
 				parent::SetValue($v,$needsave);
 			}
 			else
@@ -457,6 +466,17 @@ class TMetaException extends TException {
  * class of meta instance file link attribute 
  */	
 	class TInstanceFileLinkAttribute extends TInstanceAttribute {
+		
+		/**
+		 * @var IFileStorage
+		 */
+		private $_file_storage_;
+		
+		public function __construct(IInstance $instance,IAttributeDefinition $definition, IFileStorage $storage){
+			parent::__construct($instance,$definition);
+			$this->_file_storage_ = $storage;
+		}
+		
 /**
  * @see IInstanceAttribute::SetValue()
  */		
@@ -467,7 +487,7 @@ class TMetaException extends TException {
 				else if (is_string($value) /*&& file_exists($value)*/){
 					if (file_exists($value)){
 						$finfo = pathinfo($value);
-						$f = new TFile($finfo["basename"],$value);
+						$f = new TFile($this->_file_storage_,$finfo["basename"],$value);
 						parent::SetValue($f,$needsave);
 					} else parent::SetValue(null,$needsave);
 				}

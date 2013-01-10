@@ -10,9 +10,9 @@
 */
 
 
-TApplication::import("common::metastorage");
-TApplication::import("common::model::structures");
-TApplication::import("models::TDataModel");
+require_once 'common/metastorage.inc';
+require_once 'common/model/structures.inc';
+require_once 'models/TDataModel.inc';
 
 /**
  * @package Components
@@ -464,13 +464,13 @@ class TMetaModel extends TDataModel implements IItemsManager, IPolicyProvider {
 	public function GetPolicy(ISecurityObject $object, $policycode){
 		if ($object instanceof TMetaItem){
 			if (TItemRole::IsRole($policycode))
-				return new TItemRole($policycode,$this->securityItem($object));
+				return new TItemRole($policycode,$this->securityItem($object),$this->Application());
 			else	
-				return new TItemPermission($policycode,$this->securityItem($object));				
+				return new TItemPermission($policycode,$this->securityItem($object),$this->Application());				
 		} else if ($object instanceof TMetaProperty)
-			return new TPropertyPermission($policycode,$this->securityProperty($object));
+			return new TPropertyPermission($policycode,$this->securityProperty($object),$this->Application());
 		else if ($object instanceof TClass)
-			return new TClassPermission($policycode,$this->securityClass($object));
+			return new TClassPermission($policycode,$this->securityClass($object),$this->Application());
 		return null;
 	}
 
@@ -494,7 +494,7 @@ class TMetaModel extends TDataModel implements IItemsManager, IPolicyProvider {
 	} 
 	
 	private function _get_meta(){
-		$metapath = TApplication::$Application->PrivateDir."/metas/";
+		$metapath = $this->Application()->PrivateDir()."/metas/";
 		$filename = $this->MetaFile;
 		if (!file_exists($filename))
 			$filename = $metapath.$filename;
@@ -504,7 +504,7 @@ class TMetaModel extends TDataModel implements IItemsManager, IPolicyProvider {
 			$this->_dom_ = new DOMDocument();
 			$this->_dom_->preserveWhiteSpace = false;
 			$this->_dom_->Load($filename);
-			if (!$this->_dom_->schemaValidate(self::$SystemPath."/schemas/meta.xsd"))
+			if (!$this->_dom_->schemaValidate($this->Application()->SysPath()."/schemas/meta.xsd"))
 				throw new TMetaModelException(TMetaModelException::ERR_META_INCORRECT);
 			return new DOMXPath($this->_dom_);
 		}	
@@ -845,7 +845,7 @@ class TMetaModel extends TDataModel implements IItemsManager, IPolicyProvider {
 		if ($item instanceof TMetaItem){
 			$p = $item->Property($name);
 			if ($p instanceof IProperty)
-				return new TDBStoredFile($p->Value());
+				return new TDBStoredFile($this->Application(), $p->Value());
 		}
 		return null;
 	}	

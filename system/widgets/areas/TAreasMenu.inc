@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("common::widget::lists");
+require_once 'common/widget/lists.inc';
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasWidget");
+require_once 'widgets/areas/TAreasWidget.inc';
 
 /**
  * @package View
@@ -77,7 +77,7 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 				foreach ($temp as $item){
 					$l = $this->Wrap($item);
 					if ($l instanceof INavigable)
-						if ($l->Link() == TApplication::$Application->URI)
+						if ($l->Link() == $this->Application()->Uri())
 							$this->_current_ = $l;
 					$this->_items_[] = $l;
 				}
@@ -98,7 +98,7 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 
 	public function Wrap($base){
 		if ($base instanceof ILink)
-			return new TLinkMenuItem($base,$this);
+			return new TLinkMenuItem($base,$this, $this->Application());
 		if ($base instanceof IAction)
 			return new TActionMenuItem($base,$this);
 		if ($base instanceof IItem){

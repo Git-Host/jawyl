@@ -1,5 +1,5 @@
 <?php
-TApplication::Import('common::enum');
+require_once 'common/enum.inc';
 
 final class TOperationType extends TEnumeration {
    	const O_ADD = 15;

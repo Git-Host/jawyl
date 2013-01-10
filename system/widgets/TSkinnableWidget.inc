@@ -1,6 +1,6 @@
 <?php
 
-TApplication::import("common::widget::TSourcedWidget");
+require_once 'common/widget/TSourcedWidget.inc';
 
 abstract class TSkinnableWidget extends TSourcedWidget {
 	public function http_Scripts(){

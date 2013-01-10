@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TMetaCollection");
+require_once 'presenters/TMetaCollection.inc';
 
 /**
  * @package Presenters
@@ -59,7 +59,7 @@ class TMetaStructure extends TMetaList implements IItemsStructure {
 	protected function getItems($page = null, $pagesize = null){
 		$result = $this->DataSource->FetchChildren($this->Agregation,$this->BaseClass,null,false,$this->getFilter(),$this->getSorting());
 		if (!is_null($pagesize)){
-			TApplicationSession::Set($this->UniqueId()."_items_count",$result->ItemCount());
+			$this->Application()->Session()->Set($this->UniqueId()."_items_count",$result->ItemCount());
 			if ($this->PAGE)
 				return new TPagedIterator($result,$this->PAGE,pagesize); 
 		}
@@ -162,7 +162,7 @@ class TMetaStructure extends TMetaList implements IItemsStructure {
 	public function SubItems($parent, $page = null, $pagesize = null){
 		$result = $this->DataSource->FetchChildren($this->Agregation,$this->BaseClass,new TIdentity($parent),true,$this->getFilter(),$this->getSorting());
 		if (!is_null($pagesize)){
-			TApplicationSession::Set($this->UniqueId()."_items_count",$result->ItemCount());
+			$this->Application()->Session()->Set($this->UniqueId()."_items_count",$result->ItemCount());
 			if ($this->PAGE)
 				return new TPagedIterator($result,$this->PAGE,pagesize); 
 		}

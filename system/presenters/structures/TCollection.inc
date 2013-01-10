@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TReferedList");
+require_once 'presenters/structures/TReferedList.inc';
 
 /**
  * @package Presenters
@@ -90,7 +90,7 @@ class TCollection extends TReferedList {
 		if (is_null($this->Collection)) throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		$ss = $this->DataSource->CollectionItems($this->Collection,$c,$this->getFilter(),$this->getSorting());
 		if (!is_null($pagesize)){
-			TApplicationSession::Set($this->UniqueId()."_items_count",$ss->ItemCount());
+			$this->Application()->Session()->Set($this->UniqueId()."_items_count",$ss->ItemCount());
 			if ($page)
 				return new TPagedIterator($ss,$page,$pagesize);
 		}

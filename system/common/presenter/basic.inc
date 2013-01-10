@@ -8,8 +8,8 @@
  * @version 0.0.1 alpha  
 */
 
-	TApplication::import("common::mvp");
-	TApplication::import("common::presenter::events");
+	require_once 'common/mvp.inc';
+	require_once 'common/presenter/events.inc';
 	
 	interface IItemAccessor {
 /**

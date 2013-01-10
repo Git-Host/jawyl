@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TMetaReferedList");
+require_once 'presenters/TMetaReferedList.inc';
 
 /**
  * @package Presenters
@@ -93,7 +93,7 @@ class TMetaRelatives extends TMetaReferedList {
 		else 
 			$ss = new TArrayIterator(array());
 		if (!is_null($pagesize)){
-			TApplicationSession::Set($this->UniqueId()."_items_count",$ss->ItemCount());
+			$this->Application()->Session()->Set($this->UniqueId()."_items_count",$ss->ItemCount());
 			if ($page)
 				return new TPagedIterator($ss,$page,$pagesize);
 		}

@@ -12,15 +12,15 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("services::TIntrinsicPageService");
+require_once 'services/TIntrinsicPageService.inc';
 
 /**
  * @package Presenters

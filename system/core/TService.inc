@@ -43,21 +43,21 @@ class TServiceRole extends TPolicy {
 	const USER = "serv.user";
 	const ANONYMOUS = "serv.anonym";
 	
-	protected function checkType($type){
-		return in_array($type, array(self::ADMIN,self::USER,self::ANONYMOUS));
-	}
-	
+	/*
 	public function __construct($type){
 		parent::__construct($type);
-		if (TApplication::CurrentService() instanceof ISecurityObject)
-			$this->sobj = TApplication::CurrentService();
+		$this->sobj = TApplication::$Application->CurrentService();
+	}*/
+	
+	protected function checkType($type){
+		return in_array($type, array(self::ADMIN,self::USER,self::ANONYMOUS));
 	}
 	
 	public function Descendants(){
 		$result = array();
 		switch ($this->type){
-			case self::USER:$result[] = new TServiceRole(self::ADMIN);break;
-			case self::ANONYMOUS:$result[] = new TServiceRole(self::USER);break;
+			case self::USER:$result[] = new TServiceRole(self::ADMIN,$this->sobj);break;
+			case self::ANONYMOUS:$result[] = new TServiceRole(self::USER,$this->sobj);break;
 		} 
 		return $result;
 	}	
@@ -136,7 +136,7 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
 	}
 	
 	public function Soid(){
-		return TApplication::$Application->Name()."::".$this->Name();
+		return $this->Application()->Name()."::".$this->Name();
 	}
 /**
  * @ignore
@@ -157,7 +157,7 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
 			return clone $this->request;
 		$result = parent::__get($nm);
 		if (!$result)
-			$result = TApplication::$Application->__get($nm);	
+			$result = $this->Application()->$nm;	
 		return $result;
 	}
 	
@@ -166,8 +166,8 @@ abstract class TService extends TConfigurable implements ISecuredService, ISecur
  */	
 	public function __isset($nm){
 		$result = parent::__isset($nm);
-		if (!$result) $result = TApplication::$Application->__isset($this->Name().".".$nm);
-		if (!$result) $result = TApplication::$Application->__isset($nm);
+		// if (!$result) $result = $this->Application()->__isset($this->Name().".".$nm);
+		if (!$result) $result = isset($this->Application()->$nm);
 		return $result; 
 	}
 	

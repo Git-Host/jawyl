@@ -12,13 +12,13 @@
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("widgets::areas::TAreasWidget");
+require_once 'widgets/areas/TAreasWidget.inc';
 
-TApplication::import("widgets::aspects::TJQueryFormAspect");
+require_once 'widgets/aspects/TJQueryFormAspect.inc';
 
 /**
  * @package View

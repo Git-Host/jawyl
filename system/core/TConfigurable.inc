@@ -1,20 +1,6 @@
 <?php
-/**
- * @package CoreRuntimeClasses
- * @subpackage Configuration
- * @category Core
- * @author Dan Krasilnikov <dkrasilnikov@gmail.com>
- * @copyright Copyright (c) 2009, Dan Krasilnikov
- * @license http://opensource.org/licenses/gpl-license.php GNU Public License
- * @version 0.0.1 alpha  
-*/
-interface IConfigurable {
-	public function Name();
-	public function RegisterComponent(IConfigurable $component);
-	public function Locate($name,IConfigurable $exclude = null);
-	public function Instance($name);
-}
- 
+require_once 'core.inc';
+
 /**
  * A base abstract class for all named application runtime objects.
  * Also TConfigurable works as a factory, providing access by name to all configurable objects objects.
@@ -34,6 +20,8 @@ interface IConfigurable {
 */	
  	protected $container;
  	
+ 	private $_application_ = null;
+ 	
  	private $_components_ = array();
  	
  	private static $_ioc_types_ = array();
@@ -44,13 +32,14 @@ interface IConfigurable {
  * class constructor. You need to pass it a unique name of configurable object.
  * @param string $name name of object being created
  */ 	
-	public function __construct($name, IConfigurable $container = null){
+	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
  		$this->name = $name;
+ 		$this->_application_ = $application;
  		$this->container = $container;
  		if ($this->container)
  			$this->container->RegisterComponent($this);
  		if (!isset(self::$_ioc_types_[get_class($this)])){
-			$filename = TApplication::$Application->IocTypesCompileDir.'/'.get_class($this).'.ioc.php'; 			
+			$filename = $this->Application()->IocTypesCompileDir().'/'.get_class($this).'.ioc.php'; 			
  			if (self::$CompileIocTypes)
  				self::CompileIocTypes(get_class($this),$filename,true);
  			if (file_exists($filename)){
@@ -58,6 +47,14 @@ interface IConfigurable {
  				//self::$_ioc_types_[get_class($this)] = $ioctypes;
  			}
  		}
+ 	}
+ 	
+ 	public function Application(){
+ 		if ($this->_application_ instanceof IApplication)
+ 			return $this->_application_;
+ 		if ($this->container instanceof IConfigurable)
+ 			return $this->container->Application();
+ 		return null;
  	}
  	
  	public function RegisterComponent(IConfigurable $component){

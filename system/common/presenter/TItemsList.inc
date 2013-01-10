@@ -11,11 +11,11 @@
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenter::TSecuredPresenter");
+require_once 'common/presenter/TSecuredPresenter.inc';
 
 /**
  * @package Presenters

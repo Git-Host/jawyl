@@ -1,5 +1,5 @@
 <?php
-TApplication::Import('common::soap');
+require_once 'common/soap.inc';
 
 /** 
  * Soap component wrapper

@@ -1,5 +1,5 @@
 <?php
-TApplication::import("common::metastorage");
+require_once 'common/metastorage.inc';
 
 /**
  * @package Connectivity

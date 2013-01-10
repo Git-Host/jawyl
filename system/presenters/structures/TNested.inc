@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TMetaStructure");
+require_once 'presenters/TMetaStructure.inc';
 
 /**
  * @package Presenters
@@ -237,7 +237,7 @@ class TMetaNested extends TMetaStructure implements INestedItems {
 	protected function getSubItems($pagesize){
 		$result = $this->DataSource->FetchChildren($this->Agregation,$this->BaseClass,$this->CurrentContainer(),true,$this->getFilter(),$this->getSorting());
 		if (!is_null($pagesize)){
-			TApplicationSession::Set($this->UniqueId()."_items_count",$result->ItemCount());
+			$this->Application()->Session()->Set($this->UniqueId()."_items_count",$result->ItemCount());
 			if ($this->PAGE)
 				return new TPagedIterator($result,$this->PAGE,pagesize); 
 		}

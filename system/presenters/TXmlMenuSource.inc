@@ -12,19 +12,19 @@
 /**
  * @ignore
  */
-TApplication::import("common::mvp");
+require_once 'common/mvp.inc';
 /**
  * @ignore
  */
-TApplication::import("common::presenter::basic");
+require_once 'common/presenter/basic.inc';
 /**
  * @ignore
  */
-TApplication::import("services::TIntrinsicPageService");
+require_once 'services/TIntrinsicPageService.inc';
 
 
 class TXmlMenuItem implements IParent {
-	private $_source_;
+	protected $source;
 	
 /**
  * @var DOMNode 
@@ -39,10 +39,10 @@ class TXmlMenuItem implements IParent {
  */	
 	public function __construct(DOMNode $node, DOMXPath $xpath, TXmlMenuSource $source){
 		$this->node = $node;
-		$this->_source_ = $source;
+		$this->source = $source;
 		$links = $xpath->query("link|group|action",$this->node);	
 		foreach ($links as $link)
-			$this->sublinks[] = $this->_source_->CreateItem($link, $xpath);
+			$this->sublinks[] = $this->source->CreateItem($link, $xpath);
 	}
 	
 	public function Children(){
@@ -52,7 +52,7 @@ class TXmlMenuItem implements IParent {
 	public function Available(){
 		if (TConvertions::ConvertToBoolean($this->node->getAttribute("forceAccess")))
 			return true;
-		return $this->_source_->ItemAvailable($this);
+		return $this->source->ItemAvailable($this);
 	}	
 }
 

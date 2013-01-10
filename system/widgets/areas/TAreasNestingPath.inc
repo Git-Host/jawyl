@@ -1,5 +1,5 @@
 <?php
-	TApplication::import("common::widget::areas::TAreasList");
+	require_once 'common/widget/areas::TAreasList.inc';
 
 	class TAreasNestingPath extends TAreasList {
 		public $RootText = "..";

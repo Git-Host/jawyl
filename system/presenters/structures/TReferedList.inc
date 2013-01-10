@@ -12,7 +12,7 @@
 /**
  * @ignore
  */
-TApplication::import("presenters::TMetaList");
+require_once 'presenters/structures/TList.inc';
 
 /**
  * @package Presenters
@@ -20,7 +20,7 @@ TApplication::import("presenters::TMetaList");
  * @category System
  * Meta item associated items
  */
-class TMetaReferedList extends TMetaList implements IItemsCollection {
+class TReferedList extends TList implements IItemsCollection {
 	const AN_ADD = "AddItem";
 	const AN_REMOVE = "RemoveItem";
 	

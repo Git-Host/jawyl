@@ -12,9 +12,9 @@
 /**
  * @ignore
  */
-TApplication::import("common::item");
-TApplication::import("common::storage");
-TApplication::import("connectivity::MySQL::util");
+require_once 'common/item.inc';
+require_once 'common/storage.inc';
+require_once 'connectivity/MySQL/util.inc';
 
 /**
  * @property string $From
@@ -566,7 +566,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 
 		if ($this->_query_debug_){
 			if ($this->_conf_debug_file_){
-				$filename = TApplication::$Application->AdjustPath($this->_conf_debug_file_);
+				$filename = $this->Application()->AdjustPath($this->_conf_debug_file_);
 				$f = fopen($filename,'a');
 				$d = new TDate();			
 				fwrite($f,$d.':'.$q."\n");

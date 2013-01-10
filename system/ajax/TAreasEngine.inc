@@ -1,5 +1,5 @@
 <?php
-TApplication::import("common::ajax");
+require_once 'common/ajax.inc';
 
 interface IArea {
 /**
@@ -61,14 +61,14 @@ class TAreasEngine extends TAjaxEngine {
 	protected function raJSON($actiontype,$area){
 		switch ($actiontype){
 			case self::AREA_ADD:if ($area instanceof IArea){
-				TOutputBuffer::StartRecording();
+				$this->Application()->Buffer()->StartRecording();
 				$area->Render();
-				$this->AddJsonItem("a".$area->Id(),array($area->Id(),$actiontype,TOutputBuffer::StopRecording(),$area->ParentArea()->Id()));
+				$this->AddJsonItem("a".$area->Id(),array($area->Id(),$actiontype,$this->Application()->Buffer()->StopRecording(),$area->ParentArea()->Id()));
 			}break;
 			case self::AREA_REFERSH:if ($area instanceof IArea) {
-				TOutputBuffer::StartRecording();
+				$this->Application()->Buffer()->StartRecording();
 				$area->Render();
-				$this->AddJsonItem("r".$area->Id(),array($area->Id(),$actiontype,TOutputBuffer::StopRecording()));
+				$this->AddJsonItem("r".$area->Id(),array($area->Id(),$actiontype,$this->Application()->Buffer()->StopRecording()));
 			}break;
 			case self::AREA_DELETE:{
 				$this->AddJsonItem("d".(($area instanceof IArea)?$area->Id():$area),array((($area instanceof IArea)?$area->Id():$area),$actiontype,""));

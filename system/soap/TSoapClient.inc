@@ -1,5 +1,5 @@
 <?php
-TApplication::Import('common::soap');
+require_once 'common/soap.inc';
 
 /** 
  * Soap client class
@@ -22,7 +22,7 @@ class TSoapClient extends TConfigurable {
 	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'WSDL':$this->wsdl = TApplication::$Application->AdjustPath($value);break;
+			case 'WSDL':$this->wsdl = $this->Application()->AdjustPath($value);break;
 			default:{
 				if ($this->options->IsOption($nm))
 					$this->options->$nm = $value;

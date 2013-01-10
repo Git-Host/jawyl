@@ -43,13 +43,13 @@ class TIntrinsicLocale extends TLocale {
 	 * @param string $language
 	 */
 	public function SetLanguage($language){
-		$filename = TApplication::$Application->PrivateDir."/locales/".$language.".xml";
-		if (!file_exists($filename)) $filename = TApplication::$SystemPath."/locales/".$language.".xml";
+		$filename = $this->Application()->PrivateDir()."/locales/".$language.".xml";
+		if (!file_exists($filename)) $filename = $this->Application()->SysPath()."/locales/".$language.".xml";
 		if (file_exists($filename)){
 			$dom = new DOMDocument();
 			$dom->Load($filename);
 			if (TConvertions::ConvertToBoolean($this->Validate))
-				if (!$dom->schemaValidate(TApplication::$SystemPath."/schemas/locale.xsd"))
+				if (!$dom->schemaValidate($this->Application()->SysPath()."/schemas/locale.xsd"))
 					throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 				
 				

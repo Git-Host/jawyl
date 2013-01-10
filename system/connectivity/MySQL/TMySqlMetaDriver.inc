@@ -1,6 +1,6 @@
 <?php
-TApplication::import("connectivity::MySQL::TMySqlDBDriver");
-TApplication::import("common::metastorage");
+require_once 'connectivity/MySQL/TMySqlDBDriver.inc';
+require_once 'common/metastorage.inc';
 
 /**
  * 
