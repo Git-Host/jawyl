@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xsd:complexType name="t_reference">	
+		<xsd:sequence>
+			<xsd:element name="property">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="field" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:attribute name="name" type="xsd:string" use="required" />
+								<xsd:attribute name="table" type="xsd:string" use="optional"/>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+					<xsd:attribute name="name" type="xsd:string" use="required"/>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="classname" type="xsd:string" use="required" />
+	</xsd:complexType>
+	
+	<xsd:simpleType name="t_sortorder">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="asc" />
+			<xsd:enumeration value="desc" />
+		</xsd:restriction>
+	</xsd:simpleType>
+	
+	<xsd:simpleType name="t_identity">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="auto" />
+			<xsd:enumeration value="explicit" />
+			<xsd:enumeration value="implicit" />
+		</xsd:restriction>
+	</xsd:simpleType>	
+	
+	<xsd:complexType name="t_collection">
+		<xsd:complexContent>
+			<xsd:extension base="t_reference">
+				<xsd:sequence>
+					<xsd:element name="sort" minOccurs="1" maxOccurs="unbounded">
+						<xsd:complexType>
+							<xsd:attribute name="property" type="xsd:string" use="required"/>
+							<xsd:attribute name="order" type="t_sortorder" use="optional"/>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>	
+	</xsd:complexType>
+	
+	<xsd:element name="class">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="table" minOccurs="1" maxOccurs="unbounded">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="keyfield" minOccurs="1" maxOccurs="unbounded" type="xsd:string" />
+						</xsd:sequence>
+						<xsd:attribute name="name" type="xsd:string" use="required" />	
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="key" minOccurs="1" maxOccurs="unbounded" type="xsd:string" />
+				<xsd:element name="nestedset" minOccurs="0" maxOccurs="1">
+					<xsd:complexType>
+						<xsd:all>
+							<xsd:element name="parentfield" type="xsd:string" />
+							<xsd:element name="childrenfield" type="xsd:string" />
+						</xsd:all>
+					</xsd:complexType>					
+				</xsd:element>
+				<xsd:choice minOccurs="1" maxOccurs="unbounded">
+					<xsd:element name="scalar">
+						<xsd:complexType>
+							<xsd:attribute name="name" type="xsd:string" use="required" />
+							<xsd:attribute name="field" type="xsd:string" use="required"/>
+							<xsd:attribute name="table" type="xsd:string" use="optional"/>
+							<xsd:attribute name="type" type="xsd:string" use="optional"/>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="reference" type="t_reference" />
+					<xsd:element name="collection" type="t_collection" />
+				</xsd:choice>
+			</xsd:sequence>
+			<xsd:attribute name="identity" default="auto" use="optional" type="t_identity" />
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

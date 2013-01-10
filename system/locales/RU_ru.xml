@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<locale xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../schemas/locale.xsd">
+	<description>Русская локализация</description>
+	<syslocale>rus_rus</syslocale>
+	<symbols>
+		<decseparator>,</decseparator>
+		<digseparator><![CDATA[ ]]></digseparator>
+		<negativesign>-</negativesign>
+		<intercurrency>RUR</intercurrency>
+		<localcurrency>р.</localcurrency>
+		<timeseparator>:</timeseparator>
+		<dateseparator>.</dateseparator>
+	</symbols>
+	<formats>
+		<number>#{dig}##0{dec}##</number>
+		<currency>#{dig}##0{dec}00 {lc}</currency>
+		<date>d{ds}m{ds}y</date>
+		<time>H{ts}i{ts}s</time>
+		<datetime>d{ds}m{ds}y H{ts}i{ts}s</datetime>
+	</formats>
+	<months>
+		<month order="1" shortname="Янв">Январь</month>
+		<month order="2" shortname="Фев">Февраль</month>
+		<month order="3" shortname="Мар">Март</month>
+		<month order="4" shortname="Апр">Апрель</month>
+		<month order="5" shortname="Май">Май</month>
+		<month order="6" shortname="Июн">Июнь</month>
+		<month order="7" shortname="Июл">Июль</month>
+		<month order="8" shortname="Авг">Август</month>
+		<month order="9" shortname="Сен">Сентябрь</month>
+		<month order="10" shortname="Окт">Октябрь</month>
+		<month order="11" shortname="Ноя">Ноябрь</month>
+		<month order="12" shortname="Дек">Декабрь</month>
+	</months>
+	<weekdays firstday="1">
+		<weekday order="1" shortname="Вск" minname="Вс">Воскресенье</weekday>
+		<weekday order="2" shortname="Пнд" minname="Пн">Понедельник</weekday>
+		<weekday order="3" shortname="Втр" minname="Вт">Вторник</weekday>
+		<weekday order="4" shortname="Срд" minname="Ср">Среда</weekday>
+		<weekday order="5" shortname="Чтв" minname="Чт">Четверг</weekday>
+		<weekday order="6" shortname="Птн" minname="Пт">Пятница</weekday>
+		<weekday order="7" shortname="Суб" minname="Сб">Суббота</weekday>
+	</weekdays>	
+</locale>

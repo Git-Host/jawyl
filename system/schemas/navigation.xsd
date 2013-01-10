@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xsd:group name="g_items">
+		<xsd:choice>
+			<xsd:element name="link" type="t_strictlink" />
+			<xsd:element name="group" type="t_group" />
+		</xsd:choice>
+	</xsd:group>
+	
+	<xsd:complexType name="t_item">
+		<xsd:attribute name="forceAccess" type="xsd:boolean" use="optional" default="false" />
+	</xsd:complexType>
+	
+
+	<xsd:complexType name="t_link">
+		<xsd:complexContent>
+			<xsd:extension base="t_item">
+				<xsd:attribute name="service" type="xsd:string" use="optional" />
+				<xsd:attribute name="url" type="xsd:string" use="optional" />
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="t_strictlink">
+		<xsd:complexContent>
+			<xsd:extension base="t_link">
+				<xsd:sequence>
+					<xsd:group ref="g_items" minOccurs="0" maxOccurs="unbounded"/>		
+				</xsd:sequence>
+				<xsd:attribute name="title" type="xsd:string" use="required" />
+				<xsd:attribute name="page" type="xsd:string" use="optional" />
+				<xsd:attribute name="controller" type="xsd:string" use="optional" />
+				<xsd:attribute name="method" type="xsd:string" use="optional" />
+				<xsd:anyAttribute />
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	
+	<xsd:complexType name="t_group">
+		<xsd:complexContent>
+			<xsd:extension base="t_item">
+				<xsd:sequence>
+					<xsd:group ref="g_items" minOccurs="0" maxOccurs="unbounded"/>		
+				</xsd:sequence>
+				<xsd:attribute name="title" type="xsd:string" use="required" />
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+		
+	<xsd:element name="root">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:group ref="g_items" minOccurs="0" maxOccurs="unbounded"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

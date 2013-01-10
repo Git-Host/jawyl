@@ -1,0 +1,5 @@
+<?php
+	include_once "system/boot.inc";
+	TApplication::$CompileAppConfig = true;
+	TApplication::Run(__FILE__);
+?>
