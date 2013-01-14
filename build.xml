@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="jawyl" default="assemble">
+	<property name="src" value="." override="false" />
+	<property name="tmp" value="../deploy_temp" override="false" />
+	<property name="dest" value="../jawyl.zip" override="false" />
+	<target name="assemble">
+		<delete dir="${tmp}" includeemptydirs="true" verbose="false" failonerror="false" />
+		<delete file="${dest}" includeemptydirs="true" verbose="false" failonerror="false" />
+		<echo>Копирование system</echo>
+		<copy todir="${tmp}" >
+  			<fileset dir="${src}">
+  				<patternset>
+  				<include name="system/**" />
+    			</patternset>
+  			</fileset>
+		</copy>
+		<echo>Файлы system</echo>
+		<zip destfile="${dest}" basedir="${tmp}" />
+		<delete dir="${tmp}" includeemptydirs="true" verbose="false" failonerror="false" />
+	</target>
+</project>

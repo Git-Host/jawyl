@@ -368,6 +368,10 @@ abstract class TNOrmLoader {
 		$this->key = (count($keys) == 1)?$keys[0]:$keys;
 	}
 	
+	public function __sleep(){
+		return array("key","value");
+	}
+	
 /**
  * @return mixed
  */	
@@ -445,6 +449,10 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 		if ($this->_mtm_ref_prop_)
 			$this->value = new TNOrmMtmCollectionIterator($this->value,$this->_mtm_ref_prop_);
 	}
+	
+	public function __sleep(){
+		return array();
+	}
 }
 
 interface INOrmObject {
@@ -464,7 +472,6 @@ class TNOrmObject implements INOrmObject {
 	private function _property_name_replace($matches){
 		return "_".strtolower($matches[0]);
 	}
-	
 	
 	private function _check_prefixed_property($nm,$prefix){
 		$rc = new ReflectionClass(get_class($this));

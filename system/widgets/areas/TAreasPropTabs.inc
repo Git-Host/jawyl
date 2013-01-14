@@ -26,7 +26,7 @@ class TAreasPropTabs extends TAreasPropTable {
  */	
 	protected function linkCustomResources(){
 		parent::linkCustomResources();
-		self::LoadTabControl();
+		$this->loadTabControl();
 	}
 /**
  * @see TJQueryWidget::jsCode()

@@ -112,8 +112,8 @@ class TAreasPropTable extends TAreasWidget {
  */
 	protected function linkCustomResources(){
 		parent::linkCustomResources();
-		self::LoadForms();
-		self::LoadFileUpload();
+		$this->loadForms();
+		$this->loadFileUpload();
 	}
 	
 	protected function renderContents(TWidgetArea $area){

@@ -113,21 +113,30 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	}
 	
 	protected function evalContextTag($name,$get_self = false,$bubble = true){
-		$cc = $this->currentContext();
+		$cc = $this->currentContext();		
+		
 		$n = trim($name);
 		if ($n == "context")
 			return $cc;
-		if (method_exists($cc,$n))
-			return call_user_func(array($cc,$n));
-		if (isset($cc->$n))
-			return $cc->$n;
+
+		if (is_object($cc)){
+			if (method_exists($cc,$n))
+				return call_user_func(array($cc,$n));
+			if (isset($cc->$n))
+				return $cc->$n;
+		}
+		
 		if (isset($this->_global_vars_[$n]))
 			return $this->_global_vars_[$n];
+		
 		if (defined($n))
 			return constant($n);		
-		$v = @$cc->$n;
-		if (!is_null($v))
-			return $v;
+		
+		if (is_object($cc)){		
+			$v = @$cc->$n;
+			if (!is_null($v))
+				return $v;
+		}
 		
 		if ($bubble){
 			if ($this->response){	

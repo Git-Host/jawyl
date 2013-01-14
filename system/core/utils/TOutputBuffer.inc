@@ -8,7 +8,6 @@
  * @license http://opensource.org/licenses/gpl-license.php GNU Public License
  * @version 0.0.1 alpha  
  */
-	require_once  realpath(__DIR__.'/../core.inc');
 /**
  * @package CoreRuntimeClasses
  * @subpackage Utilities
@@ -20,7 +19,7 @@
  * starts buffering.
  */		
 		public function StartRecording(){
-			   ob_start();
+			ob_start();
 		}
 /**
  * stops buffering and returns buffer contents.
