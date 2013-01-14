@@ -247,7 +247,7 @@ if ($this->Source instanceof IItemsCollection){
 	}
 	
 	protected function linkCustomResources(){
-		self::LoadDraggable();
+		$this->loadDraggable();
 		parent::linkCustomResources();
 	}	
 }

@@ -45,6 +45,7 @@ class TIntrinsicPage extends TPage {
 		if ($this->_lazy_load_){
 			$this->_lazy_load_ = false;
 			$loadcomponents = true;  
+			$service = $this->service;
 			include $this->_config_file_;
 		}
 		return parent::__get($nm);
@@ -143,8 +144,7 @@ class TIntrinsicPage extends TPage {
 		$dom->Load($filenames[0]);
 		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
 			if (!$dom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
-				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
-		
+				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);		
 		$override = false;
 		if (file_exists($filenames[2])){
 			$override = true;
@@ -228,6 +228,7 @@ class TIntrinsicPage extends TPage {
 	} 
 	
 	private static function _check_need_compile(array $config,$compiled,TIntrinsicPageService $service){
+		return true;
 		if (!is_file($compiled.".php")) return true;
 		if (filemtime($config[0]) > filemtime($compiled.".php")) return true;
 		if (file_exists($config[2]))
@@ -277,7 +278,7 @@ class TIntrinsicPage extends TPage {
 		$conffiles = $service->PageConfigFiles($path);		
 		if ($service->CompilePages){
 			if (is_file($conffiles[0]) || is_file($conffiles[2])){
-				if (self::_check_need_compile($conffiles,$conffiles[1],$service)){
+				if (self::_check_need_compile($conffiles,$conffiles[1],$service)){						
 					self::_compile_page($conffiles,$service);
 				}
 			}
@@ -429,6 +430,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		if (is_null($id)) $id = 'default';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$conffiles =  $this->PageConfigFiles($id);
+				
 		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php') || is_file($conffiles[2])){
 			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id, $this);
 			return $this->PAGES[$id];

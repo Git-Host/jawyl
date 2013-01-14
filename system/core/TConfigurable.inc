@@ -174,7 +174,7 @@ require_once 'core.inc';
   	
   	private function _check_ioc_type($value,$type){
   		if (is_object($value) && is_string($type)){
-  			return $value instanceof $type;
+  				return $value instanceof $type;
   		}
   		  		
   		if (($type == 'boolean') || ($type == 'integer') || ($type == 'float') || ($type == 'string') || ($type == 'array') || ($type == 'object'))

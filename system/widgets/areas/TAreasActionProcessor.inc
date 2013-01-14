@@ -79,8 +79,8 @@ class TAreasActionProcessor extends TAreasWidget {
  */
 	protected function linkCustomResources(){
 		parent::linkCustomResources();
-		self::LoadForms();
-		self::LoadFileUpload();
+		$this->loadForms();
+	 	$this->loadFileUpload();
 	}
 		
 	protected function areaCssClass(TWidgetArea $area){

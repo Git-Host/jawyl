@@ -14,10 +14,10 @@
 			}
 					?>
 					<style>
-						.error {
+						.err {
 							font-family:Verdana;
 						}
-						.error table.trace {
+						.err table.trace {
 							border-collapse:collapse;
 							border-style:solid;
 							border-color:black;
@@ -25,7 +25,7 @@
 							margin:10px;
 						}
 						
-						.error table.trace th {
+						.err table.trace th {
 							font-weight:bold;
 							background-color:orange;
 							font-size:11pt;
@@ -36,7 +36,7 @@
 							font-size:10pt;
 						}
 						
-						.error table.trace td {
+						.err table.trace td {
 							font-size:11pt;
 							border-style:dashed;
 							border-color:black;
@@ -45,18 +45,18 @@
 							font-size:10pt;
 						}
 						
-						.error h3 {
+						.err h3 {
 							color:red;
 							font-size:12pt;
 						}
 						
-						.error div.part-title {
+						.err div.part-title {
 							font-weight:bold;
 							font-size:10pt;
 							margin:3px;
 						}
 						
-						.error div.message {
+						.err div.message {
 							color:black;
 							font-size:12pt;
 							border-style:dotted;
@@ -68,7 +68,7 @@
 							background-color:#ffeedd;
 						}
 						
-						.error table.code {
+						.err table.code {
 							color:gray;
 							border-style:double;
 							border-color:black;
@@ -80,34 +80,34 @@
 							table-layout: fixed;
 						}
 						
-						.error table.code td {
+						.err table.code td {
 							border-style:none;
 							padding:2px;
 							font-size:10pt;
 						}
 						
-						.error table.code td.line {
+						.err table.code td.line {
 							overflow:hidden;
 							white-space: nowrap;
 						}
 						
-						.error table.code td.line div.tab {
+						.err table.code td.line div.tab {
 							width:30px;
 							display:inline;
 						}
 						
 						
-						.error table.code tr.error-line {
+						.err table.code tr.error-line {
 							font-weight:bold;
 							color:red;
 						}
 						
-						.error span.syspath {
+						.err span.syspath {
 							font-weight:lighter;
 							color:silver;
 						}
 					</style>
-					<div class="error">
+					<div class="err">
 					<h3>
 					<?php
 					$error = $e instanceof ErrorException;

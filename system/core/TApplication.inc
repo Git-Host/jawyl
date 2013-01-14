@@ -444,11 +444,11 @@
 							$counter++;
 							if ($node->getAttribute('classname')){
 								if ($container)
-									$result .= '$obj'.$counter.' = self::Instantiate("'.$node->getAttribute('classname').'",array("name"=>"'.$node->getAttribute('name').'","container"=>'.$container.'));'."\n";
+									$result .= '$obj'.$counter.' = $this->Instantiate("'.$node->getAttribute('classname').'",array("name"=>"'.$node->getAttribute('name').'","container"=>'.$container.'));'."\n";
 								else 
-									$result .= '$obj'.$counter.' = self::Instantiate("'.$node->getAttribute('classname').'",array("name"=>"'.$node->getAttribute('name').'"));'."\n";
+									$result .= '$obj'.$counter.' = $this->Instantiate("'.$node->getAttribute('classname').'",array("name"=>"'.$node->getAttribute('name').'"));'."\n";
 							} else {
-								$result .= '$obj'.$counter.' = self::Instance("'.$node->getAttribute('name').'");'."\n";
+								$result .= '$obj'.$counter.' = $this->Instance("'.$node->getAttribute('name').'");'."\n";
 							}
 							if ($node->getAttribute('membername'))	
 								$result .= $container.'->__set("'.$node->getAttribute('membername').'",$obj'.$counter.');'."\n";
@@ -622,11 +622,11 @@
 */					
 		public function GetClass($classname){
 			$result = null;	
-			if (!class_exists($classname)){	
+			if (!class_exists($classname,false)){	
 				self::_autoloader($classname);
-				if (!class_exists($classname)){
+				if (!class_exists($classname,false)){
 					$parts = explode('/',$classname);
-					if (class_exists($parts[count($parts) - 1]))
+					if (class_exists($parts[count($parts) - 1],false))
 						$classname = $parts[count($parts) - 1];
 				}
 			}
@@ -825,6 +825,7 @@
 				}break;
 				case self::ENV_DEVELOPING:{
 					error_reporting(E_ALL | E_STRICT);
+					register_shutdown_function(array("TApplication","OnShutdown"));
 					TConfigurable::$CompileIocTypes = true;
 				}break; 
 			}
@@ -870,7 +871,16 @@
 		}
 		
 		private static function _autoloader($class){
-			require_once $class.'.inc';
+			if ($class[0] == '/')
+				$class = substr($class, 1);
+			include_once $class.'.inc';
+		}
+		
+		public static function OnShutdown(){
+			if ($error = error_get_last()){
+				if ($error["type"] < 8)
+					self::AppErrorHandler($error["type"], $error["message"], $error["file"], $error["line"]);
+			}
 		}
 		
 /**

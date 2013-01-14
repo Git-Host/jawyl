@@ -71,7 +71,7 @@
 			$format = preg_replace('/Y/','yy',$format);
 			$format = preg_replace('/y/','y',$format);
 		?>
-<script type='text/javascript' src='<?php echo self::JQueryPath(); ?>jquery.jawyl.areas.js'></script>
+<script type='text/javascript' src='<?php echo $this->JQueryPath(); ?>jquery.jawyl.areas.js'></script>
 <script type='text/javascript'>
 jQuery.areas_date_format = "<?php echo $format; ?>";
 jQuery.areas_response_type = "<?php echo $this->response->AjaxContentType; ?>";

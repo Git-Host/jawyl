@@ -28,7 +28,18 @@ class TPagePolicy extends TPolicy {
 	public function Descendants(){
 		return array(new TServiceRole(TServiceRole::ANONYMOUS,$this->sobj->Service()));
 	}
-} 
+}
+
+class TExposableException extends TException {
+	public function __construct($message,$msgcode = 0){
+		$this->code = $msgcode;
+		$this->message = $message;
+	}
+	
+	protected function getMessageText($msgcode){
+		return $this->message;
+	}
+}
 
 
 /**
@@ -81,8 +92,6 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 	
 	protected $exception;
 	
-	private $_builtin_error_handling_ = true; 
-	
 /**
  * constructor
  * @param string $name 
@@ -101,7 +110,6 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  */	
 	public function __set($nm,$value){
 		switch ($nm){
-			case 'BuiltinErrorHandling':$this->_builtin_error_handling_ = TConvertions::ConvertToBoolean($value);break;
 			case 'AjaxContentType':{
 				if (!in_array($value,TResponse::ContentTypes()))
 					throw new TCoreException(TCoreException::ERR_BAD_VALUE);
@@ -115,7 +123,6 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
  */	
 	public function __get($nm){
 		switch ($nm){
-			case 'BuiltinErrorHandling':return $this->_builtin_error_handling_;break;
 			case "AjaxContentType":return $this->ajaxContentType;break;
 			case "ContentType":return $this->isAjax?$this->ajaxContentType:parent::__get($nm);break;
 			case "AjaxEngine":{
@@ -223,15 +230,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		try {	
 			$this->exception = null;
 			$result = parent::Handle($request);
-		} catch (Exception $e){
-			echo $this->Application()->Buffer()->Flush();
+		} catch (TExposableException $e){
 			$this->exception = $e;
-			if ($this->BuiltinErrorHandling){
-				throw $e;
-			}
-/*
- * @todo: implement exception preprocessing
- */				
 			if ($this->isAjax)
 				$this->AjaxEngine->Error($this,$e->getMessage());
 			$result = false;	
@@ -376,9 +376,10 @@ abstract class TPageService extends TService {
 	private function _check_page_access($page){
 		$policy = $this->Policy();
 		$acl = $this->ACL();
+		
 		if (!($page instanceof TPage))
 			$page = $this->getPage($page);
-			
+		
 		if (!($page instanceof TPage))
 			return false;
 			
@@ -386,6 +387,7 @@ abstract class TPageService extends TService {
 			$u = $acl->CurrentUser();
 			if (!$u instanceof ISecuritySubject)
 				$u = TAnonymousUser::Instance();
+						
 			return $policy->CheckPolicy($u,new TPagePolicy(TPagePolicy::PAGE_ACCESS,$page));
 		}	
 		return true;
