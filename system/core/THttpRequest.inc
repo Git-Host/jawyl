@@ -53,8 +53,8 @@
 /**
  * @ignore
  */		
-		public function __construct($service = null){
-			parent::__construct($service);
+		public function __construct($service = null, IFileStorage $file_storage = null){
+			parent::__construct($service,$file_storage);
 			$this->IsXmlHttpRequest = strtolower($this->Header("HTTP_X_REQUESTED_WITH")) == "xmlhttprequest";
 			$this->IsAjax = $this->IsXmlHttpRequest;
 			
@@ -68,7 +68,7 @@
 	
 			if ($this->fileStorage instanceof IFileStorage)
 			{
-				foreach ($_FILES as $key=>$file)
+				foreach ($_FILES as $key=>$file){
 					if (is_array($file) && (($file['error'] == 0) || is_array($file['error']))){
 						if (is_array($file["name"])){
 							$files = array();
@@ -85,10 +85,11 @@
 								}
 							$this->_file_parameters_[$key] = $files;
 						} else {
-							$this->_file_parameters_[$key] = new TUploadedFile($this->fileStorage,$file);
+							$this->_file_parameters_[$key] = new TUploadedFile($this->fileStorage, $file);
 							$orig[$key] = $file["name"];
 						}
 					}
+				}
 			}
 
 			$t = null;
