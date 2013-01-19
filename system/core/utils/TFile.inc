@@ -50,6 +50,13 @@
    	public function __construct(IFileStorage $storage,$name,$path,$type = null,$size = null){
    		$this->Name = $name;
    		$this->MimeType = $type;
+   		if (!$this->MimeType){
+   			if (function_exists("finfo_file")){
+   				$finfo = finfo_open(FILEINFO_MIME_TYPE);
+   				$this->MimeType = finfo_file($finfo, $path);
+   				finfo_close($finfo);
+   			}
+   		}
    		$this->storage = $storage;
    		if (!TFileSystem::IsAbsolute($path))
    			$path = $this->storage->FileStoragePath().'/'.$path;

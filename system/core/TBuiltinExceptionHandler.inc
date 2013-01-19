@@ -212,10 +212,13 @@
 			switch (TApplication::$Environment){
 				case TApplication::ENV_PRODUCTION:{
 					if (openlog('Jawyl',LOG_NDELAY | LOG_PERROR,LOG_DAEMON)){
-						if ($e instanceof ErrorException)
-							syslog(LOG_ERR, 'error '.$e->getCode().':'.$e->getMessage());
-						else	
-							syslog(LOG_INFO, 'exception '.$e->getCode().':'.$e->getMessage());
+						if ($e instanceof ErrorException){
+							//syslog(LOG_ERR, 'error '.$e->getCode().':'.$e->getMessage());
+							error_log('error '.$e->getCode().':'.$e->getMessage(),0);
+						} else {	
+							error_log('exception '.$e->getCode().':'.$e->getMessage(),0);
+							//syslog(LOG_INFO, 'exception '.$e->getCode().':'.$e->getMessage());
+						}
 					}
 				}break;
 				case TApplication::ENV_TESTING:{
