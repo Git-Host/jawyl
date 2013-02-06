@@ -1,5 +1,6 @@
 <?php
 require_once 'common/metastorage.inc';
+require_once 'connectivity/MySQL/drivers.inc';
 
 /**
  * @package Connectivity
@@ -37,6 +38,9 @@ class TMySqlException extends TStorageException {
  * @see IIterator
  */
 class TMySqlDBRawDataIterator extends TIterator {
+/**
+ * @var IMySqlResultSet
+ */	
 	protected $resultSet;
 	protected $currentRow;
 	protected $fields = array();
@@ -46,12 +50,12 @@ class TMySqlDBRawDataIterator extends TIterator {
  */	
 	protected $driver;
 	
-	public function __construct($resultset, TMySqlDBDriver $driver){
+	public function __construct(IMySqlResultSet $resultset, TMySqlDBDriver $driver){
 		$this->resultSet = $resultset;
 		$this->driver = $driver;
-		$fn = mysql_num_fields($this->resultSet);
+		$fn = $this->resultSet->FieldCount();
 		for ($i = 0; $i < $fn; $i++){
-			$nm = mysql_field_name($this->resultSet,$i);
+			$nm = $this->resultSet->FieldName($i);
 			if (in_array($nm,$this->fields)) $nm .= $i;
 			$this->fields[] = $nm;
 		}
@@ -59,8 +63,8 @@ class TMySqlDBRawDataIterator extends TIterator {
 	}
 	
 	public function Next(){
-		$this->currentRow = null;
-		if ($row = mysql_fetch_array($this->resultSet,MYSQL_NUM)){
+		$this->currentRow = false;
+		if ($row = $this->resultSet->FetchIndexed()){
 			$this->currentRow = array_merge($row,array_combine($this->fields,$row));
 			$this->pointer++;
 			return true;
@@ -69,15 +73,10 @@ class TMySqlDBRawDataIterator extends TIterator {
 	}	
 	
 	public function Seek($position){
-		if ($position == 0 && mysql_num_rows($this->resultSet) == 0)
+		if ($position == 0 && $this->resultSet->RowCount() == 0)
 			return true;
-		if (mysql_data_seek($this->resultSet, $position)){
-			if ($row = mysql_fetch_array($this->resultSet,MYSQL_NUM)){
-				$this->currentRow = array_merge($row,array_combine($this->fields,$row));
-				$this->pointer = $position;
-				return true;
-			}
-		}
+		if ($this->resultSet->Seek($position))
+			return $this->Next();
 		return false;
 	}
 	
@@ -96,7 +95,7 @@ class TMySqlDBRawDataIterator extends TIterator {
 	}
 		
 	public function ItemCount(){
-		return mysql_num_rows($this->resultSet);
+		return $this->resultSet->RowCount();
 	}
 	public function DataType(){return IIterator::DT_RAW;}
 }

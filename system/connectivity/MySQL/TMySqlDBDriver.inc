@@ -462,8 +462,15 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	const AUTH_CONNECTION = 0;
 	const AUTH_APP = 1;
 	const AUTH_EXPLICIT = 2;
-			
-	protected $connection;
+	
+	const DM_AUTO = 'auto';
+	const DM_MYSQL = 'mysql';
+	const DM_MYSQLI = 'mysqli';
+	
+/**
+ * @var IMySqlConnection
+ */			
+	protected $connection = null;
 	
 	private $_auth_method_ = self::AUTH_CONNECTION;
 	//private $_acl_manager_ = null;
@@ -471,12 +478,21 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	
 	private $_json_ns_names_ = null;
 	
+	private $_tran_level_ = 0;
+	
 	protected $_conf_debug_file_;
+	
+	protected $_driver_mode_ = self::DM_AUTO;
 
 	public function __set($nm,$value){
 		switch ($nm){
 			case "DBPrefix":{$this->tablePrefix = $value;}break;
 			case "QueryDebug":$this->_query_debug_ = TConvertions::ConvertToBoolean($value);break;
+			case "DriverMode":{
+				if ($value == self::DM_MYSQLI || $value == self::DM_MYSQL)
+					$this->_driver_mode_ = $value;
+				else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+			}break;
 			default:parent::__set($nm,$value);break;
 		}
 	}
@@ -485,84 +501,62 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		switch ($nm){
 			case "DBPrefix":return $this->tablePrefix;break;
 			case "QueryDebug":return $this->_query_debug_;break;
+			case "DriverMode":return $this->_driver_mode_;break;
 			default:return parent::__get($nm);break;
 		}
 	}
 		
 	protected function quoteValue($value){
-		if (is_null($value)) return "null";
-		if (is_bool($value)) return $value?"1":"0";
-		if (is_int($value) || is_float($value)) return $value;
-		if ($value instanceof TDate)
-			$value = $value->ToString("Y-m-d H:i:s");
-		else
-			$value = (string)$value;
-		if (is_string($value)){
-			if ($value == "")
-		  		return "Null";
-		  	if (($value == "true") || ($value == "false"))
-		  		return $this->quoteValue(TConvertions::ConvertToBoolean($value));	
-			return "'" . mysql_real_escape_string($value,$this->connection) . "'";
-		}
-		throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		return $this->connection->Quote($value);
 	}
 		
-	protected function scalarValue($q, $row = 0, $field = 0){
-		return mysql_result(mysql_query($q,$this->connection),$row,$field);
+	protected function scalarValue($q, array $parameters = array(), $row = 0, $field = 0){
+		$query = $this->connection->Query($q, $parameters);
+		return $query->Scalar($row,$field);
 	}
 		
 	protected function lastInsertId(){
-		return mysql_insert_id($this->connection);
-	}
-		
-	private function _prepare_query_param_key(&$value){
-		$value = ":".$value;
+		return $this->connection->LastId();
 	}
 	
 	private function _prepare_table_name($matches){
 		return "`".$this->RealTableName($matches[1])."`";
-	}
-		
-	private function _prepare_statement($q,array $parameters = array()){
-		$pnames =  array_keys($parameters);
-		$pvalues = array_values($parameters);
-		array_walk($pnames,array($this,"_prepare_query_param_key"));
-		$evaluated = $this->_prepare_record_result($pvalues);
-		return str_replace(array_reverse($pnames),array_reverse($evaluated),preg_replace_callback('/\[(\w[\w_]*)\]/',array($this,"_prepare_table_name"),$q));
-	}
+	}	
 		
 	public function Execute($q,array $parameters = array()){
 		$this->_auto_connect();
-		return $this->query($this->_prepare_statement($q,$parameters));
+		return $this->query($q,$parameters);
 	}
 
 	public function Fetch($q, array $parameters = array()){
 		$this->_auto_connect();
-		return $this->iQuery($this->_prepare_statement($q,$parameters));
+		return $this->iQuery($q,$parameters);
 	}
 	
 	public function Scalar($q, array $parameters = array()){
 		$this->_auto_connect();
-		return $this->scalarValue($this->_prepare_statement($q,$parameters));
+		return $this->query($q,$parameters,0,0);
 	}	
 	
 	public function RealTableName($tablename){
 		return $this->tablePrefix.$tablename;
 	}
 		
-	protected function query($q){
+	protected function query($q, array $parameters = array(),$col = null, $row = null){
 		$result = false;
 		$select = false;
 		$queries = explode(chr(0),$q);
 		if (count($queries) > 1){
 			foreach ($queries as $q1)
-				$result = $this->query($q1,$iteratortype);
+				$result = $this->query($q1,$parameters);
 			return $result;
 		}
 		
 		if (preg_match('/\\A\\s*select\\s/i',$q)){
 			$select = true; 
 		}
+		
+		$q = preg_replace_callback('/\[(\w[\w_]*)\]/',array($this,"_prepare_table_name"),$q);
 
 		if ($this->_query_debug_){
 			if ($this->_conf_debug_file_){
@@ -574,21 +568,19 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			}
 		}
 		
-		$result = mysql_query($q,$this->connection);
-		if (mysql_errno($this->connection) != 0){
-			throw new TMySqlException(mysql_errno($this->connection),array("msgtext"=>mysql_error($this->connection),"query"=>$q));
-			return false;
+		$query = $this->connection->Query($q,$parameters);
+		
+		if ($select){
+			if (is_null($col) && is_null($row))
+				return $query->ResultSet();
+			return $query->Scalar($row,$col);
 		}
-
 		
-		if (!$select)
-			$result = mysql_affected_rows($this->connection);
-		
-		return $result;
+		return $query->Execute();
 	}
 	
-	protected function iQuery($q){
-		$result = new TMySqlDBRawDataIterator($this->query($q),$this);
+	protected function iQuery($q, array $parameters = array()){
+		$result = new TMySqlDBRawDataIterator($this->query($q,$parameters),$this);
 		return $result;
 	}
 		
@@ -618,16 +610,18 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			break;
 		}
 		
-		if ($this->connection = mysql_pconnect($this->Server,$u,$p))
-		{
-			if (mysql_select_db($this->DataBase)){
-				if ($this->Names)
-				   $this->query("SET NAMES '".$this->Names."'");
-				return true;
-			} else 
-			throw new TMySqlException(TMySqlException::ERR_MYSQL_DBFAIL,array("db"=>$this->DataBase,"server"=>$this->Server));
-		} else 
-			throw new TMySqlException(TMySqlException::ERR_MYSQL_CONNECTFAIL,array("server"=>$this->Server));
+		$mode = $this->_driver_mode_;
+		if ($mode == self::DM_AUTO){
+			$mode = self::DM_MYSQL;
+			if (class_exists('mysqli',false))
+				$mode = self::DM_MYSQLI;
+		}
+		
+		switch ($mode){
+			case self::DM_MYSQL:$this->connection = new TMySqlConnection($this->Server,$u,$p, $this->DataBase, $this->Names);break;
+			case self::DM_MYSQLI:$this->connection = new TMySqliConnection($this->Server,$u,$p, $this->DataBase, $this->Names);break;
+		}
+		
 		return false;
 	}
 		
@@ -640,19 +634,28 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 	
 	public function DisConnect(){
-		//mysql_close($this->connection);
 		$this->connection = null;
 	}	
 		
 	public function BeginTransaction(){
 		$this->_auto_connect();
-		$this->query("begin");
-		//$this->query('start transaction');
+		if ($this->_tran_level_ == 0)
+			$this->connection->Begin();
+		$this->_tran_level_++;
 	}
 		
-	public function CommitTransaction(){$this->query('commit');}
+	public function CommitTransaction(){
+		$this->_auto_connect();
+		$this->_tran_level_--;
+		if ($this->_tran_level_ == 0)
+			$this->connection->Commit();
+	}
 		
-	public function RollbackTransaction(){$this->query('rollback');}
+	public function RollbackTransaction(){
+		$this->_auto_connect();
+		$this->_tran_level_--;
+		$this->connection->Rollback();
+	}
 		
 	protected static function transformColType(TDataType $type){
 		switch ($type->TypeCode) {
@@ -661,12 +664,12 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			case TDataType::FILELINK:
 			case TDataType::STRING:return ($type->VarLength?'var':'').'char'.($type->Length?('('.$type->Length.')'):'');break;
 			case TDataType::GUID:return 'char('.($type->Length).')';break;
-			case TDataType::BIGINT:return "bigint".($type->Size?("(".$type->Size.")"):"");break;
+			case TDataType::BIGINT:return "bigint".($type->Size?("(".$type->Size.")"):"").($type->Unsigned?' unsigned':'');break;
 			case TDataType::BOOLEAN:return "bit";break;
 			case TDataType::DATETIME:return "datetime";break;
 			case TDataType::DECIMAL:return "decimal".(($type->Size || $type->Decimals)?("(".$type->Size.($type->Decimals?(",".$type->Decimals):"").")"):"");break;
 			case TDataType::FLOAT:return "float".(($type->Size || $type->Decimals)?("(".$type->Size.($type->Decimals?(",".$type->Decimals):"").")"):"");break;
-			case TDataType::INTEGER:return "integer".($type->Size?("(".$type->Size.")"):"");break;
+			case TDataType::INTEGER:return "integer".($type->Size?("(".$type->Size.")"):"").($type->Unsigned?' unsigned':'');break;
 			case TDataType::SET:
 			case TDataType::IMAGE:
 			case TDataType::FILE:return "mediumblob";break;
@@ -676,7 +679,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			default:{throw new TCoreException(TCoreException::ERR_BAD_VALUE);return false;}break;
 		}
 	}
-
+	
 	protected static function transformRefIntegrity($ricode){
 		switch ($ricode){
 			case TTableReferenceType::REL_CASCADE:return "CASCADE";break;
@@ -708,7 +711,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 	}
 		
 	private function _transform_fk_definition($tablename,TForeignKeyDefinition $def){
-		return "CONSTRAINT `fk_".$this->RealTableName($tablename)."_".$def->Name."` FOREIGN KEY `".$def->Name."` (`".$def->Name."`) REFERENCES `".$this->RealTableName($def->MasterField->Table)."` (`".$def->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($def->OnDelete)." ON UPDATE ".self::transformRefIntegrity($def->OnUpdate);
+		return "CONSTRAINT `fk_".$this->RealTableName($tablename)."_".$def->Name."` FOREIGN KEY `".$def->Name."` (`".$def->Name."`) REFERENCES `".$this->RealTableName($def->MasterField->DataSource()->Name())."` (`".$def->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($def->OnDelete)." ON UPDATE ".self::transformRefIntegrity($def->OnUpdate);
 	}
 		
 	public function DefineNestedSets($name, array $definitions, array $options = array()){
@@ -734,9 +737,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 								
 	public function TableExists($tablename){
 		$this->_auto_connect();
-		return mysql_num_rows(mysql_query(sprintf("show tables like %s",$this->quoteValue($this->RealTableName($tablename))),$this->connection)) > 0;
+		$query = $this->connection->Query(sprintf("show tables like %s",$this->quoteValue($this->RealTableName($tablename))));
+		$res = $query->ResultSet();
+		return $res->RowCount() > 0;
 	}
-		
+			
 	public function DefineTable($tablename, array $definitions, array $options = array()){
 		$q = "create table ".$this->RealTableName($tablename)." (";
 		$fd = array();
@@ -777,18 +782,24 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->query("drop table if exists `".$this->RealTableName($tablename)."`");
 	}
 	
-	public function DefineField($tablename, TFieldDefinition $definition){
-		$q = "alter table `".$this->RealTableName($tablename)."`";
+	public function DefineFields($tablename, array $definitions){
+		$q = "alter table `".$this->RealTableName($tablename)."` ";
 		$add = array();
-		$fld = $this->_transform_field_definition($tablename,$definition);
-		$add[] = "add ".$fld[0];
-		if (count($fld) > 1) $add[] = "add ".$fld[1];
-		if (count($fld) > 2) $add[] = "add ".$fld[2];
+		foreach ($definitions as $definition){
+			$fld = $this->_transform_field_definition($tablename,$definition);
+			$add[] = "add ".$fld[0];
+			if (count($fld) > 1) $add[] = "add ".$fld[1];
+			if (count($fld) > 2) $add[] = "add ".$fld[2];
+		}
 		return $this->query($q.join(",",$add)); 
 	}
 		
-	public function UndefineField($tablename, $fieldname){
-		return $this->query("alter table `".$this->RealTableName($tablename)."` drop column `".$fieldname."`");
+	public function UndefineFields($tablename, array $fields){
+		if (!empty($fields)){		
+			array_walk($fields,create_function('&$val','$val = " drop column `".$val."`";'));	
+			return $this->query("alter table `".$this->RealTableName($tablename)."` ".join(',',$fields));
+		}
+		return false;
 	}
 		
 	public function DefineIndex($tablename, TIndexDefinition $definition){
@@ -797,6 +808,10 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		
 	public function UndefineIndex($tablename, $indexname){
 		return $this->query("alter table `".$this->RealTableName($tablename)."` drop index `".$indexname."`");
+	}
+	
+	public function UndefineForeignKey($tablename, $fieldname){
+		return $this->query("alter table `".$this->RealTableName($tablename)."` drop foreign key `fk_".$this->RealTableName($tablename)."_".$fieldname."`");	
 	}
 		
 	public function DefineForeignKey($tablename, TForeignKeyDefinition $definition){

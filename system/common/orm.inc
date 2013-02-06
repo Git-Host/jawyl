@@ -124,6 +124,19 @@ interface IORMStorage {
  * @return TOrmPropertyMeta[]
  */
 	public function Properties($object);
+	
+/**
+ * @param object|ReflectionClass|string $object
+ * @return TOrmPropertyMeta[]
+ */	
+	public function Keys($object);
+	
+	
+/**
+ * @param object|ReflectionClass|string $object
+ * @return string[]
+ */	
+	public function Tables($object);
 }
 
 interface IORMHierarchyStorage {

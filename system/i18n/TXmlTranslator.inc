@@ -29,19 +29,8 @@
  */
 		protected function domain_search($domain,$text,$plural = null){
 			if (key_exists($domain,$this->domains)){
-				$xpath = new DOMXPath($this->domains[$domain]);
-				$msg = $xpath->query("/domain/msg[@id='".htmlentities($text,ENT_QUOTES,'UTF-8')."']");
-				if ($msg->length > 0){
-					$count = $plural;
-					if (is_null($count)) $count = 1;
-					if ($count == 1)
-						$trans = $xpath->query("default",$msg->item(0));
-					else 
-						$trans = $xpath->query("plural[@from <= ".$plural." and @to >= ".$plural."]",$msg->item(0));
-						
-					if ($trans->length > 0)
-						return $trans->item(0)->nodeValue;
-				}
+				$v = include $this->domains[$domain];
+				if (is_string($v)) return $v;
 			}
 			return $text;
 		}
@@ -65,28 +54,47 @@
 			}
 			return $this->domain_search($domain,$text,$plural); 
 		}
+		
+		private function _compile_domain($domain,$xml){
+			$fn = $this->Application()->ConfCompileDir().'/languages/'.$domain.'.php';
+			if (!file_exists($fn)){
+				$dom = new DOMDocument();
+				$dom->Load($xml);
+				TFileSystem::ForceDir($this->Application()->ConfCompileDir().'/languages');
+				$xpath = new DOMXPath($dom);
+				$msgs = $xpath->query('/domain/msg');
+				$script = "<?php\n";
+				foreach ($msgs as $msg){
+					$trans = $xpath->query("default",$msg);
+					foreach ($trans as $tr)
+						$script	.= 'if (($text == "'.addslashes(html_entity_decode($msg->getAttribute("id"))).'") && ($plural < 2 || is_null($plural))) return "'.addslashes($tr->nodeValue)."\";\n";	 
+					$trans = $xpath->query("plural",$msg);
+					foreach ($trans as $tr)
+						$script	.= 'if (($text == "'.addslashes(html_entity_decode($msg->getAttribute("id"))).'") && ($plural >= '.$tr->getAttribute("from").') && ($plural <= '.$tr->getAttribute("to").')) return "'.addslashes($tr->nodeValue)."\";\n";	 
+				}
+				file_put_contents($fn, $script);
+			}
+			return $fn;
+		}
+		
 
 /**
  * @see ITranslator::SetLanguage()
  * @param string $language
  */			
 		public function SetLanguage($language){
-			$dirs = array();
-			if (is_dir($this->Application()->SysPath()."/languages/".$language))
-				$dirs[] = $this->Application()->SysPath()."/languages/".$language;
+			$dir = null;
 			if (is_dir($this->Application()->PrivateDir()."/languages/".$language))
-				$dirs[] = $this->Application()->PrivateDir()."/languages/".$language;
+				$dir = $this->Application()->PrivateDir()."/languages/".$language;
 			$this->domains = array();
-			foreach ($dirs as $dir)
 			if (is_dir($dir)) {
     			if ($dh = opendir($dir)) {
         			while ($file = readdir($dh)){
             			if (is_file($dir."/".$file) && ($file != "..") && ($file != ".")){
             				$pi = pathinfo($dir."/".$file);
             				if ($pi["extension"] == "xml"){
-            					$domainname = basename($file, ".xml"); 
-            					$this->domains[$domainname] = new DOMDocument();
-            					$this->domains[$domainname]->Load($dir."/".$file);
+            					$domainname = basename($file, ".xml");
+            					$this->domains[$domainname] = $this->_compile_domain($domainname,$dir."/".$file);
             				}
         				}
         			}

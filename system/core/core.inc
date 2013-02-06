@@ -184,3 +184,11 @@ interface IOutputBuffer {
 	
 	public function Flush();
 }
+
+interface IClassLoader {
+/**
+ * @param string $classname
+ * @return bool
+ */	
+	public function LoadClass($classname);
+}

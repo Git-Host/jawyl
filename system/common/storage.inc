@@ -356,6 +356,8 @@ class TTable extends TDataSource {
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		parent::AttachField($fld);
 	}
+	
+	public function __toString(){return (string)$this->Name();}
 }
 
 /**
@@ -983,16 +985,20 @@ interface IDBDriver extends ITransactionProvider {
  * @return boolean
  */		
 	public function UndefineTable($tablename);
+	
 /**
  * @param string $tablename
+ * @param TFieldDefinition[] $definitions
  * @return boolean
  */		
-	public function DefineField($tablename, TFieldDefinition $definition);
+	public function DefineFields($tablename, array $definitions);
+	
 /**
  * @param string $tablename
+ * @param string[] $fields
  * @return boolean
  */		
-	public function UndefineField($tablename, $fieldname);
+	public function UndefineFields($tablename, array $fields);
 /**
  * @param string $tablename
  * @return boolean
@@ -1003,6 +1009,11 @@ interface IDBDriver extends ITransactionProvider {
  * @return boolean
  */		
 	public function UndefineIndex($tablename, $indexname);
+/**
+ * @param string $tablename
+ * @return boolean
+ */		
+	public function UndefineForeignKey($tablename, $fieldname);
 /**
  * @param string $tablename
  * @return boolean
@@ -1058,10 +1069,12 @@ interface IDBDriver extends ITransactionProvider {
  * @return int 
  */	
 	public function UpdateRecords(TDataSource $records, array $fields, array $values);
+
 /**
  * @return IIterator
  */	
 	public function FetchRecords(TDataSource $records);
+
 }
 
 /**

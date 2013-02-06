@@ -170,10 +170,18 @@
  * @var string
  */		
 		private $_file_storage_path_;
+		
+		private static $_runtime_successfull_ = false;
+		
 /**
  * @var IExceptionHandler
  */		
 		protected $_ioc_exception_handler_;
+		
+/**
+ * @var IClassLoader[]
+ */		
+		protected $_ioc_class_loader_ = array();
 		
 /**
  * @var bool
@@ -622,15 +630,9 @@
 */					
 		public function GetClass($classname){
 			$result = null;	
-			if (!class_exists($classname,false)){	
+			if (!self::_check_class($classname))	
 				self::_autoloader($classname);
-				if (!class_exists($classname,false)){
-					$parts = explode('/',$classname);
-					if (class_exists($parts[count($parts) - 1],false))
-						$classname = $parts[count($parts) - 1];
-				}
-			}
-			$result = new ReflectionClass($classname);
+			$result = new ReflectionClass(self::_check_class($classname));
 			return $result;
 		}
 
@@ -870,15 +872,35 @@
 			}
 		}
 		
+		private static function _check_class($classname){
+			if (!class_exists($classname,false)){
+				$parts = explode('/',$classname);
+				if (class_exists($parts[count($parts) - 1],false))
+					return $parts[count($parts) - 1]; 
+				else
+					return null;	
+			}
+			return $classname;			
+		}
+		
 		private static function _autoloader($class){
 			if ($class[0] == '/')
 				$class = substr($class, 1);
-			include_once $class.'.inc';
+			@include_once $class.'.inc';
+			
+			if (!self::_check_class($class)){
+				if (is_array(self::$Application->ClassLoader)){
+					foreach (self::$Application->ClassLoader as $cl)
+							if ($cl->LoadClass($class)) break;
+				} else if (self::$Application->ClassLoader){
+					self::$Application->ClassLoader->LoadClass($class);
+				}
+			}			
 		}
 		
 		public static function OnShutdown(){
-			if ($error = error_get_last()){
-				if ($error["type"] < 8)
+			if (/*(!self::$_runtime_successfull_) &&*/ $error = error_get_last()){
+				//if ($error["type"] < 8)
 					self::AppErrorHandler($error["type"], $error["message"], $error["file"], $error["line"]);
 			}
 		}
@@ -887,6 +909,7 @@
 * Application main method, which launches runtime. Called once in the initial script. 
 */		
 		public static function Run($callerPath){
+			self::$_runtime_successfull_ = false;
 			global $Application;
 			spl_autoload_register(array("TApplication","_autoloader"));
 			self::_adjust_environment();
@@ -897,12 +920,16 @@
 			$Application = new TApplication(realpath(dirname($callerPath)));
 			set_include_path(get_include_path().PATH_SEPARATOR.self::$SystemPath.PATH_SEPARATOR.$Application->PrivateDir.'/code');
 			$Application->_app_run();
+			self::$_runtime_successfull_ = true;
 		}
 		
 		public static function AppErrorHandler($errno,$errstr,$errfile,$errline){
 			if (error_reporting() & $errno) {
-				TApplication::AppExceptionHandler(new ErrorException($errstr, $errno, $errno, $errfile,$errline));
-				return true;
+				$e = new ErrorException($errstr, $errno, $errno, $errfile,$errline);
+				TApplication::AppExceptionHandler($e);
+				throw $e;
+				//throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);
+				return false;
 			} 
 			return false;
 		}

@@ -48,7 +48,11 @@ require_once 'core.inc';
  			}
  		}
  	}
- 	
+
+ /**
+  * @return TApplication
+  * @see IConfigurable::Application()
+  */	
  	public function Application(){
  		if ($this->_application_ instanceof IApplication)
  			return $this->_application_;
@@ -273,9 +277,13 @@ require_once 'core.inc';
  	 */
 	public function __set($nm,$value){
 		if ($n = $this->_check_ioc($nm, $type, $is_ioc_array)){
-			if ($is_ioc_array)
-				$this->setIocArrayMember($this->$n, $value, $type);
-			else 		
+			if ($is_ioc_array){
+				if (is_array($value)){
+					foreach ($value as $v)
+						$this->setIocArrayMember($this->$n, $v, $type);
+				} else
+					$this->setIocArrayMember($this->$n, $value, $type);
+			} else 		
 				$this->setIocMember($this->$n, $value, $type);
 		} else if ($n = $this->_check_suffix($nm,'json')){
 			$this->$n = is_object($value)?$value:json_decode($value);	
