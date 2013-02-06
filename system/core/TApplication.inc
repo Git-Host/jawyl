@@ -899,8 +899,8 @@
 		}
 		
 		public static function OnShutdown(){
-			if (/*(!self::$_runtime_successfull_) &&*/ $error = error_get_last()){
-				//if ($error["type"] < 8)
+			if ((!self::$_runtime_successfull_) && $error = error_get_last()){
+				if ($error["type"] < 8)
 					self::AppErrorHandler($error["type"], $error["message"], $error["file"], $error["line"]);
 			}
 		}
