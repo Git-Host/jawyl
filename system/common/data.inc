@@ -90,10 +90,11 @@
 	
 	class TIntegerType extends TDataType {
 		public $Size = null;
-		public function __construct($s = null){
+		public $Unsigned = false;
+		public function __construct($s = null,$unsigned = null){
 			$this->typeCode = TDataType::INTEGER;
-			if (isset($s))
-				$this->Size = $s;
+			if (isset($s)) $this->Size = $s;
+			if (isset($unsigned)) $this->Unsigned = $unsigned;
 		}
 
 /**
@@ -105,8 +106,8 @@
 	}
 
 	final class TLongType extends TIntegerType {
-		public function __construct($s = null){
-			parent::__construct($s);
+		public function __construct($s = null,$unsigned = null){
+			parent::__construct($s,$unsigned);
 			$this->typeCode = TDataType::BIGINT;
 		}
 	}

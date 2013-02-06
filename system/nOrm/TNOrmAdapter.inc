@@ -1237,28 +1237,53 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return false;
 	}
 	
+	
+	protected function toPropertyMeta($nm,$prop){
+		if ($prop['type'] == 'scalar'){
+			$type = TItemPropertyType::PT_STRING;
+			switch ($prop['datatype']){
+				case 'string':break;
+				case 'int':$type = TItemPropertyType::PT_INT;break;
+				case 'float':$type = TItemPropertyType::PT_DEC;break;
+				case 'date':
+				case 'TDate':$type = TItemPropertyType::PT_DATE;break;
+				case 'bool':$type = TItemPropertyType::PT_BOOL;break;
+			}
+			return new TOrmPropertyMeta($nm, $nm, $type);
+		} else {
+			switch ($prop['type']){
+				case 'collection':return new TOrmCollectionPropertyMeta($nm, $nm, $prop['classname']);break;
+				case 'reference':return new TOrmReferencePropertyMeta($nm, $nm, $prop['classname']);break;
+			}
+		}
+		return null;
+	}
+	
+	public function Keys($object){
+		if ($orm = $this->_get_orm_config($object)){
+			$result = array();
+			foreach ($orm["keys"] as $key)
+				$result[$key] = $this->toPropertyMeta($key, $orm["properties"][$key]);
+			return $result;
+		}
+		return null;
+	}	
+	
+	/**
+	 * @param object|ReflectionClass|string $object
+	 * @return string[]
+	 */
+	public function Tables($object){
+		if ($orm = $this->_get_orm_config($object))
+			return array_keys($orm["tables"]);
+		return null;
+	}
+	
 	public function Properties($dummy){
 		if ($orm = $this->_get_orm_config($dummy)){
 			$result = array();
-			foreach ($orm['properties'] as $key=>$prop){
-				if ($prop['type'] == 'scalar'){
-					$type = TItemPropertyType::PT_STRING;
-					switch ($prop['datatype']){
-						case 'string':break;
-						case 'int':$type = TItemPropertyType::PT_INT;break;
-						case 'float':$type = TItemPropertyType::PT_DEC;break;	
-						case 'date': 
-						case 'TDate':$type = TItemPropertyType::PT_DATE;break;
-						case 'bool':$type = TItemPropertyType::PT_BOOL;break;
-					}
-					$result[$key] = new TOrmPropertyMeta($key, $key, $type); 
-				} else {
-					switch ($prop['type']){
-						case 'collection':$result[$key] = new TOrmCollectionPropertyMeta($key, $key, $prop['classname']);break;
-						case 'reference':$result[$key] = new TOrmReferencePropertyMeta($key, $key, $prop['classname']);break; 
-					} 
-				}
-			}
+			foreach ($orm['properties'] as $key=>$prop)
+				$result[$key] = $this->toPropertyMeta($key, $prop);
 			
 			if (!empty($orm['nestedsets']))
 				$result[$orm['nestedsets']['parent']] = new TOrmReferencePropertyMeta($orm['nestedsets']['parent'], $orm['nestedsets']['parent'], $orm['classname']);

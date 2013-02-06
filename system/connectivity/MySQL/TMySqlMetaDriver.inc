@@ -203,14 +203,14 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 		
 		$checkprot = "";
 			
-		while ($table = mysql_fetch_array($tables,MYSQL_NUM))
+		while ($table = $tables->FetchIndexed())
 			switch ($table[0]){
 				case $this->RealTableName(self::CLASSES_STATICS).self::SNAPSHOTS_PREFIX:{
 					$cid = false;
 					$ds = false;
 					$dt = false;
 					$columns = $this->query("show columns from ".$this->RealTableName(self::CLASSES_STATICS).self::SNAPSHOTS_PREFIX);
-					while ($column = mysql_fetch_array($columns,MYSQL_ASSOC))
+					while ($column = $columns->FetchAssoc())
 						switch ($column["Field"]){
 							case self::CLASS_PK_FIELD:$cid = ($column["Type"] == "bigint(20)");break;
 							case "date_since":$ds = ($column["Type"] == "datetime");break;
@@ -222,7 +222,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 				case $this->RealTableName(self::CLASSES_STATICS):{
 					$cid = false;
 					$columns = $this->query("show columns from ".$this->RealTableName(self::CLASSES_STATICS));
-					while ($column = mysql_fetch_array($columns,MYSQL_ASSOC))
+					while ($column = $columns->FetchAssoc())
 						switch ($column["Field"]){
 							case self::CLASS_PK_FIELD:$cid = ($column["Type"] == "bigint(20)") && ($column["Key"] == "PRI");break;
 						}
@@ -237,7 +237,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 					$lkey = false;
 					$ancestor = false;						
 					$columns = $this->query("show columns from ".$this->RealTableName(self::CLASSES_TABLE));
-					while ($column = mysql_fetch_array($columns,MYSQL_ASSOC))
+					while ($column = $columns->FetchAssoc())
 						switch ($column["Field"]){
 							case self::CLASS_PK_FIELD:$cid = ($column["Type"] == "bigint(20)") && ($column["Key"] == "PRI") && ($column["Extra"] == "auto_increment");break;
 							case self::CLASS_NAME_FIELD:$name = ($column["Type"] == "varchar(200)") && ($column["Key"] == "UNI") && ($column["Null"] == "NO");break;
@@ -259,7 +259,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 					$refclass = false;
 					$isstat = false;
 					$columns = $this->query("show columns from ".$this->RealTableName(self::ATTRDEFINITIONS_TABLE));
-					while ($column = mysql_fetch_array($columns,MYSQL_ASSOC))
+					while ($column = $columns->FetchAssoc())
 						switch ($column["Field"]){
 							case self::CLASS_ATTR_PK_FIELD:$caid = ($column["Type"] == "bigint(20)") && ($column["Key"] == "PRI") && ($column["Extra"] == "auto_increment");break;
 							case self::CLASS_PK_FIELD:$cid = ($column["Type"] == "bigint(20)") && ($column["Key"] == "MUL") && ($column["Null"] == "NO");break;
@@ -279,7 +279,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 					$check["eid"] = false;
 					$check["cid"] = false;
 					$columns = $this->query("show columns from ".$this->RealTableName(self::ENTITIES_TABLE));
-					while ($column = mysql_fetch_array($columns,MYSQL_ASSOC))
+					while ($column = $columns->FetchAssoc())
 						switch ($column["Field"]){
 							case self::ENTITY_PK_FIELD:$check["eid"] = ($column["Type"] == "bigint(20)") && ($column["Key"] == "PRI") && ($column["Extra"] == "auto_increment");break;
 							case self::CLASS_PK_FIELD:$check["cid"] = ($column["Type"] == "bigint(20)") && ($column["Key"] == "MUL") && ($column["Null"] == "NO");break;
@@ -532,7 +532,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 	private function _undefine_class(TDBClass $c){
 		$table = $this->RealTableName(self::CLASSES_TABLE);
 		$res = $this->query("select ".self::CLASS_PK_FIELD.",".self::CLASS_LKEY_FIELD.",".self::CLASS_RKEY_FIELD." from ".$table." where ".self::CLASS_NAME_FIELD." = ".$this->quoteValue($c->Name()));
-  		if ($temp = mysql_fetch_assoc($res)){
+  		if ($temp = $res->FetchAssoc()){
   			if ($temp[self::CLASS_RKEY_FIELD] == $temp[self::CLASS_LKEY_FIELD] + 1){   
   					$this->BeginTransaction();
   					$this->query("lock tables ".$table." write");
@@ -560,7 +560,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 			try {
 				$table = $this->RealTableName(self::ATTRDEFINITIONS_TABLE);
 				if (!($a instanceof TDBDefinedAttribute)){
-					if ($temp = mysql_fetch_assoc($this->query("select * from ".self::ATTRDEFINITIONS_TABLE." where (".self::CLASS_PK_FIELD." = ".$this->quoteValue($a->Id()).") and (".self::CLASS_ATTR_NAME_FIELD." = ".$this->quoteValue($a->Name()).")")))
+					if ($temp = $this->query("select * from ".self::ATTRDEFINITIONS_TABLE." where (".self::CLASS_PK_FIELD." = ".$this->quoteValue($a->Id()).") and (".self::CLASS_ATTR_NAME_FIELD." = ".$this->quoteValue($a->Name()).")")->FetchAssoc())
 						$a = TMySqlRowConverter::ToAttrDefinition($temp, $this);
 				}
 				if (!($a instanceof TDBDefinedAttribute))
@@ -593,7 +593,7 @@ class TMySqlMetaDriver extends TMySqlDBDriver implements IMetaDriver {
 				from ".$this->RealTableName(self::CLASSES_TABLE)." c 
 					inner join ".$this->RealTableName(self::ATTRDEFINITIONS_TABLE)." a on c.".self::CLASS_PK_FIELD." = a.".self::CLASS_PK_FIELD." order by c.".self::CLASS_LKEY_FIELD." asc");
 			
-			while ($row = mysql_fetch_assoc($result)){
+			while ($row = $result->FetchAssoc()){
 				$c = TMySqlDBClass::Obtain($row[self::CLASS_PK_FIELD], $this);
 				if (!$c){
 					$anc = null;
