@@ -245,7 +245,7 @@ class TMySqlConnection extends TMySqlAdapter {
 	 * @return string
 	 */
 	protected function quoteString($value){
-		return "'" . mysql_real_escape_string($this->quoteValue($value),$this->_connection_) . "'";
+		return "'" . mysql_real_escape_string($value,$this->_connection_) . "'";
 	}
 
 	/**
