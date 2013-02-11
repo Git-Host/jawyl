@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xsd:element name="wizard">
+	<xsd:complexType>
+		<xsd:sequence>
+			<xsd:element name="step">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="parameter">
+							<xsd:complexType>
+								<xsd:simpleContent>
+									<xsd:extension base="xsd:string">
+										<xsd:attribute name="name" type="xsd:string" use="required" />
+										<xsd:attribute name="title" type="xsd:string" use="required" />
+									</xsd:extension>
+								</xsd:simpleContent>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+					<xsd:attribute name="title" type="xsd:string" use="required" />
+					<xsd:attribute name="setup" type="xsd:string" use="optional" />
+					<xsd:attribute name="processor" type="xsd:string" use="optional" />
+					<xsd:attribute name="validator" type="xsd:string" use="optional" />
+					<xsd:attribute name="rollback" type="xsd:string" use="optional" />
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="resume" type="xsd:string" use="optional" />
+	</xsd:complexType>
+</xsd:element>
+</xsd:schema>

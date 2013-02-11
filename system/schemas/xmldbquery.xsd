@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<xsd:attributeGroup name="g_attribute">
+  <xsd:attribute name="source" type="xsd:string" use="required" />
+  <xsd:attribute name="name" type="xsd:string" use="required" />
+</xsd:attributeGroup>
+
+<xsd:complexType name="t_attribute">
+ 	<xsd:attributeGroup ref="g_attribute" />
+</xsd:complexType>
+
+<xsd:simpleType name="t_ordertype">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="asc"/>
+    <xsd:enumeration value="desc"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="t_jointype">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="inner"/>
+    <xsd:enumeration value="left"/>
+    <xsd:enumeration value="right"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="t_agregtype">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="contents"/>
+    <xsd:enumeration value="containers"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:complexType name="t_order">
+ 	<xsd:attributeGroup ref="g_attribute" />
+ 	<xsd:attribute name="type" type="t_ordertype" default="asc" />
+</xsd:complexType>
+
+<xsd:complexType name="t_source">
+	<xsd:sequence>
+		<xsd:element name="join" minOccurs="0" maxOccurs="unbounded">
+			<xsd:complexType>
+				<xsd:sequence>
+					<xsd:group ref="g_source" minOccurs="1" maxOccurs="1" />
+					<xsd:element name="on" minOccurs="1" maxOccurs="1">
+						<xsd:complexType>
+							<xsd:complexContent>
+ 								<xsd:extension base="t_logic">
+ 									<xsd:attribute name="section" type="xsd:string" use="optional"/>
+								</xsd:extension>
+							</xsd:complexContent>
+						</xsd:complexType>
+					</xsd:element>
+		 		</xsd:sequence>
+		  		<xsd:attribute name="type" type="t_jointype" default="inner" />
+		 	</xsd:complexType>
+		</xsd:element>
+	</xsd:sequence>
+	<xsd:attribute name="name" type="xsd:string" />
+	<xsd:attribute name="alias" type="xsd:string" />
+</xsd:complexType>
+
+<xsd:complexType name="t_table">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_class">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+ 			<xsd:attribute name="exactmatch" type="xsd:boolean" use="optional"/>
+ 			<xsd:attribute name="descenders" type="xsd:boolean" use="optional"/>
+ 			<xsd:attribute name="exclude" type="xsd:string" use="optional"/>
+ 			<xsd:attribute name="snapshots_since" type="xsd:dateTime" use="optional"/>
+ 			<xsd:attribute name="snapshots_till" type="xsd:dateTime" use="optional"/>
+ 			<xsd:attribute name="snapshot_date" type="xsd:dateTime" use="optional"/>
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_association">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+ 			<xsd:attribute name="type" type="xsd:string" />
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_agregation">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+ 			<xsd:attribute name="onlydirect" type="xsd:boolean" default="false" use="optional" />
+ 			<xsd:attribute name="withfirstlevel" type="xsd:boolean" default="true" use="optional" />
+ 			<xsd:attribute name="type" type="t_agregtype" default="contents" use="optional" />
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_collection">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+ 			<xsd:attribute name="type" type="xsd:string" />
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_vocabulary">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+ 			<xsd:attribute name="keyfilter" type="xsd:string" />
+		</xsd:extension>
+	</xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="t_union">
+	<xsd:sequence>
+		<xsd:element name="select" type="t_select" minOccurs="2" maxOccurs="unbounded"/>
+	</xsd:sequence>
+	<xsd:attribute name="name" type="xsd:string" />
+</xsd:complexType>
+
+<xsd:group name="g_source">
+	<xsd:choice>
+		<xsd:element name="table" type="t_table" />
+		<xsd:element name="class" type="t_class" />
+		<xsd:element name="select" type="t_select" />
+		<xsd:element name="union" type="t_union" />
+		<xsd:element name="association" type="t_association" />
+		<xsd:element name="agregation" type="t_agregation" />
+		<xsd:element name="collection" type="t_collection" />
+		<xsd:element name="vocabulary" type="t_vocabulary" />
+	</xsd:choice>
+</xsd:group>
+
+<xsd:complexType name="t_sources">
+	<xsd:sequence>
+		<xsd:group ref="g_source" minOccurs="1" maxOccurs="unbounded" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_singlearg">
+	<xsd:sequence>
+		<xsd:group ref="g_arguments" minOccurs="1" maxOccurs="1" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_dualarg">
+	<xsd:sequence>
+		<xsd:group ref="g_arguments" minOccurs="2" maxOccurs="2" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_triplearg">
+	<xsd:sequence>
+		<xsd:group ref="g_arguments" minOccurs="3" maxOccurs="3" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_tripleargopt">
+	<xsd:sequence>
+		<xsd:group ref="g_arguments" minOccurs="2" maxOccurs="3" />
+	</xsd:sequence>
+</xsd:complexType>
+
+
+<xsd:complexType name="t_multiarg">
+	<xsd:sequence>
+		<xsd:group ref="g_arguments" minOccurs="1" maxOccurs="unbounded" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:simpleType name="t_intervaltype">
+	<xsd:restriction base="xsd:string">
+		<xsd:enumeration value="day" />
+		<xsd:enumeration value="month" />
+		<xsd:enumeration value="year" />
+		<xsd:enumeration value="week" />
+		<xsd:enumeration value="hour" />
+		<xsd:enumeration value="minute" />
+		<xsd:enumeration value="second" />
+		<xsd:enumeration value="microsecond" />
+	</xsd:restriction>
+</xsd:simpleType>
+
+<xsd:group name="g_operations">
+	<xsd:choice>
+    <xsd:element name="bitor" type="t_multiarg" />
+    <xsd:element name="bitand" type="t_multiarg" />
+    <xsd:element name="or" type="t_multiarg" />
+    <xsd:element name="and" type="t_multiarg" />
+    <xsd:element name="not" type="t_singlearg" />
+    <xsd:element name="equal" type="t_dualarg" />
+    <xsd:element name="nonequal" type="t_dualarg" />
+    <xsd:element name="more" type="t_dualarg" />
+    <xsd:element name="less" type="t_dualarg" />
+    <xsd:element name="equalmore" type="t_dualarg" />
+    <xsd:element name="equalless" type="t_dualarg" />
+    <xsd:element name="in">
+    	<xsd:complexType>
+    		<xsd:sequence>
+    			<xsd:group ref="g_arguments" />
+    			<xsd:element name="set">
+    				<xsd:complexType>
+    					<xsd:group ref="g_arguments" minOccurs="0" maxOccurs="unbounded"/>
+    				</xsd:complexType>
+    			</xsd:element>
+    		</xsd:sequence>
+    	</xsd:complexType>    
+    </xsd:element>
+    <xsd:element name="regmatch" type="t_dualarg" />
+    <xsd:element name="like" type="t_dualarg" />
+    <xsd:element name="notlike" type="t_dualarg" />
+    <xsd:element name="str_len" type="t_singlearg" />
+    <xsd:element name="str_pos"  type="t_dualarg" />
+    <xsd:element name="str_concat" type="t_multiarg" />
+    <xsd:element name="str_lower" type="t_singlearg" />
+    <xsd:element name="str_upper" type="t_singlearg" />
+    <xsd:element name="str_substr" type="t_tripleargopt" />
+    <xsd:element name="str_replace" type="t_triplearg" />
+	<xsd:element name="str_ltrim" type="t_singlearg" />
+	<xsd:element name="str_rtrim" type="t_singlearg" />
+	<xsd:element name="str_trim" type="t_singlearg" />
+    <xsd:element name="sum" type="t_multiarg" />
+    <xsd:element name="subtract" type="t_multiarg" />
+    <xsd:element name="multiply" type="t_multiarg" />
+    <xsd:element name="divide" type="t_multiarg" />
+    <xsd:element name="modulo" type="t_multiarg" />
+    <xsd:element name="abs" type="t_singlearg" />
+    <xsd:element name="acos" type="t_singlearg" />
+    <xsd:element name="asin" type="t_singlearg" />
+    <xsd:element name="atan" type="t_singlearg" />
+    <xsd:element name="cos" type="t_singlearg" />
+    <xsd:element name="sin" type="t_singlearg" />
+    <xsd:element name="tan" type="t_singlearg" />
+    <xsd:element name="ceil" type="t_singlearg" />
+    <xsd:element name="floor" type="t_singlearg" />
+    <xsd:element name="round" type="t_singlearg" />
+    <xsd:element name="power" type="t_dualarg" />
+    <xsd:element name="exp" type="t_singlearg" />
+    <xsd:element name="ln" type="t_singlearg" />
+    <xsd:element name="log" type="t_dualarg" />
+    <xsd:element name="sqrt" type="t_singlearg" />
+    <xsd:element name="rand" />
+    <xsd:element name="date_current" />
+    <xsd:element name="date_add">
+    	<xsd:complexType>
+    		<xsd:sequence>
+    			<xsd:group ref="g_arguments" minOccurs="2" maxOccurs="2" />
+    			<xsd:element name="intervaltype" type="t_intervaltype" minOccurs="0" />
+    		</xsd:sequence>
+    	</xsd:complexType>        
+    </xsd:element>
+    <xsd:element name="date_subtract">
+    	<xsd:complexType>
+    		<xsd:sequence>
+    			<xsd:group ref="g_arguments" minOccurs="2" maxOccurs="2" />
+    			<xsd:element name="intervaltype" type="t_intervaltype" minOccurs="0" />
+    		</xsd:sequence>
+    	</xsd:complexType>            
+    </xsd:element>
+    <xsd:element name="date_differ" type="t_dualarg" />
+    <xsd:element name="date_make">
+    	<xsd:complexType>
+    		<xsd:sequence>
+    			<xsd:group ref="g_arguments" minOccurs="3" maxOccurs="3"/>
+    		</xsd:sequence>
+    	</xsd:complexType>            
+    </xsd:element>
+    <xsd:element name="date_day" type="t_singlearg" />
+    <xsd:element name="date_month" type="t_singlearg" />
+    <xsd:element name="date_year" type="t_singlearg" />
+    <xsd:element name="date_week" type="t_singlearg" />
+    <xsd:element name="date_weekday" type="t_singlearg" />
+    <xsd:element name="time_current" />
+    <xsd:element name="time_add" type="t_dualarg"/>
+    <xsd:element name="time_subtract" type="t_dualarg"/>
+    <xsd:element name="time_differ" type="t_dualarg" />
+    <xsd:element name="time_make">
+    	<xsd:complexType>
+    		<xsd:sequence>
+    			<xsd:group ref="g_arguments" minOccurs="3" maxOccurs="7" />
+    		</xsd:sequence>
+    	</xsd:complexType>            
+    </xsd:element>
+    <xsd:element name="time_hour" type="t_singlearg" />
+    <xsd:element name="time_minute" type="t_singlearg" />
+    <xsd:element name="time_second" type="t_singlearg" />
+    <xsd:element name="time_microsecond" type="t_singlearg" />
+    <xsd:element name="gsum" type="t_singlearg" />
+    <xsd:element name="gavg" type="t_singlearg" />
+    <xsd:element name="gcount" type="t_singlearg" />
+    <xsd:element name="ifelse" type="t_triplearg" />
+    <xsd:element name="casewhen">
+    	<xsd:complexType>
+    		<xsd:sequence>
+    			<xsd:element name="branch" minOccurs="1" maxOccurs="unbounded">
+    				<xsd:complexType>
+    					<xsd:sequence>
+    						<xsd:element name="condition">
+    							<xsd:complexType>
+    								<xsd:group ref="g_operations" />
+    							</xsd:complexType>
+    						</xsd:element>
+    						<xsd:group ref="g_arguments" />
+    					</xsd:sequence>
+    				</xsd:complexType>
+    			</xsd:element>
+    			<xsd:element name="default">
+    				<xsd:complexType>
+    					<xsd:group ref="g_arguments" />
+    				</xsd:complexType>
+    			</xsd:element>
+    		</xsd:sequence>
+    	</xsd:complexType>                	
+    </xsd:element>
+	</xsd:choice>
+</xsd:group>
+
+<xsd:group name="g_arguments">
+	<xsd:choice>
+		<xsd:element name="attribute" type="t_attribute" />
+		<xsd:element name="value">
+			<xsd:complexType>
+				<xsd:simpleContent>
+					<xsd:extension base="xsd:string">
+						<xsd:attribute name="prepared" type="xsd:boolean" use="optional" />
+					</xsd:extension>
+				</xsd:simpleContent>
+			</xsd:complexType>
+		</xsd:element>
+		<xsd:group ref="g_operations" />
+	</xsd:choice>
+</xsd:group>
+
+<xsd:complexType name="t_logic">
+	<xsd:group ref="g_operations" />		
+</xsd:complexType>
+
+<xsd:complexType name="t_grouping">
+	<xsd:sequence>
+    	<xsd:element name="attribute" type="t_attribute" minOccurs="1" maxOccurs="unbounded" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_ordering">
+	<xsd:sequence>
+		<xsd:element name="order" type="t_order" minOccurs="1" maxOccurs="unbounded" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="t_select">
+ 	<xsd:complexContent>
+ 		<xsd:extension base="t_source">
+  			<xsd:sequence>
+    			<xsd:element name="attribute" minOccurs="0" maxOccurs="unbounded">
+    				<xsd:complexType>
+ 						<xsd:complexContent>
+ 							<xsd:extension base="t_attribute">
+ 								<xsd:attribute name="alias" type="xsd:string" />
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+    			</xsd:element>
+    			<xsd:element name="expression" minOccurs="0" maxOccurs="unbounded">
+    				<xsd:complexType>
+    					<xsd:group ref="g_operations" minOccurs="1" maxOccurs="1" />
+    					<xsd:attribute name="alias" type="xsd:string"/>
+					</xsd:complexType>
+    			</xsd:element>
+    			<xsd:element name="sources" type="t_sources" minOccurs="1" maxOccurs="1" />
+    			<xsd:element name="conditions" type="t_logic" minOccurs="0" maxOccurs="1" />
+    			<xsd:element name="grouping" type="t_grouping" minOccurs="0" maxOccurs="1" />
+    			<xsd:element name="ordering" type="t_ordering" minOccurs="0" maxOccurs="1" />
+  			</xsd:sequence>
+  			<xsd:attribute name="distinct" type="xsd:boolean" default="false" />
+  			<xsd:attribute name="limit" type="xsd:string" default="" />
+  			<xsd:attribute name="offset" type="xsd:string" default="" />
+  		</xsd:extension>
+  	</xsd:complexContent>
+</xsd:complexType>
+</xsd:schema>
