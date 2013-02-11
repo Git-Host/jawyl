@@ -363,7 +363,7 @@ abstract class TPageService extends TService {
 		} else if (!$this->_check_page_access($page))
 			return null;	
 		
-		return TApplication::Url($this->name,$this->formAppUrlParameters($page, $controller, $method, $parameters),null,true);
+		return $this->Application()->Url($this->name,$this->formAppUrlParameters($page, $controller, $method, $parameters),null,true);
 	}
 	
 	public function RedirectToNotFound(){
