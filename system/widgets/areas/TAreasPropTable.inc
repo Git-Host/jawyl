@@ -23,11 +23,20 @@ require_once 'widgets/areas/TAreasWidget.inc';
  */
 class TAreasPropTable extends TAreasWidget {
 /**
- * @var string
+ * @var string[]
  */	
 	private $_hide_ = array();
+/**
+ * @var string[]
+ */	
 	private $_show_ = array();
+/**
+ * @var string[]
+ */	
 	private $_include_t_ = array();
+/**
+ * @var string[]
+ */	
 	private $_exclude_t_ = array();
 
 	public function __set($nm,$value){
@@ -80,9 +89,9 @@ class TAreasPropTable extends TAreasWidget {
 		$item = $this->Source->CurrentItem();
 		$result = array();
 		if (!is_null($item)){
-			 $temp = $item->Properties($this->IncludeTypes,$this->ExcludeTypes);
+			 $temp = $item->Properties($this->_include_t_,$this->_exclude_t_);
 			 foreach ($temp as $p)
-			 	if (!in_array($p->Name(),$this->HideProperties) && (empty($this->ShowProperties) || in_array($p->Name(),$this->ShowProperties)))
+			 	if (!in_array($p->Name(),$this->_hide_) && (empty($this->_show_) || in_array($p->Name(),$this->_show_)))
 			 		$result[$p->Name()] = $p;
 		}
 		return $result;
