@@ -159,7 +159,7 @@
 					}
 				}
 				if (!is_null($year) && !is_null($month) && !is_null($day))
-					return @mktime($hour,$minute,$second,$month,$day,$year);
+					return mktime($hour,$minute,$second,$month,$day,$year);
 			}
 			return null;
 		} 
@@ -210,7 +210,7 @@
 			elseif (is_string($date)){
 				$this->_timestamp_ = $this->fromString($date,TI18n::Locale()->DateFormat());
 				if (is_null($this->_timestamp_))
-					$this->_timestamp_ = @strtotime($date);	
+					$this->_timestamp_ = strtotime($date);	
 			} 
 			elseif ($date instanceof TDate)
 				$this->_timestamp_ = $date->TimeStamp();
@@ -230,7 +230,7 @@
 		public function ToString($format){
 			if (is_null($format)) 
 				return TI18n::Locale()->FormatDateTime($this->_timestamp_);	
-			return @date($format,$this->_timestamp_);
+			return date($format,$this->_timestamp_);
 		}
 		
 /**

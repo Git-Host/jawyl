@@ -71,7 +71,7 @@ class TOracleRawDataIterator extends TIterator {
 	public function Rewind() {	
 		$this->pointer = 0;
 		$this->currentRow = false;
-		//@oci_free_cursor($this->_recordset_);	
+		//oci_free_cursor($this->_recordset_);	
 /*
  * @todo php-bug: Исключения не подхватываются при неявных вызовах методов итератора в foreach 
  */				

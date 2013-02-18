@@ -886,7 +886,7 @@
 		private static function _autoloader($class){
 			if ($class[0] == '/')
 				$class = substr($class, 1);
-			@include_once $class.'.inc';
+			include_once $class.'.inc';
 			
 			if (!self::_check_class($class)){
 				if (is_array(self::$Application->ClassLoader)){

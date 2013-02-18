@@ -277,7 +277,9 @@
 		public function SessDestroy($id){
 			if (!$this->CallHandlers("destroy",array("id"=>$id))) return false;
 			$sess_file = $this->savePath."/sess_$id";
-			return(@unlink($sess_file));
+			if (file_exists($sess_file))
+				return unlink($sess_file);
+			return false;
 		}
 		
 /**
@@ -295,7 +297,7 @@
 				$pi = pathinfo($fn);
 				if (preg_match('/sess_[a-f0-9]{32}/',$fn))
 					if (filemtime($this->savePath."/".$fn)+$maxlifetime < time())
-						@unlink($this->savePath."/".$fn);
+						unlink($this->savePath."/".$fn);
 			}
 		}
 		

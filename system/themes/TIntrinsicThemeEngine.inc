@@ -122,8 +122,11 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if (is_object($cc)){
 			if (method_exists($cc,$n))
 				return call_user_func(array($cc,$n));
-			if (isset($cc->$n))
-				return $cc->$n;
+			if (method_exists($cc, '__get') || property_exists($cc, $n)){
+				$v = $cc->$n;
+				if (!is_null($v))
+					return $v;
+			}
 		}
 		
 		if (isset($this->_global_vars_[$n]))
@@ -131,12 +134,6 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		
 		if (defined($n))
 			return constant($n);		
-		
-		if (is_object($cc)){		
-			$v = @$cc->$n;
-			if (!is_null($v))
-				return $v;
-		}
 		
 		if ($bubble){
 			if ($this->response){	
@@ -362,13 +359,13 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 				if (count($matches) > 3)
 					return '<?php if ('.$this->_compile_expression($matches[2]).' == '.$this->_compile_expression($matches[3],true).') { ?>';
 				else
-					return '<?php if (@'.$this->_compile_expression($matches[2]).') { ?>';
+					return '<?php if ('.$this->_compile_expression($matches[2]).') { ?>';
 			}break;
 			case 'ifnot':{
 				if (count($matches) > 3)
 					return '<?php if ('.$this->_compile_expression($matches[2]).' != '.$this->_compile_expression($matches[3],true).') { ?>'; 
 				else
-					return '<?php if (!@'.$this->_compile_expression($matches[2]).') { ?>';
+					return '<?php if (!'.$this->_compile_expression($matches[2]).') { ?>';
 			}break;
 			case 'is':return '<?php $__c__n__ = '.$this->_compile_expression($matches[2],true).'; if ($this->CurrentContext() instanceof $__c__n__) { ?> ';break;
 			case 'switch':return '<?php switch ('.$this->_compile_expression($matches[2]).') {';break;
