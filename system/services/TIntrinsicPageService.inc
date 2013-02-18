@@ -74,15 +74,24 @@ class TIntrinsicPage extends TPage {
 			$result .= " if (\$loadcomponents) {\n";
 			$extension = false;
 			
-			if (isset($classes[$node->getAttribute("name")])){
+			if (isset($classes[$node->getAttribute("name")]) || $inst = TApplication::$Application->Instance($node->getAttribute("name"))){
 				$extension = true;
-				if ($node->getAttribute("classname"))
-					$extension = $classes[$node->getAttribute("name")][0] == $node->getAttribute("classname");	 
+				if ($node->getAttribute("classname")){
+					if (isset($classes[$node->getAttribute("name")]))
+						$extension = $classes[$node->getAttribute("name")][0] == $node->getAttribute("classname");
+				}	 
 			}	
 			
-			if ($extension)
-				$varname = $classes[$node->getAttribute("name")][1];
-			else {
+			if ($extension){
+				if (isset($classes[$node->getAttribute("name")]))
+					$varname = $classes[$node->getAttribute("name")][1];
+				else {
+					$varname = '$obj'.$counter;
+					$counter++;
+					$result .= $varname.' = $service->Application()->Instance("'.$node->getAttribute("name").'");';
+					$classes[$node->getAttribute("name")] = array('',$varname,get_class($inst));
+				}
+			} else {
 				$varname = '$obj'.$counter;
 				$counter++;
 				$c = $service->Application()->GetClass($node->getAttribute("classname"));

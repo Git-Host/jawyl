@@ -57,7 +57,7 @@
 		
 		private function _compile_domain($domain,$xml){
 			$fn = $this->Application()->ConfCompileDir().'/languages/'.$domain.'.php';
-			if (!file_exists($fn)){
+			if (!file_exists($fn) || filemtime($fn) < filemtime($xml)){
 				$dom = new DOMDocument();
 				$dom->Load($xml);
 				TFileSystem::ForceDir($this->Application()->ConfCompileDir().'/languages');

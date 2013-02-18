@@ -910,7 +910,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 			foreach ($unset as $u)
 				$this->SetCookie($name."[$u]", null, $expire, $path);
 		} else 
-			@setcookie($name,$value,$expire,$path);
+			setcookie($name,$value,$expire,$path);
 	}
 	
 /**

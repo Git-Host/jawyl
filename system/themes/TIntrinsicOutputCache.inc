@@ -17,7 +17,7 @@ class TIntrinsicOutputCache extends TConfigurable implements IOutputCache {
 				$txt = file_get_contents($dh."/".$fn);
 				$test = preg_match('/\/\*\expires:(\d*);*\//', $txt);
 				if ($test[1] < time())
-					@unlink($dh."/".$fn);
+					unlink($dh."/".$fn);
 			}
 		}
 		return true;

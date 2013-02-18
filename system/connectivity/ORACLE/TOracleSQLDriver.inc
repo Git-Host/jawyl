@@ -27,9 +27,9 @@ class TOracleSqlDriver extends TConfigurable implements IAnsiSQLDBDriver {
 	public function Connect(){
 		if (!$this->_connection_){
 			if ($this->_persistent_)
-				$this->_connection_ = @oci_pconnect($this->_user_, $this->_password_, $this->_database_,$this->_encoding_);
+				$this->_connection_ = oci_pconnect($this->_user_, $this->_password_, $this->_database_,$this->_encoding_);
 			else	
-				$this->_connection_ = @oci_connect($this->_user_, $this->_password_, $this->_database_,$this->_encoding_);
+				$this->_connection_ = oci_connect($this->_user_, $this->_password_, $this->_database_,$this->_encoding_);
 			if (!$this->_connection_){
 				throw new TOracleException(null,oci_error());
 			}
