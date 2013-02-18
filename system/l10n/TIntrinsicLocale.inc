@@ -135,11 +135,11 @@ class TIntrinsicLocale extends TLocale {
             return $format;
 	}
         
-        /**
-         * @param string $str
-         * @return float
-         */                
-         public function StrToFloat($str){
+     /**
+      * @param string $str
+      * @return float
+      */                
+     public function StrToFloat($str){
              return floatval(preg_replace('/[^\d\.]/','',str_replace($this->symbols["decseparator"],'.',$str))); 
          }
 
@@ -166,7 +166,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @param string $format
 	 * @return string
 	 */
-	protected function format_number($number, $format){
+	protected function doFormatNumber($number, $format){
 		//return $number;
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0)) return $number;
 		preg_match('/\\A[#0]*\\{dig\\}([#0]*)(?:\\{dec\\}0*#*)?\\s*\\Z/',$format,$test);
@@ -188,7 +188,7 @@ class TIntrinsicLocale extends TLocale {
 		$parts = explode("|",$strnum);
 		if (strlen($parts[0]) < $requiredcount)
 			$parts[0] = str_repeat("0",$requiredcount - strlen($parts[0])).$parts[0];
-		$intpart = strrev(chunk_split(strrev($parts[0]),$digcount,$this->symbols["digseparator"]));
+		$intpart = trim(strrev(chunk_split(strrev($parts[0]),$digcount,$this->symbols["digseparator"])));
 
 		$decpart = "";
 		if (count($parts) > 1) $decpart = $parts[1];
@@ -205,7 +205,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function FormatNumber($number){
-		return $this->format_number($number,$this->formats["number"]);
+		return $this->doFormatNumber($number,$this->formats["number"]);
 	}
 
 	/**
@@ -276,7 +276,7 @@ class TIntrinsicLocale extends TLocale {
 			
 		$format = $this->formats["currency"];
 		preg_match('/\\A([#0]*\\{dig\\}[#0]*(?:\\{dec\\}0*)?).*\\Z/',$format,$test);
-		$num = $this->format_number($number,$test[1]);
+		$num = $this->doFormatNumber($number,$test[1]);
 		preg_match('/\\A[#0]*\\{dig\\}[#0]*(?:\\{dec\\}0*)?(.*)\\Z/',$format,$test);
 		$format = preg_replace('/\\{lc\\}/',$this->symbols["localcurrency"],$test[1]);
 		$format = preg_replace('/\\{ic\\}/',$this->symbols["intercurrency"],$format);
