@@ -354,8 +354,6 @@
 				TFileSystem::ForceDir($this->ConfCompileDir);
 				
 				for ($i = 0; $i < 2; $i++){
-					
-					
 					if (file_exists($this->PrivateDir."/init.$i.xml") || file_exists($this->OverrideDir."/init.$i.xml")){
 						if (!file_exists($this->ConfCompileDir."/init.$i.php"))
 							$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
@@ -368,6 +366,8 @@
 								$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
 					}
 				}
+				
+				$this->_compile_plugins($this->PrivateDir.'/plugins', $this->ConfCompileDir.'/plugins');
 					
 				$config_file = $this->ConfCompileDir.'/application.php';
 						
@@ -467,7 +467,7 @@
 			}
 		}
 		
-		private function _compile_init_str($inputfile){
+		private function _compile_init_str($inputfile, &$objid){
 			$app_config = '';
 			if (file_exists($inputfile)){
 				$configXml = new DOMDocument();
@@ -476,7 +476,7 @@
 				if (!$configXml->schemaValidate(self::$SystemPath.'/schemas/init.xsd'))
 					throw new TCoreException(TCoreException::ERR_APPCONF_INCORRECT);
 				$xpath = new DOMXPath($configXml);
-				$objid = 0;
+				if (!$objid) $objid = 0;
 				self::_parse_contents($xpath,$configXml->firstChild,'$this',$app_config,$objid);
 			}
 			return $app_config;
@@ -490,6 +490,41 @@
 					$app_config .= $this->_compile_init_str($this->OverrideDir.'/'.basename($inputfile));
 				$app_config .= '?>';
 				file_put_contents($outputfile,$app_config);
+			}
+		}
+		
+		private function _compile_plugins($indir,$outdir,$service = null){
+			if (file_exists($indir)){
+				$fn = 'application.php';
+				if ($service)
+					$fn = 'service.'.$service.'.php';
+				
+				$conf = '<?php 
+						';
+				$files = TFileSystem::ListFiles($indir);
+				
+				$restime = filemtime($outdir.'/'.$fn);
+				
+				$need_compile = false;
+				
+				foreach ($files as $f)
+					if (isset($f['extension']) && $f['extension'] == 'xml' && filemtime($f['dirname'].'/'.$f['basename']) > $restime){
+						$need_compile = true;
+						break;
+					}	
+				
+				if ($need_compile){
+					foreach ($files as $f)
+						if (isset($f['extension']) && $f['extension'] == 'xml')
+							$conf .= $this->_compile_init_str($f['dirname'].'/'.$f['basename']);
+						else if (!$service && !isset($f['filename']) && is_dir($f['dirname'].'/'.$f['basename']))
+							$this->_compile_plugins($f['dirname'].'/'.$f['basename'],$outdir,$f['basename']);
+						
+					$fn = 'application.php';
+					if ($service)
+						$fn = 'service.'.$service.'.php';
+					file_put_contents($outdir.'/'.$fn, $conf);
+				}
 			}
 		}
 		
@@ -683,6 +718,8 @@
 			if (file_exists($this->ConfCompileDir.'/init.0.php'))
 				include_once $this->ConfCompileDir.'/init.0.php';
 			include_once $this->ConfCompileDir.'/application.php';
+			if (file_exists($this->ConfCompileDir.'/plugins/application.php'))
+				include_once $this->ConfCompileDir.'/plugins/application.php';			
 			if (file_exists($this->ConfCompileDir.'/init.1.php'))
 				include_once $this->ConfCompileDir.'/init.1.php';
 			$servicename = '';
@@ -711,12 +748,16 @@
 				if ($this->_current_service_){
 					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
 					if (file_exists($service_config)) include_once $service_config;
+					$service_config = $this->ConfCompileDir.'/plugins/service.'.$this->_current_service_->Name().'.php';
+					if (file_exists($service_config)) include_once $service_config;
 					$handled = $this->_current_service_->Handle(self::Request());	
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
 				foreach (self::$_services_ as $servicename=>$serviceclass){
 					$this->_current_service_ = $this->GetService($servicename);
 					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
+					if (file_exists($service_config)) include_once $service_config; 
+					$service_config = $this->ConfCompileDir.'/plugins/service.'.$this->_current_service_->Name().'.php';
 					if (file_exists($service_config)) include_once $service_config; 
 					if ($handled = $this->_current_service_->Handle(self::Request())) break;	
 				}
@@ -837,6 +878,7 @@
 * */		
 		public function __set($nm,$value){
 			switch ($nm){
+				case 'TimeZone':date_default_timezone_set($value);break;
 				case 'Shared':$this->_shared_ = preg_replace('/\A[\\\\\/]?(.*)[\\\\\/]?\z/','/$1',$value);break;
 				case 'Language':TI18n::SetLanguage($value);break;
 				case 'Locale':TI18n::SetLocale($value);break;
@@ -909,6 +951,8 @@
 * Application main method, which launches runtime. Called once in the initial script. 
 */		
 		public static function Run($callerPath){
+			if (!ini_get('date.timezone'))
+				date_default_timezone_set('Asia/Vladivostok');	
 			self::$_runtime_successfull_ = false;
 			global $Application;
 			spl_autoload_register(array("TApplication","_autoloader"));

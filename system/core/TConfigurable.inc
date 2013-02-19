@@ -48,6 +48,14 @@ require_once 'core.inc';
  			}
  		}
  	}
+ 	
+ 	public function __destruct(){
+ 		$this->container = null;
+ 		foreach ($this->_components_ as $nm => $c) 
+ 			unset($this->_components_[$nm]);
+ 		unset($c);
+ 		unset($this->_components_);
+ 	}
 
  /**
   * @return TApplication
