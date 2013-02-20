@@ -982,8 +982,11 @@
 		}
 		
 		public static function AppExceptionHandler(Exception $e){
-			if (self::$Application->_ioc_exception_handler_ instanceof IExceptionHandler){
+			if (self::$Application && self::$Application->_ioc_exception_handler_ instanceof IExceptionHandler){
 				return self::$Application->_ioc_exception_handler_->HandleException($e);
+			} else {
+				echo $e->getCode().':'.$e->getMessage().' on line '.$e->getLine().' in '.$e->getFile();
+				die;
 			}
 			return false;	
 		}
