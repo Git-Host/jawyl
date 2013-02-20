@@ -349,50 +349,6 @@
 			if (!$this->_root_) $this->_root_ = '/';
 
 			parent::__construct('');
-				
-			if (self::$CompileAppConfig){
-				TFileSystem::ForceDir($this->ConfCompileDir);
-				
-				for ($i = 0; $i < 2; $i++){
-					if (file_exists($this->PrivateDir."/init.$i.xml") || file_exists($this->OverrideDir."/init.$i.xml")){
-						if (!file_exists($this->ConfCompileDir."/init.$i.php"))
-							$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
-						else 	
-							if (
-									(file_exists($this->PrivateDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->PrivateDir."/init.$i.xml")))
-									||
-									(file_exists($this->OverrideDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->OverrideDir."/init.$i.xml")))
-								)
-								$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
-					}
-				}
-				
-				$this->_compile_plugins($this->PrivateDir.'/plugins', $this->ConfCompileDir.'/plugins');
-					
-				$config_file = $this->ConfCompileDir.'/application.php';
-						
-				$config = file_exists($config_file);
-				$src = file_exists($this->ConfigFile);
-				if (!$config){
-					if ($src){
-						$this->_compile_config($this->ConfigFile);
-					} else throw new TCoreException(TCoreException::ERR_NO_APPCONF);
-				} else {
-					if ($src){
-						if (filemtime($config_file) < filemtime($this->ConfigFile))
-							$this->_compile_config($this->ConfigFile);
-					}
-				}						
-				
-				if (file_exists($this->PrivateDir.'/routes.xml') || file_exists($this->OverrideDir.'/routes.xml')){
-					if (
-							(file_exists($this->PrivateDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->PrivateDir.'/routes.xml')))
-							||
-							(file_exists($this->OverrideDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->OverrideDir.'/routes.xml')))
-					)
-					$this->_compile_routes($this->PrivateDir.'/routes.xml');
-				}
-			}
 		}
 		
 /**
@@ -485,9 +441,9 @@
 		private function _compile_init($inputfile,$outputfile){
 			if (file_exists($inputfile)){
 				$app_config = '<?php'."\n";
-				$app_config .= $this->_compile_init_str($inputfile);
+				$app_config .= $this->_compile_init_str($inputfile,$objid);
 				if (file_exists($this->OverrideDir.'/'.basename($inputfile)))
-					$app_config .= $this->_compile_init_str($this->OverrideDir.'/'.basename($inputfile));
+					$app_config .= $this->_compile_init_str($this->OverrideDir.'/'.basename($inputfile),$objid);
 				$app_config .= '?>';
 				file_put_contents($outputfile,$app_config);
 			}
@@ -516,7 +472,7 @@
 				if ($need_compile){
 					foreach ($files as $f)
 						if (isset($f['extension']) && $f['extension'] == 'xml')
-							$conf .= $this->_compile_init_str($f['dirname'].'/'.$f['basename']);
+							$conf .= $this->_compile_init_str($f['dirname'].'/'.$f['basename'],$objid);
 						else if (!$service && !isset($f['filename']) && is_dir($f['dirname'].'/'.$f['basename']))
 							$this->_compile_plugins($f['dirname'].'/'.$f['basename'],$outdir,$f['basename']);
 						
@@ -715,6 +671,50 @@
 		} 
 		
 		private function _app_run(){
+			if (self::$CompileAppConfig){
+				TFileSystem::ForceDir($this->ConfCompileDir);
+				for ($i = 0; $i < 2; $i++){
+					if (file_exists($this->PrivateDir."/init.$i.xml") || file_exists($this->OverrideDir."/init.$i.xml")){
+						if (!file_exists($this->ConfCompileDir."/init.$i.php"))
+							$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
+						else
+							if (
+									(file_exists($this->PrivateDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->PrivateDir."/init.$i.xml")))
+									||
+									(file_exists($this->OverrideDir."/init.$i.xml") && (filemtime($this->ConfCompileDir."/init.$i.php") < filemtime($this->OverrideDir."/init.$i.xml")))
+							)
+							$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
+					}
+				}
+			
+				$this->_compile_plugins($this->PrivateDir.'/plugins', $this->ConfCompileDir.'/plugins');
+					
+				$config_file = $this->ConfCompileDir.'/application.php';
+			
+				$config = file_exists($config_file);
+				$src = file_exists($this->ConfigFile);
+				if (!$config){
+					if ($src){
+						$this->_compile_config($this->ConfigFile);
+					} else throw new TCoreException(TCoreException::ERR_NO_APPCONF);
+				} else {
+					if ($src){
+						if (filemtime($config_file) < filemtime($this->ConfigFile))
+							$this->_compile_config($this->ConfigFile);
+					}
+				}
+			
+				if (file_exists($this->PrivateDir.'/routes.xml') || file_exists($this->OverrideDir.'/routes.xml')){
+					if (
+							(file_exists($this->PrivateDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->PrivateDir.'/routes.xml')))
+							||
+							(file_exists($this->OverrideDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->OverrideDir.'/routes.xml')))
+					)
+						$this->_compile_routes($this->PrivateDir.'/routes.xml');
+				}
+			}			
+			
+			
 			if (file_exists($this->ConfCompileDir.'/init.0.php'))
 				include_once $this->ConfCompileDir.'/init.0.php';
 			include_once $this->ConfCompileDir.'/application.php';
