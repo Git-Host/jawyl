@@ -928,7 +928,10 @@
 		private static function _autoloader($class){
 			if ($class[0] == '/')
 				$class = substr($class, 1);
-			include_once $class.'.inc';
+			if (function_exists('stream_resolve_include_path')){
+				if ($inc = stream_resolve_include_path($class.'.inc'))
+					include_once $inc;
+			} else include $class.'.inc';
 			
 			if (!self::_check_class($class)){
 				if (is_array(self::$Application->ClassLoader)){

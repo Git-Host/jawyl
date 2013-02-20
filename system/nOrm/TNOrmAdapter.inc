@@ -1099,6 +1099,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$break = !empty($assume_descendants);
 			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
+			$filter = array();
+			
 			if (is_object($dummy)){
 				$filter = $this->_filter_from_object($orm, $dummy, $tables);
 			}
