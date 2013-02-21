@@ -329,9 +329,14 @@ class TMySqliQuery implements IMySqlQuery {
 	private $_param_mask_;
 
 	public function __construct($query, mysqli $connection){
-		preg_match_all('/:[\w_]+/', $query, $this->_param_mask_, PREG_SET_ORDER);
-		array_walk($this->_param_mask_,create_function('&$value','$value = substr($value[0],1);'));
-		$this->_q_ = $connection->prepare(preg_replace('/:[\w_]+/','?',$query));
+		preg_match_all('/\'(?:(?<=\\\\)\'|[^\'])*\'|:\w+/', $query, $this->_param_mask_, PREG_SET_ORDER);
+		array_walk($this->_param_mask_,create_function('&$value','$value = ($value[0][0] == ":")?substr($value[0],1):null;'));
+		$this->_param_mask_ = array_filter($this->_param_mask_);
+		$this->_q_ = $connection->prepare(preg_replace_callback(
+					'/\'(?:(?<=\\\\)\'|[^\'])*\'|:\w+/',
+					create_function('$matches','return ($matches[0][0] == ":")?"?":$matches[0];'),
+					$query)
+		);
 		if (!$this->_q_){
 			throw new Exception($connection->error);
 		};
@@ -419,11 +424,16 @@ class TMySqliConnection extends TMySqlAdapter {
 	public function Rollback(){
 		$this->_connection_->rollback();
 	}
+	
 	public function Close(){
 		$this->_connection_->close();
 	}
 
-	
+	private function _prepare_param(&$value){
+		if ($value instanceof TDate)
+			$value = $value->ToString('Y-m-d H:i:s');
+	}
+		
 	/**
 	 * @param string $q
 	 * @param array $parameters
@@ -432,6 +442,7 @@ class TMySqliConnection extends TMySqlAdapter {
 	public function Query($q, array $parameters = array()){
 		if (!isset($this->_queries_[$q]))
 			$this->_queries_[$q] = new TMySqliQuery($q,$this->_connection_);
+		array_walk($parameters, array($this,'_prepare_param'));
 		$this->_queries_[$q]->Bind($parameters);
 		return $this->_queries_[$q];
 	}
