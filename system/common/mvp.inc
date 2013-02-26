@@ -667,6 +667,8 @@ abstract class TWidget extends TResponseElement {
  * @var IThemeEngine
  */
 	protected $currentEngine;
+	
+	public $SkinName;
 /**
  * adds a widget as a subwidget
  */	
