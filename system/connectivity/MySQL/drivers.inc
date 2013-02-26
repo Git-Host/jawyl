@@ -332,6 +332,7 @@ class TMySqliQuery implements IMySqlQuery {
 		preg_match_all('/\'(?:(?<=\\\\)\'|[^\'])*\'|:\w+/', $query, $this->_param_mask_, PREG_SET_ORDER);
 		array_walk($this->_param_mask_,create_function('&$value','$value = ($value[0][0] == ":")?substr($value[0],1):null;'));
 		$this->_param_mask_ = array_filter($this->_param_mask_);
+				
 		$this->_q_ = $connection->prepare(preg_replace_callback(
 					'/\'(?:(?<=\\\\)\'|[^\'])*\'|:\w+/',
 					create_function('$matches','return ($matches[0][0] == ":")?"?":$matches[0];'),
@@ -432,6 +433,7 @@ class TMySqliConnection extends TMySqlAdapter {
 	private function _prepare_param(&$value){
 		if ($value instanceof TDate)
 			$value = $value->ToString('Y-m-d H:i:s');
+		if ($value == '') $value = null;
 	}
 		
 	/**
