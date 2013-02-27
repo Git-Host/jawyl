@@ -433,7 +433,8 @@ class TMySqliConnection extends TMySqlAdapter {
 	private function _prepare_param(&$value){
 		if ($value instanceof TDate)
 			$value = $value->ToString('Y-m-d H:i:s');
-		if ($value == '') $value = null;
+		if (is_bool($value)) $value = $value?1:0;
+		if ($value === '') $value = null;
 	}
 		
 	/**
