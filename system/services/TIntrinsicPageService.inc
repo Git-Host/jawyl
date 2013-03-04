@@ -284,10 +284,10 @@ class TIntrinsicPage extends TPage {
  */	
 	public static function Instanciate($path,TIntrinsicPageService $service){
 		$result = null;
-		$conffiles = $service->PageConfigFiles($path);		
+		$conffiles = $service->PageConfigFiles($path);
 		if ($service->CompilePages){
 			if (is_file($conffiles[0]) || is_file($conffiles[2])){
-				if (self::_check_need_compile($conffiles,$conffiles[1],$service)){						
+				if (self::_check_need_compile($conffiles,$conffiles[1],$service)){
 					self::_compile_page($conffiles,$service);
 				}
 			}
@@ -439,7 +439,7 @@ abstract class TIntrinsicPageService extends TPageService {
 		if (is_null($id)) $id = 'default';
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$conffiles =  $this->PageConfigFiles($id);
-				
+		
 		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php') || is_file($conffiles[2])){
 			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id, $this);
 			return $this->PAGES[$id];

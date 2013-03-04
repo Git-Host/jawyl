@@ -353,13 +353,14 @@ abstract class TPageService extends TService {
  * @see TApplication::Url()
  */	
 	public final function Url($page,$controller = null,$method = null, array $parameters = array(),$absolute = true){
-		if (is_null($page) && $this->page)
-				$page = $this->page->Name();
-		
 		if ($this->page){
+			if (is_null($page))
+				$page = $this->page->Name();
+			
 			if ($page != $this->page->Name())
 				if (!$this->_check_page_access($page))
 					return null;
+			
 		} else if (!$this->_check_page_access($page))
 			return null;	
 		
@@ -383,7 +384,7 @@ abstract class TPageService extends TService {
 		
 		if (!($page instanceof TPage))
 			return false;
-			
+		
 		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker && $page instanceof TPage){
 			$u = $acl->CurrentUser();
 			if (!$u instanceof ISecuritySubject)
