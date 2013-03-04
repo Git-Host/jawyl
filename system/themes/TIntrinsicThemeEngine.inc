@@ -178,6 +178,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			if ($brpos !== false){
 				$expr = substr($expr,$brpos);
 				$result .= preg_replace_callback('/\[([^\]]*)\]/', array($this,'_compile_arr_index'), $expr);
+				$result = 'isset('.$result.') && '.$result;
 			}
 			return $result;
 		}
