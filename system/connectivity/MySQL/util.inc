@@ -126,30 +126,31 @@ class TMySqlNestingsIterator extends TIteratorAdapter {
 	
 	public function Item(){
 		if (!isset($this->_item_)){
-			$row = $this->iterator->Item();
+			if ($row = $this->iterator->Item()){
 			
-			$lkey = TMySqlDBDriver::NS_LKEY_FIELD;
-			$rkey = TMySqlDBDriver::NS_RKEY_FIELD;
+				$lkey = TMySqlDBDriver::NS_LKEY_FIELD;
+				$rkey = TMySqlDBDriver::NS_RKEY_FIELD;
 			
-			if (!empty($this->_prev_item_)){
-				if ($this->_prev_item_->$rkey > $row[$rkey])
-					array_push($this->_parents_stack_, $this->_prev_item_);
-			}
+				if (!empty($this->_prev_item_)){
+					if ($this->_prev_item_->$rkey > $row[$rkey])
+						array_push($this->_parents_stack_, $this->_prev_item_);
+				}
 			
-			$hindex = count($this->_parents_stack_) - 1;
-			$parent = null;
-			if (!empty($this->_parents_stack_))
-				$parent = $this->_parents_stack_[$hindex];
-				
-			while ($parent && $row[$lkey] > $parent->$rkey) {
-				array_pop($this->_parents_stack_);
-				$hindex--;
+				$hindex = count($this->_parents_stack_) - 1;
 				$parent = null;
 				if (!empty($this->_parents_stack_))
 					$parent = $this->_parents_stack_[$hindex];
-			} 
+				
+				while ($parent && $row[$lkey] > $parent->$rkey) {
+					array_pop($this->_parents_stack_);
+					$hindex--;
+					$parent = null;
+					if (!empty($this->_parents_stack_))
+						$parent = $this->_parents_stack_[$hindex];
+				} 
 			
-			$this->_item_ = new TMySqlNestedSetElement($row,$parent);
+				$this->_item_ = new TMySqlNestedSetElement($row,$parent);
+			}
 		}
 		return $this->_item_;
 	}

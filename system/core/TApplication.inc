@@ -657,6 +657,8 @@
 		public function GetService($name){
 			if (is_string(self::$_services_[$name]))
 				self::$_services_[$name] = self::Instantiate(self::$_services_[$name],array("name"=>$name,"container"=>$this));
+			if (self::$_services_[$name] instanceof IService)
+				$this->_service_setup(self::$_services_[$name]);
 			return self::$_services_[$name];
 		}
 
@@ -669,6 +671,13 @@
 			header('Location:'.$url);
 			die;
 		} 
+		
+		private function _service_setup(IService $service){
+			$service_config = $this->ConfCompileDir.'/service.'.$service->Name().'.php';
+			if (file_exists($service_config)) include_once $service_config;
+			$service_config = $this->ConfCompileDir.'/plugins/service.'.$service->Name().'.php';
+			if (file_exists($service_config)) include_once $service_config;
+		}
 		
 		private function _app_run(){
 			if (self::$CompileAppConfig){
@@ -706,6 +715,8 @@
 			
 				if (file_exists($this->PrivateDir.'/routes.xml') || file_exists($this->OverrideDir.'/routes.xml')){
 					if (
+							(!file_exists($this->ConfCompileDir.'/url.php'))
+							||	
 							(file_exists($this->PrivateDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->PrivateDir.'/routes.xml')))
 							||
 							(file_exists($this->OverrideDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->OverrideDir.'/routes.xml')))
@@ -744,23 +755,14 @@
 			
 			if ($servicename){
 				$this->_current_service_ = $this->GetService($servicename);
-				
 				if ($this->_current_service_){
-					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
-					if (file_exists($service_config)) include_once $service_config;
-					$service_config = $this->ConfCompileDir.'/plugins/service.'.$this->_current_service_->Name().'.php';
-					if (file_exists($service_config)) include_once $service_config;
 					$handled = $this->_current_service_->Handle(self::Request());	
 				} else throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>$servicename));
 			} else {
-				foreach (self::$_services_ as $servicename=>$serviceclass){
-					$this->_current_service_ = $this->GetService($servicename);
-					$service_config = $this->ConfCompileDir.'/service.'.$this->_current_service_->Name().'.php';
-					if (file_exists($service_config)) include_once $service_config; 
-					$service_config = $this->ConfCompileDir.'/plugins/service.'.$this->_current_service_->Name().'.php';
-					if (file_exists($service_config)) include_once $service_config; 
-					if ($handled = $this->_current_service_->Handle(self::Request())) break;	
-				}
+				foreach (self::$_services_ as $servicename=>$serviceclass)
+					if ($this->_current_service_ = $this->GetService($servicename)){
+						if ($handled = $this->_current_service_->Handle(self::Request())) break;	
+					}
 				if (!$handled)
 					throw new TCoreException(TCoreException::ERR_SERVICE_NOT_FOUND, array('service'=>'default instance'));
 			}

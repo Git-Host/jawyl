@@ -65,7 +65,7 @@
 			
 			$this->_accept_query_params($_GET, true, $this->_get_parameters_, $orig);
 			$this->_accept_query_params($_POST, false, $this->_post_parameters_, $orig);
-	
+				
 			if ($this->fileStorage instanceof IFileStorage)
 			{
 				foreach ($_FILES as $key=>$file){
