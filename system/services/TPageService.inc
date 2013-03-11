@@ -427,8 +427,16 @@ abstract class TPageService extends TService {
 			$this->page = $this->getAccessDeniedPage();
 		}
 		if (!($this->page instanceof TPage))
-			return false;	
-		return $this->page->Handle($this->Request);	
+			return false;
+		try {	
+			return $this->page->Handle($this->Request);
+		} catch (TCoreException $e){
+			if ($e->getCode() == TCoreException::ERR_ACCESS_DENIED)
+				if ($page = $this->getAccessDeniedPage())
+					$this->Application()->Redirect($page->Url());
+			throw $e;
+		}
+		return false;	
 	}
 	
 	public function CurrentPage(){
