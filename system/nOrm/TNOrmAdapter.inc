@@ -762,7 +762,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @return object
  */	
 	public function Load($object, array $assume_descendants = array()){
-		if ($orm = $this->_get_orm_config($object)){
+		if ($orm = $this->_get_orm_config($object)){			
 			if ($this->_lazy_loading_ && $this->_bool_unique_objects_){
 				if ($result = $this->_loaded_object($object, $orm))
 					return $result;

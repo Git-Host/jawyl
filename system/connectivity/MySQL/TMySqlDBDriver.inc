@@ -933,7 +933,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->_auto_connect();
 		$target = $this->_get_nstarget($parent);
 		$tname = $this->RealTableName($target->Name);
-		$this->query("lock tables ".$tname." write");
+		//$this->query("lock tables ".$tname." write");
 		list($plk,$prk,$plevel) = $this->_ns_findparent($parent, $parent);
 		
 		$tprk = $prk;
@@ -959,10 +959,10 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 				$i = $i+$this->BulkInsertAmount;
 			}
 			$this->CommitTransaction();
-			$this->Execute("unlock tables");
+			//$this->Execute("unlock tables");
 		} catch (Exception $e){
 			$this->RollbackTransaction();
-			$this->Execute("unlock tables");
+			//$this->Execute("unlock tables");
 			throw $e;
 			return false;
 		}
@@ -996,7 +996,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$this->_auto_connect();
 		$target = $this->_get_nstarget($parents);
 		$tname = $this->RealTableName($target->Name);
-		$this->query("lock tables ".$tname." write");
+		//$this->query("lock tables ".$tname." write");
 		list($plk,$prk,$plevel) = $this->_ns_findparent($target, $parents);
 		$result = false;
 		$this->BeginTransaction();
@@ -1007,11 +1007,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$primary_key = $this->lastInsertId();
 		if ($primary_key == $oldid) $primary_key = null; 
 		$this->CommitTransaction();
-		$this->query("unlock tables");
+		//$this->query("unlock tables");
 		$result = true;
 		} catch (Exception $e){
 			$this->RollbackTransaction();
-			$this->query("unlock tables");
+			//$this->query("unlock tables");
 			throw $e;
 			$result = false;
 		}
@@ -1048,17 +1048,17 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		$result = 0;
 		$target = $this->_get_nstarget($branches);
 		$tname = $this->RealTableName($target->Name);
-		$this->query("lock tables ".$tname." write");
+		//$this->query("lock tables ".$tname." write");
 		$this->BeginTransaction();
 		try {
 			$this->_ns_eject_branches($tname, $branches);
 			$result = $this->Execute("delete from ".$target->Name." where ".TMySqlDBDriver::NS_DELETED_FIELD." = 1");
 			$this->CommitTransaction();
-			$this->query("unlock tables");
+			//$this->query("unlock tables");
 			$result = true;
 		} catch (Exception $e){
 			$this->RollbackTransaction();
-			$this->query("unlock tables");
+			//$this->query("unlock tables");
 			throw $e;
 			$result = false; 
 		}
@@ -1074,7 +1074,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		
 		$tname = $this->RealTableName($target->Name);
-		$this->query("lock tables ".$tname." write");
+		//$this->query("lock tables ".$tname." write");
 		$this->BeginTransaction();
 		try {
 			$ranges = $this->_ns_eject_branches($tname, $branches);
@@ -1096,11 +1096,11 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			$this->Execute("update ".$tname." set ".TMySqlDBDriver::NS_RKEY_FIELD." = ".TMySqlDBDriver::NS_RKEY_FIELD." + :lk, ".TMySqlDBDriver::NS_LKEY_FIELD." = ".TMySqlDBDriver::NS_LKEY_FIELD." + :lk, ".TMySqlDBDriver::NS_LEVEL_FIELD." = ".TMySqlDBDriver::NS_LEVEL_FIELD." + :level, ".TMySqlDBDriver::NS_DELETED_FIELD." = 0 where (".TMySqlDBDriver::NS_DELETED_FIELD." = 1)", array("lk"=>$plk,"level"=>$plevel));
 			
 			$this->CommitTransaction();
-			$this->query("unlock tables");
+			//$this->query("unlock tables");
 			$result = true;
 		} catch (Exception $e){
 			$this->RollbackTransaction();
-			$this->query("unlock tables");
+			//$this->query("unlock tables");
 			throw $e;
 			$result = false;
 		}
