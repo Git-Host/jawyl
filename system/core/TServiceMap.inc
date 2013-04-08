@@ -91,7 +91,10 @@
  * @return THttpRequest
  * @see THttpRequest
 */			
-		public function GetRequest($uri, IApplication $application){
+		public function GetRequest($uri, IApplication $application,$servicename = null){
+			if ($servicename)
+				if ($this->_service_ != $servicename)
+					return null;
 			preg_match($this->_regexp_,$uri,$params);
 			if (count($params) > 0){
 				$service = $this->_service_;
@@ -126,7 +129,7 @@
  * @see TApplication  
  */
 	final class TServiceMap {
-		private $_routs_ = array();
+		private $_routes_ = array();
 /**
  * add a request route to service map.
  * @param string $regexp regular expression for request parsing
@@ -136,7 +139,7 @@
  * @see TRequestRoute::__construct()
  */		
 		public function AppendRoute($regexp,$request,$service,array $params = array()){
-			$this->_routs_[] = new TRequestRoute($regexp,$request,$service,$params);
+			$this->_routes_[] = new TRequestRoute($regexp,$request,$service,$params);
 		}
 		
 /**
@@ -145,10 +148,10 @@
  * @return THttpRequest
  * @see THttpRequest
 */			
-		public function ParseUri($uri, IApplication $application){
+		public function ParseUri($uri, IApplication $application, $servicename = null){
 			$request = null;
-			foreach ($this->_routs_ as $route){
-				$request = $route->GetRequest($uri, $application);
+			foreach ($this->_routes_ as $route){
+				$request = $route->GetRequest($uri, $application,$servicename);
 				if (!is_null($request)) break; 
 			}
 			return $request;	
@@ -162,7 +165,7 @@
  * @return string|null 
 */		
 		public function MakeUri($service,array $parameters = array(), array &$notapplied = array()){
-			foreach ($this->_routs_ as $route){
+			foreach ($this->_routes_ as $route){
 				$uri = $route->MakeUri($service,$parameters,$notapplied);
 				if (!is_null($uri)) return $uri;
 			}

@@ -739,10 +739,10 @@
 				if (isset($_REQUEST['service'])) $servicename = $_REQUEST['service'];
 				if ($this->Sef){
 					include_once $this->ConfCompileDir.'/url.php';
-					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath,$this);
+					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath,$this,$servicename);
 				}
 				if (!self::$_request_) 
-					self::$_request_ = new THttpRequest($servicename,$this);
+					self::$_request_ = new THttpRequest($servicename,$this);				
 			} else {
 				self::$_request_ = new TConsoleCall();
 			}
