@@ -819,31 +819,33 @@
 			if (!preg_match('/.*[\/\\\\]$/',$pth))
 				$pth .= '/'; 				
 				
-			$url = '';
+			$url = $pth;
+			$sef_url = null;
+			
 			if ($this->Sef){
 				$notapplied = array();
-				$url = $this->_service_map_->MakeUri($service,$parameters,$notapplied);
-				if (!is_null($url)){
-					if (count($notapplied) > 0){
-						$url .= '?';
-						foreach ($notapplied as $key)
-						 if ($parameters[$key])
-							$url = $url.'&'.$key.'='.rawurlencode($parameters[$key]);
-					}
-					return $pth.$url;
-				}
+				$sef_url = $this->_service_map_->MakeUri($service,$parameters,$notapplied);
 			}
 			
-			$url = $pth;
-			
-			if ((!is_null($service)) || (count(array_values($parameters)) > 0))
-				$url .= '?';
-			if (!is_null($service))
-				$url .= '&service='.rawurlencode($service);
+			if (!is_null($sef_url)){
+				if (count($notapplied) > 0){
+					$sef_url .= '?';
+					foreach ($notapplied as $key)
+						if ($parameters[$key])
+						$sef_url = $sef_url.'&'.$key.'='.rawurlencode($parameters[$key]);
+				}
+				$url = $url.$sef_url;
+			} else {
+				if ((!is_null($service)) || (count(array_values($parameters)) > 0))
+					$url .= '?';
+				if (!is_null($service))
+					$url .= '&service='.rawurlencode($service);
 				
-			foreach ($parameters as $key=>$value)
-				if ($value)
-					$url = $url.'&'.$key.'='.rawurlencode($value);
+				foreach ($parameters as $key=>$value)
+					if ($value)
+						$url = $url.'&'.$key.'='.rawurlencode($value);
+			}
+			
 			if ($force_absolute)
 				$url = 'http://'.$this->Domain.$url;
 			return $url;
