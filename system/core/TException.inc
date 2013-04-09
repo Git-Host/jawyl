@@ -23,13 +23,13 @@
 		public static $EnableStackTrace = false;
 /**
  * gets error message text by error code
- * @param int $msgcode
+ * @param long $msgcode
  */		
 		protected abstract function getMessageText($msgcode);
 		
 /**
  * exception constructor
- * @param int $msgcode
+ * @param long $msgcode
  * @param string $context
  */		
 		public function __construct($msgcode,array $parameters = array()){

@@ -12,8 +12,26 @@ class TMySqlException extends TStorageException {
 	const ERR_MYSQL_DBFAIL = 1001;
 	const ERR_MYSQL_CONNECTFAIL = 1002;
 	
+	public function __construct($msgcode,array $parameters = array()){
+		switch ($msgcode){
+			case 1062:{
+				$msgcode = TStorageException::UNIQUENESS_VIOLATED;
+				if (preg_match("/for key '(\w+)'/", $parameters['msgtext'], $matches))
+					$this->exData['Field'] = $matches[1];
+			}break;	
+			case 1451:{
+				$msgcode = TStorageException::INTEGRITY_VIOLATED;
+				if (preg_match("/`\w+`\.`(\w+)`, CONSTRAINT `\w+` FOREIGN KEY \(`\w+`\) REFERENCES `(\w+)`/i", $parameters['msgtext'], $matches)){
+					$this->exData['Master'] = $matches[1];
+					$this->exData['Detail'] = $matches[2];
+				}
+			}break;
+		}
+		parent::__construct($msgcode,$parameters);
+	}
+	
 /**
- * @param int $msgcode
+ * @param long $msgcode
  * @return string
  */	
 	protected function getMessageText($msgcode){

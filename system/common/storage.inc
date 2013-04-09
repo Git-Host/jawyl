@@ -24,14 +24,27 @@ require_once 'common/acid.inc';
  * class for storage exceptions
  */
 class TStorageException extends TException {
+	const CONNECTION_FAILED = 50001;
+	const STORAGE_NOT_OPEN = 50002;
+	const UNIQUENESS_VIOLATED = 50003;
+	const INTEGRITY_VIOLATED = 50004;
+	
+	protected $exData = array();
+	
 /**
- * @param int $msgcode
+ * @param long $msgcode
  * @return string
  */	
 	protected function getMessageText($msgcode){
 		switch ($msgcode){
 			default:return "";break;		
 		}
+	}
+	
+	public function __get($nm){
+		if (isset($this->exData[$nm]))
+			return $this->exData[$nm];
+		return null;
 	}
 }
 
