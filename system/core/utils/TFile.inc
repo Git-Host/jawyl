@@ -180,6 +180,28 @@
    		}
    }
    
+   class TExternalImage extends TImage {
+   		public function __construct(IFileStorage $storage, $url){
+   			parent::__construct($storage, '', $url);
+   		}
+   	
+   		public function ImageType(){
+   			return false;
+   		}
+   	 
+   		public function TypeExtension(){
+   			return false;
+   		}
+   	 
+   		public function GetThumbnailLink(){
+   			return $this->path;
+   		}
+   	
+   		public function GetLink(){
+   			return $this->path;
+   		}   	
+   }
+   
 /**
  * @package CoreRuntimeClasses
  * @subpackage Utilities

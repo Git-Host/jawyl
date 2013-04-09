@@ -26,6 +26,6 @@ class TFileSystem {
 	}
 	
 	public static function IsAbsolute($path){
-		return preg_match('/^([\\\\\\/]|[a-zA-Z]\:).*$/', trim($path));
+		return preg_match('/^([\\\\\\/]|[a-zA-Z]\:|https?\:).*$/', trim($path));
 	} 
 }
