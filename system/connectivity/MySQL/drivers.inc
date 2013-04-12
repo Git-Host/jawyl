@@ -76,7 +76,13 @@ abstract class TMySqlAdapter implements IMySqlConnection {
 	public function Quote($value){
 		if (is_null($value)) return 'null';
 		if (is_bool($value)) return $value?'1':'0';
-		if (is_int($value) || is_float($value)) return $value;
+		if (is_int($value)) return $value;
+		if (is_float($value)) {
+			$loc = localeconv();
+			if ($loc['decimal_point'] != '.')
+				return str_replace($loc['decimal_point'], '.', (string)$value);
+			return $value;
+		}
 		if ($value instanceof TDate)
 			$value = $value->ToString('Y-m-d H:i:s');
 		else
