@@ -110,6 +110,19 @@
 	}   	
    }
    
+   class TImageException extends TException {
+   		const IM_TYPE_UNSUPPORTED = 700001;
+   		const IM_INVALID = 700002;
+   		
+   		protected function getMessageText($msgcode){
+   			switch ($msgcode){
+   				case self::IM_TYPE_UNSUPPORTED:return 'Image type is not supported! Only gif, png, jpeg or bmp format is allowed!';break;
+   				case self::IM_INVALID:return 'Image is invalid!';break;
+   			}
+   			return '';
+   		}   		
+   }
+   
    class TImage extends TFile {
    		protected $thumbnail;
    		protected $imageType;
@@ -155,10 +168,16 @@
    				unlink($filename);
    			TFileSystem::ForceDir(dirname($filename));
    			list($orig_width, $orig_height, $orig_type, $attr) = getimagesize($this->path);
+   			
+   			
+   			
    			if (!$width)
    				$width = $orig_width;
    			if (!$height)
    				$height = $orig_height;
+   			
+   			if ($width == 0 || $height == 0)
+   				throw new TImageException(TImageException::IM_INVALID);
 
    			if ($orig_width < $orig_height)
    				$width = ($height / $orig_height) * $orig_width;
@@ -170,6 +189,8 @@
 				case IMAGETYPE_GIF:$image_src = imagecreatefromgif($this->path);break;
 				case IMAGETYPE_PNG:$image_src = imagecreatefrompng($this->path);break;
 				case IMAGETYPE_JPEG:$image_src = imagecreatefromjpeg($this->path);break;
+				case IMAGETYPE_WBMP:$mage_src = imagecreatefromwbmp($this->path);break;
+				default:throw new TImageException(TImageException::IM_TYPE_UNSUPPORTED);break;
 			}
 			imagecopyresampled($image_dest, $image_src, 0, 0, 0, 0, $width, $height, $orig_width, $orig_height);
    			switch ($type){
