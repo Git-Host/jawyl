@@ -235,9 +235,10 @@
  * @param array $file php uploaded file structure
  */   		
    		public function __construct(IFileStorage $storage, array $file){
-   			if (isset($file["error"]))
+   			if ($file["error"] != UPLOAD_ERR_OK){
    				$this->_error_ = $file["error"];
-   			else
+   				$this->storage = $storage;
+   			} else
    				parent::__construct($storage, $file["name"],$file["tmp_name"],$file["type"],$file["size"]);
    		}
 
@@ -258,11 +259,11 @@
    				case UPLOAD_ERR_CANT_WRITE:$e = new Exception('Upload error! Can not write file to disk.',$this->_error_);break;
    				case UPLOAD_ERR_EXTENSION:$e = new Exception('Upload Error! PHP-extension stopped file upload.',$this->_error_);break;
    			}
-   			if (!is_null($e)) throw $e;
-   			
-   			
+   			if (!is_null($e))
+   				throw $e;
    			
    			if ($this->_stored_) return $this->path;
+   			
    			if ($filename){
    				if (!TFileSystem::IsAbsolute($filename))
    					$filename = $this->storage->FileStoragePath().'/'.$filename;
