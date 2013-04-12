@@ -884,7 +884,10 @@
 			switch ($nm){
 				case 'TimeZone':date_default_timezone_set($value);break;
 				case 'Shared':$this->_shared_ = preg_replace('/\A[\\\\\/]?(.*)[\\\\\/]?\z/','/$1',$value);break;
-				case 'Language':TI18n::SetLanguage($value);break;
+				case 'Language':{
+					setlocale(LC_ALL,$value);
+					TI18n::SetLanguage($value);
+				}break;
 				case 'Locale':TI18n::SetLocale($value);break;
 				case 'Translator':TI18n::SetTranslator($value);break;
 				case 'SessionHandler':{
