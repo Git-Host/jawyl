@@ -69,21 +69,24 @@
 			if ($this->fileStorage instanceof IFileStorage)
 			{
 				foreach ($_FILES as $key=>$file){
-					if (is_array($file) && (($file['error'] == 0) || is_array($file['error']))){
+					if (is_array($file)/* && (($file['error'] == 0) || is_array($file['error']))*/){
 						if (is_array($file["name"])){
 							$files = array();
 							$orig[$key] = '';
 							foreach ($file["name"] as $i => $fname)
-								if ($file["error"][$i] == 0){
-									$orig[$key] .= $fname.';';
+								$orig[$key] .= $fname.';';
+								if ($file["error"][$i] == UPLOAD_ERR_OK)
 									$files[$i] = new TUploadedFile($this->fileStorage,array(
 										"name"=>$fname,
 										"tmp_name"=>$file["tmp_name"][$i],
 										"type"=>$file["type"][$i],
 										"size"=>$file["size"][$i]
 									));
-								}
-							$this->_file_parameters_[$key] = $files;
+								else 
+									$files[$i] = new TUploadedFile($this->fileStorage,array(
+										"error"=>$file["error"][$i]
+									));
+								$this->_file_parameters_[$key] = $files;
 						} else {
 							$this->_file_parameters_[$key] = new TUploadedFile($this->fileStorage, $file);
 							$orig[$key] = $file["name"];

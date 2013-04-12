@@ -202,6 +202,18 @@
    		}   	
    }
    
+   class TUploadException extends TException {
+   		protected function getMessageText($msgcode){
+   			switch ($msgcode){
+   				case UPLOAD_ERR_INI_SIZE:return 'File size exceeded maximum allowed size!';break;
+   				case UPLOAD_ERR_FORM_SIZE:return 'File size exceeded maximum allowed size!';break;
+   				case UPLOAD_ERR_PARTIAL:return 'Upload error! File was not transfered completely!';break;
+   				case UPLOAD_ERR_NO_FILE:return 'Upload error! File was not transfered at all!';break;
+   			} 
+   			return '';  			
+   		} 	
+   }
+   
 /**
  * @package CoreRuntimeClasses
  * @subpackage Utilities
@@ -212,12 +224,21 @@
    class TUploadedFile extends TFile {
    		private $_stored_ = false;
    		
+   		private $_error_ = false;
+   		
+		public function UploadError(){
+			return $this->_error_;
+		}
+   		
 /**
  * constructor
  * @param array $file php uploaded file structure
  */   		
    		public function __construct(IFileStorage $storage, array $file){
-   			parent::__construct($storage, $file["name"],$file["tmp_name"],$file["type"],$file["size"]);
+   			if (isset($file["error"]))
+   				$this->_error_ = $file["error"];
+   			else
+   				parent::__construct($storage, $file["name"],$file["tmp_name"],$file["type"],$file["size"]);
    		}
 
 /**
@@ -227,6 +248,20 @@
  * @see TApplication 
  */   		
    		public function Store($filename = null){
+   			$e = null;
+   			switch ($this->_error_){
+   				case UPLOAD_ERR_INI_SIZE:
+   				case UPLOAD_ERR_FORM_SIZE:
+   				case UPLOAD_ERR_PARTIAL:
+   				case UPLOAD_ERR_NO_FILE:$e = new TUploadException($this->_error_);break;
+   				case UPLOAD_ERR_NO_TMP_DIR:$e = new Exception('Upload error! TMP path not set.',$this->_error_);break;
+   				case UPLOAD_ERR_CANT_WRITE:$e = new Exception('Upload error! Can not write file to disk.',$this->_error_);break;
+   				case UPLOAD_ERR_EXTENSION:$e = new Exception('Upload Error! PHP-extension stopped file upload.',$this->_error_);break;
+   			}
+   			if (!is_null($e)) throw $e;
+   			
+   			
+   			
    			if ($this->_stored_) return $this->path;
    			if ($filename){
    				if (!TFileSystem::IsAbsolute($filename))

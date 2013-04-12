@@ -1035,7 +1035,16 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  */	
 	public function Item($name){
 		return $this->Instance($name);
-	}	
+	}
+
+	public function MaxUploadSize(){
+		$v = ini_get('upload_max_filesize');
+		if (preg_match('/^(\d+)M$/', $v, $matches))
+			return $matches[1]*1024*1024;
+		else if (preg_match('/^(\d+)K$/', $v, $matches))
+			return $matches[1]*1024;
+		return $v;
+	}
 }
 
 /**
