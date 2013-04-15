@@ -257,7 +257,7 @@ class TIntrinsicLocale extends TLocale {
 			$timestamp = $timestamp->TimeStamp();
 		
 		if ((count($this->formats) == 0) && (count($this->symbols) == 0))
-		return date("C",$timestamp);
+			return date(DATE_W3C,$timestamp);
 			
 		$format = $this->formats["datetime"];
 		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
