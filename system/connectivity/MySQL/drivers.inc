@@ -46,7 +46,7 @@ interface IMySqlQuery {
 }
 
 interface IMySqlConnection {
-	public function __construct($server,$user,$pwd,$db,$names);
+	public function __construct($server,$user,$pwd,$db,$names = null);
 	public function Begin();
 	public function Commit();
 	public function Rollback();
