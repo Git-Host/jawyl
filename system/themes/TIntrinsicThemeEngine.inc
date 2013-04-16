@@ -9,17 +9,9 @@
  * @version 0.0.1 alpha  
 */
 
-/**
- * @ignore
- */
 require_once 'core/TConfigurable.inc';
-/**
- * @ignore
- */
 require_once 'common/theme/engine.inc';
-/**
- * @ignore
- */
+require_once 'core/utils/processing.inc';
 require_once 'services/TPageService.inc';
 
 function capitalize($str){
@@ -27,6 +19,7 @@ function capitalize($str){
 }
 
 function html_obfuscate($str){
+	/* @TODO obfuscation logic */
 	return $str;
 }
 
@@ -63,7 +56,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	protected $_ioc_output_cache_;
 
 /**
- * @var IContentFilter[]
+ * @var IDataFilter[]
  */	
 	protected $_ioc_content_filter_ = array();
 	
@@ -287,7 +280,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			$v = strtolower(trim($f));
 			if ($v){
 				switch ($v){
-					case 'q':$result .= ',ENT_QUOTES,"UTF-8")';break;
+					case 'q':$result .= ',ENT_QUOTES,"UTF-8",false)';break;
 					default:$result .= ')';break;
 				}
 			}

@@ -78,6 +78,12 @@ require_once 'common/enum.inc';
  * @return mixed
  */		
 		public function Value();
+		
+/**
+ * gets property display value
+ * @return mixed
+ */		
+		public function DisplayValue();
 /**
  * gets property item
  * @return IItem
@@ -249,6 +255,14 @@ require_once 'common/enum.inc';
  * @return string
  */		
 		public function Name(){return $this->meta->Name();}
+		
+		public function DisplayValue(){
+			if ($s = $this->Selection() && !is_array($this->Value())){
+				if (isset($s[$this->Value()]))
+					return $s[$this->Value()];
+			}
+			return $this->Value();
+		}
 /**
  * gets property caption
  * @return string
