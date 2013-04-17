@@ -864,11 +864,9 @@
 			switch (self::$Environment){
 				case self::ENV_PRODUCTION:{
 					error_reporting(E_ERROR);
-					TConfigurable::$CompileIocTypes = false;
 				}break;
 				case self::ENV_TESTING:{
 					error_reporting(E_ERROR | E_WARNING | E_USER_ERROR | E_USER_WARNING);
-					TConfigurable::$CompileIocTypes = false;
 				}break;
 				case self::ENV_DEVELOPING:{
 					error_reporting(E_ALL | E_STRICT);
