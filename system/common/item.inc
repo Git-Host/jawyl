@@ -257,7 +257,7 @@ require_once 'common/enum.inc';
 		public function Name(){return $this->meta->Name();}
 		
 		public function DisplayValue(){
-			if ($s = $this->Selection() && !is_array($this->Value())){
+			if (($s = $this->Selection()) && !is_array($this->Value())){
 				if (isset($s[$this->Value()]))
 					return $s[$this->Value()];
 			}

@@ -39,7 +39,7 @@ require_once 'core.inc';
  		if ($this->container)
  			$this->container->RegisterComponent($this);
  		if (!isset(self::$_ioc_types_[get_class($this)])){
-			$filename = $this->Application()->IocTypesCompileDir().'/'.get_class($this).'.ioc.php'; 			
+			$filename = $this->Application()->IocTypesCompileDir().'/'.get_class($this).'.ioc.php';
  			if (self::$CompileIocTypes)
  				self::CompileIocTypes(get_class($this),$filename,true);
  			if (file_exists($filename)){

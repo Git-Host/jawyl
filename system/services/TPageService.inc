@@ -431,9 +431,16 @@ abstract class TPageService extends TService {
 		try {	
 			return $this->page->Handle($this->Request);
 		} catch (TCoreException $e){
-			if ($e->getCode() == TCoreException::ERR_ACCESS_DENIED)
-				if ($page = $this->getAccessDeniedPage())
-					$this->Application()->Redirect($page->Url());
+			switch ($e->getCode()){
+				case TCoreException::ERR_ACCESS_DENIED:{
+					if ($page = $this->getAccessDeniedPage())
+						$this->Application()->Redirect($page->Url());
+				}break;
+				case TCoreException::ERR_RESOURCE_NOT_FOUND:{
+					if ($page = $this->getNotFoundPage())
+						$this->Application()->Redirect($page->Url());
+				}break;
+			}
 			throw $e;
 		}
 		return false;	
