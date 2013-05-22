@@ -73,20 +73,22 @@
 						if (is_array($file["name"])){
 							$files = array();
 							$orig[$key] = '';
-							foreach ($file["name"] as $i => $fname)
+							foreach ($file["name"] as $i => $fname){
 								$orig[$key] .= $fname.';';
 								if ($file["error"][$i] == UPLOAD_ERR_OK)
 									$files[$i] = new TUploadedFile($this->fileStorage,array(
 										"name"=>$fname,
 										"tmp_name"=>$file["tmp_name"][$i],
 										"type"=>$file["type"][$i],
-										"size"=>$file["size"][$i]
+										"size"=>$file["size"][$i],
+										"error"=>UPLOAD_ERR_OK
 									));
 								else 
 									$files[$i] = new TUploadedFile($this->fileStorage,array(
 										"error"=>$file["error"][$i]
 									));
-								$this->_file_parameters_[$key] = $files;
+							}
+							$this->_file_parameters_[$key] = $files;
 						} else {
 							$this->_file_parameters_[$key] = new TUploadedFile($this->fileStorage, $file);
 							$orig[$key] = $file["name"];

@@ -211,7 +211,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		}
 		$nm = ($nm == "")?"null":$nm;
 		$tmpl = ($tmpl == "")?"null":$tmpl;
-		return '<?php $this->_out_widget("'.$nm.'",'.$tmpl.'); ?>';
+		return '<?php $this->_out_widget($this->evalContextTag("'.$nm.'",true),'.$tmpl.'); ?>';
 	}
 	
 	protected function callMethod($method,$var){
@@ -246,7 +246,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	private function _compile_filters_open(array $filters){
 		$result ='';
 		foreach ($filters as $f){
-			$v = strtolower(trim($f));
+			$fn = trim($f);
+			$v = strtolower($fn);
 			if ($v){
 				switch ($v){
 					case 'c':
@@ -259,14 +260,17 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 					case 'l':$result .= 'mb_strtolower(';break;
 					case 'cap':$result .= 'capitalize(';break;
 					case 'obf':$result .= 'html_obfuscate(';break;
+					case 'esc':$result .= 'addslashes(';break;
+					case 'jsl':$result .= 'addcslashes(';break;
+					case 'trm':$result .= 'trim(';break;
 					case 'q':$result .= 'htmlentities(';break;
 					default:{
-						if ($this->_get_content_filter($v))
-							$result .= '$this->_get_content_filter("'.$v.'")->Filter(';
-						else if (function_exists($v))
-							$result .= $v.'(';
+						if ($this->_get_content_filter($fn))
+							$result .= '$this->_get_content_filter("'.$fn.'")->Filter(';
+						else if (function_exists($fn))
+							$result .= $fn.'(';
 						else
-							$result .= '$this->callMethod("'.$v.'",'; 	
+							$result .= '$this->callMethod("'.$fn.'",'; 	
 					}break;
 				}
 			}
@@ -276,11 +280,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _compile_filters_close(array $filters){
 		$result ='';
-		foreach ($filters as $f){
+		foreach (array_reverse($filters) as $f){
 			$v = strtolower(trim($f));
 			if ($v){
 				switch ($v){
 					case 'q':$result .= ',ENT_QUOTES,"UTF-8",false)';break;
+					case 'jsl':$result .= ',"\\0\\n\\v\\f\\r\\\'\\"\\\\")';break;
 					default:$result .= ')';break;
 				}
 			}

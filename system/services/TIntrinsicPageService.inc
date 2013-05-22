@@ -147,6 +147,13 @@ class TIntrinsicPage extends TPage {
 			self::_compile_page_element($n,$xpath,$container_class, $compiled_container, $result,$counter,$classes,$service);
 	}
 	
+	private static function _compile_page_plugin($filename,$real_classname,TIntrinsicPageService $service, &$counter, &$classes, &$text){
+		$dom = new DOMDocument();
+		$dom->preserveWhiteSpace = false;
+		$dom->Load($filename);
+		self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes,$service);
+	}
+	
 	private static function _compile_page_contents($filenames,TIntrinsicPageService $service, &$counter, &$classes, &$text){
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = false;
@@ -212,6 +219,13 @@ class TIntrinsicPage extends TPage {
 			self::_compile_elements($odom->firstChild, $real_classname, '$this', new DOMXPath($odom), $text, $counter,$classes,$service);
 		else
 			self::_compile_elements($dom->firstChild, $real_classname, '$this', new DOMXPath($dom), $text, $counter,$classes,$service);
+		
+		if (file_exists($filenames[3])){
+			$files = TFileSystem::ListFiles($filenames[3]);
+			foreach ($files as $f)
+				if (isset($f['extension']) && $f['extension'] == 'xml')
+					self::_compile_page_plugin($f['dirname'].'/'.$f['basename'],$real_classname,$service, $counter, $classes, $text);
+		}
 		return $classname;
 	}
 	
@@ -349,11 +363,12 @@ class TIntrinsicPage extends TPage {
 					}
 				
 				$request->path_remainder = array_slice($request->path_remainder,$ptr,$cnt - $ptr);
-				
+				$cnt = count($request->path_remainder);				
 				for ($i = $ptr; $i < $cnt; $i++)
 					$request->SetGetParameter($i - $ptr,$request->path_remainder[$i]);
 			} 
 		}
+		
 		parent::Handle($request);
 	}
 }
@@ -403,6 +418,8 @@ abstract class TIntrinsicPageService extends TPageService {
 	private $_compile_pages_ = false;
 	private $_validate_config_ = false; 
 	
+	protected $_bool_sef_rpc_ = false;
+	
 	public function __set($nm,$value){
 		switch ($nm){
 			case "DefaultPath":$this->__default__ = $value;break;
@@ -436,10 +453,9 @@ abstract class TIntrinsicPageService extends TPageService {
  * @return TIntrinsicPage
  */	
 	protected function getPage($id){
-		if (is_null($id)) $id = 'default';
+		if (!$id) return $this->getDefaultPage();
 		if (isset($this->PAGES[$id])) return $this->PAGES[$id];
 		$conffiles =  $this->PageConfigFiles($id);
-		
 		if (is_file($conffiles[0]) || is_file($conffiles[1].'.php') || is_file($conffiles[2])){
 			$this->PAGES[$id] = TIntrinsicPage::Instanciate($id, $this);
 			return $this->PAGES[$id];
@@ -452,7 +468,8 @@ abstract class TIntrinsicPageService extends TPageService {
 		return array(
 					$this->Application()->PrivateDir()."/".$this->Name()."/".$filename.".xml",
 					$this->Application()->ConfCompileDir()."/".$this->Name()."/".$filename,
-					$this->Application()->OverrideDir()."/".$this->Name()."/".$filename.".xml"
+					$this->Application()->OverrideDir()."/".$this->Name()."/".$filename.".xml",
+					$this->Application()->PrivateDir()."/modules/".$this->Name()."/".$filename
 					);
 	}
 	
@@ -461,7 +478,7 @@ abstract class TIntrinsicPageService extends TPageService {
  * @return TIntrinsicPage
  */	
 	protected function getDefaultPage(){
-		return $this->getPage($this->__default__);
+		return $this->getPage($this->__default__?$this->__default__:'default');
 	}
 
 /**
@@ -503,18 +520,22 @@ abstract class TIntrinsicPageService extends TPageService {
 	protected function formAppUrlParameters($page,$controller = null,$method = null,array $parameters = array()){
 		if (TConvertions::ConvertToBoolean($this->Application()->Sef())){
 			$path = $page;
-			if ($controller)
-				$path .= "/".$controller;
-			if ($method)
-				$path .= "/".$method;
-			$params = array();	
-			foreach ($parameters as $key=>$value){
-				if (is_string($key))
-					$params[$key] = $value;
-				else if (is_numeric($key))
-					$path .= "/".$value;
+			if ($this->SefRpc){
+				if ($controller)
+					$path .= "/".$controller;
+				if ($method)
+					$path .= "/".$method;
+				$params = array();	
+				foreach ($parameters as $key=>$value){
+					if (is_string($key))
+						$params[$key] = $value;
+					else if (is_numeric($key))
+						$path .= "/".$value;
+				}
+				return array("path"=>$path) + $params;
 			}
-			return array("path"=>$path) + $params;
+			
+			return parent::formAppUrlParameters(null, $controller, $method, array('path'=>$path) + $parameters);
 		}
 		return parent::formAppUrlParameters($page, $controller, $method, $parameters); 
 	}	

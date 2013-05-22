@@ -45,4 +45,3 @@
 			return (isset($this->_titles_[$name]))? $this->_titles_[$name]: 'Tab';
 		}
 	}
-?>

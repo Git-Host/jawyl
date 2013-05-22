@@ -16,6 +16,6 @@
  * gets specified resource url
  * @return string
  */		
-		public function ItemNavigationUrl(IItem $item = null, $controller = null, $method = null, array $parameters = array());
+		public function ItemNavigationUrl(IItem $item, $controller = null, $method = null, array $parameters = array());
 	}
 ?>

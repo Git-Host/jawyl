@@ -220,8 +220,8 @@
 		public function Generate(){
 			switch ($this->_guid_length_){
 				case self::GUID13:return uniqid();break;
-				case self::GUID23:return uniqid(rand(), true);break;
-				case self::GUID32:return md5(uniqid(rand(), true));break;
+				case self::GUID23:return uniqid('', true);break;
+				case self::GUID32:return uniqid(mt_rand(100000000,999999999),true);break;
 			}
 		}
 		

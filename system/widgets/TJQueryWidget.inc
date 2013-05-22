@@ -10,6 +10,7 @@
 */
 
 require_once 'widgets/TSkinnableWidget.inc';
+require_once 'common/widget/lists.inc';
 
 /**
  * @package View

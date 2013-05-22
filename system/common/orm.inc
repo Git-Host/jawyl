@@ -102,7 +102,7 @@ interface IORMStorage {
  * @param object $object
  * @return object
  */	
-	public function Save($object, array $propeties_mask = array());
+	public function Save($object, array $propeties_mask = array(), $origin);
 	
 /** 
  * Deleted object from storage, returns true on success

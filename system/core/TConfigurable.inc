@@ -243,9 +243,12 @@ require_once 'core.inc';
 	
 	protected function getIocMember(&$member,$type){
 		if (is_string($member)){
-			$member = $this->Instance($member);
-			if (($member) && (!$this->_check_ioc_type($member, $type)))
-				throw new TCoreException(TCoreException::ERR_BAD_TYPE);
+			if ($item = $this->Instance($member)){
+				$member = $item;
+				if (!$this->_check_ioc_type($member, $type))
+					throw new TCoreException(TCoreException::ERR_BAD_TYPE);
+			} else
+				return null;
 		}
 		return $member;	
 	}
