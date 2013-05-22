@@ -56,7 +56,7 @@
  * @property-read string $IocTypesCompileDir gets directory where application compiled configuration files are stored
  * @property-read int $CallType 
  * 
- * @property-write string $Language sets current i18n and l10n language name;
+ * @property string $Language sets current i18n and l10n language name;
  * @see TI18n::SetLanguage()
  * @see ILocale::SetLanguage()
  * @property-write string $Locale sets current l10n locale instance name 
@@ -243,11 +243,14 @@
 		private static $_request_;
 		private static $_services_ = array();
 		
+		private $_lang_;
+		
 /**
 * @ignore
 * */		
 		public function __get($nm){
 			switch ($nm){
+				case 'Language':return $this->_lang_;break;
 				case 'SessionHandler':return $this->Session();break;
 				case 'SysPath':return $this->SysPath();break;
 				case 'RequestPath':return $this->_request_path_;break;
@@ -449,38 +452,50 @@
 			}
 		}
 		
-		private function _compile_plugins($indir,$outdir,$service = null){
-			if (file_exists($indir)){
-				$fn = 'application.php';
-				if ($service)
-					$fn = 'service.'.$service.'.php';
-				
-				$conf = '<?php 
-						';
-				$files = TFileSystem::ListFiles($indir);
-				
-				$restime = filemtime($outdir.'/'.$fn);
-				
-				$need_compile = false;
-				
-				foreach ($files as $f)
-					if (isset($f['extension']) && $f['extension'] == 'xml' && filemtime($f['dirname'].'/'.$f['basename']) > $restime){
-						$need_compile = true;
-						break;
-					}	
-				
-				if ($need_compile){
-					foreach ($files as $f)
-						if (isset($f['extension']) && $f['extension'] == 'xml')
-							$conf .= $this->_compile_init_str($f['dirname'].'/'.$f['basename'],$objid);
-						else if (!$service && !isset($f['filename']) && is_dir($f['dirname'].'/'.$f['basename']))
-							$this->_compile_plugins($f['dirname'].'/'.$f['basename'],$outdir,$f['basename']);
-						
-					$fn = 'application.php';
-					if ($service)
-						$fn = 'service.'.$service.'.php';
-					file_put_contents($outdir.'/'.$fn, $conf);
+		
+		private function _check_need_plugin_compile($indir,$outdir){
+			$files = TFileSystem::ListFiles($indir);
+			$need_compile = false;
+			
+			foreach ($files as $f){
+				if (is_dir($f['dirname'].'/'.$f['basename'])){
+					$need_compile = $this->_check_need_plugin_compile($f['dirname'].'/'.$f['basename'], $outdir);
+					if ($need_compile) break;
+				} else if (isset($f['extension']) && $f['extension'] == 'xml'){
+					$restime = 0;
+					if (file_exists($outdir.'/'.$f['filename'].'.php'))
+						$restime = filemtime($outdir.'/'.$f['filename'].'.php');
+					$need_compile = filemtime($f['dirname'].'/'.$f['basename']) > $restime;
+					if ($need_compile) break;
 				}
+			}
+			
+			return $need_compile;	
+		}
+		
+		
+		private function _compile_plugin($indir,array &$confs){
+			if (file_exists($indir)){
+				$files = TFileSystem::ListFiles($indir);
+				foreach ($files as $f){
+					if (isset($f['extension']) && $f['extension'] == 'xml'){
+						if (!isset($confs[$f['filename'].'.php']))
+							$confs[$f['filename'].'.php'] = '<?php'."\n";
+						$confs[$f['filename'].'.php'] .= $this->_compile_init_str($f['dirname'].'/'.$f['basename'],$objid);
+					}		
+				}		
+			}			
+		}
+		
+		private function _compile_plugins($indir,$outdir,$service = null){
+			if (file_exists($indir) && file_exists($outdir) && $this->_check_need_plugin_compile($indir, $outdir)){				
+				$files = TFileSystem::ListFiles($indir);
+				$confs = array();
+				foreach ($files as $f)
+					if (is_dir($f['dirname'].'/'.$f['basename']))
+						$this->_compile_plugin($f['dirname'].'/'.$f['basename'],$confs);
+				foreach ($confs as $fn => $text)
+					file_put_contents($outdir.'/'.$fn, $text);
 			}
 		}
 		
@@ -883,6 +898,7 @@
 				case 'TimeZone':date_default_timezone_set($value);break;
 				case 'Shared':$this->_shared_ = preg_replace('/\A[\\\\\/]?(.*)[\\\\\/]?\z/','/$1',$value);break;
 				case 'Language':{
+					$this->_lang_ = $value;
 					setlocale(LC_ALL,$value);
 					TI18n::SetLanguage($value);
 				}break;

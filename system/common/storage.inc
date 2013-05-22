@@ -37,6 +37,10 @@ class TStorageException extends TException {
  */	
 	protected function getMessageText($msgcode){
 		switch ($msgcode){
+			case self::CONNECTION_FAILED:return 'Connection to storage failed!';break;
+			case self::STORAGE_NOT_OPEN:return 'Storage is closed for access!';break;
+			case self::UNIQUENESS_VIOLATED:return 'Uniqueness violated!';break;
+			case self::INTEGRITY_VIOLATED:return 'Integrity violated!';break;
 			default:return "";break;		
 		}
 	}

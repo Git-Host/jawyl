@@ -43,6 +43,9 @@
  * @return string
  */		
 		public function Translate($domain,$text, $plural = null){
+			if (is_object($text))
+				$text = (string)$text;
+			if (!is_string($text)) return $text;
 			if (is_null($domain)){
 				$tr = $text;
 				$names = array_keys($this->domains);
@@ -57,6 +60,7 @@
 		
 		private function _compile_domain($domain,$xml){
 			$fn = $this->Application()->ConfCompileDir().'/languages/'.$domain.'.php';
+			
 			if (!file_exists($fn) || filemtime($fn) < filemtime($xml)){
 				$dom = new DOMDocument();
 				$dom->Load($xml);
@@ -67,10 +71,10 @@
 				foreach ($msgs as $msg){
 					$trans = $xpath->query("default",$msg);
 					foreach ($trans as $tr)
-						$script	.= 'if (($text == "'.addslashes(html_entity_decode($msg->getAttribute("id"))).'") && ($plural < 2 || is_null($plural))) return "'.addslashes($tr->nodeValue)."\";\n";	 
+						$script	.= 'if (($text === "'.addslashes(html_entity_decode($msg->getAttribute("id"))).'") && ($plural < 2 || is_null($plural))) return "'.addslashes($tr->nodeValue)."\";\n";	 
 					$trans = $xpath->query("plural",$msg);
 					foreach ($trans as $tr)
-						$script	.= 'if (($text == "'.addslashes(html_entity_decode($msg->getAttribute("id"))).'") && ($plural >= '.$tr->getAttribute("from").') && ($plural <= '.$tr->getAttribute("to").')) return "'.addslashes($tr->nodeValue)."\";\n";	 
+						$script	.= 'if (($text === "'.addslashes(html_entity_decode($msg->getAttribute("id"))).'") && ($plural >= '.$tr->getAttribute("from").') && ($plural <= '.$tr->getAttribute("to").')) return "'.addslashes($tr->nodeValue)."\";\n";	 
 				}
 				file_put_contents($fn, $script);
 			}

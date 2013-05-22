@@ -352,7 +352,7 @@ abstract class TPageService extends TService {
  * @return string 
  * @see TApplication::Url()
  */	
-	public final function Url($page,$controller = null,$method = null, array $parameters = array(),$absolute = true){
+	public final function Url($page = null,$controller = null,$method = null, array $parameters = array(),$absolute = true){
 		if ($this->page){
 			if (is_null($page))
 				$page = $this->page->Name();
@@ -411,10 +411,10 @@ abstract class TPageService extends TService {
  * gets page that fits request and calls its Handle method
  * @return boolean
  */		
-	protected function handleRequest(TRequest $request){
-		if (!$request->page)
+	protected function handleRequest(TRequest $request){		
+		if (!$request->page){
 			$this->page = $this->getDefaultPage();
-		 else 
+		} else 
 			$this->page = $this->getPage($request->page);	
 		if (is_null($this->page)){
 			$this->page = $this->getNotFoundPage();

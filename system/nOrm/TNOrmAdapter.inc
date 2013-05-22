@@ -289,6 +289,8 @@ class TNOrmException extends TStorageException {
 	const ERR_INVALID_ORM_CONFIG = 30003;
 	const ERR_COMPOSITE_KEY_INCOMPLETE = 30004;
 	const ERR_MISSING_KEY = 30005;
+	const ERR_INVALID_PROPERTY = 30006;
+	const ERR_NOT_REFERENCE = 30007;
 /**
  * @param int $msgcode
  * @return string
@@ -300,6 +302,8 @@ class TNOrmException extends TStorageException {
 			case self::ERR_INVALID_ORM_CONFIG:return "Invalid orm configuration!";break;
 			case self::ERR_COMPOSITE_KEY_INCOMPLETE:return "Can not save entity with incomplete composite key!";break;
 			case self::ERR_MISSING_KEY:return "Object identifier is missing!";break;
+			case self::ERR_INVALID_PROPERTY:return "Invalid property name %property specified!";break;
+			case self::ERR_NOT_REFERENCE:return "Property %property specified for dereferencing is not a reference property!";break;
 			default:return "";break;		
 		}
 	}		
@@ -463,7 +467,6 @@ interface INOrmObject {
 }
 
 class TNOrmObject implements INOrmObject {
-	//private $_origins_ = array();
 	
 	private $_loaders_ = array();
 	
@@ -483,7 +486,7 @@ class TNOrmObject implements INOrmObject {
 		}			
 		return false;
 	}
-		
+	
 	public function __set($nm,$value){
 		if ($n = $this->_check_prefixed_property($nm,'orm')){
 			$this->$n = $value;
@@ -491,8 +494,6 @@ class TNOrmObject implements INOrmObject {
 				$this->_loaders_[$n] = $value;
 				$this->$n = null;
 			}
-			/*if (!isset($this->_origins_[$n]))
-				$this->_origins_[$n] = ($value instanceof TNOrmLoader)?$value->Key():$value;*/
 		} else if ($n = $this->_check_prefixed_property($nm,'ns')){
 			if ($value instanceof TNOrmBranchLoader){
 				$this->_loaders_[$n] = $value;
@@ -504,7 +505,7 @@ class TNOrmObject implements INOrmObject {
 		} 
 	}
 	
-	public function __get($nm){
+	public function __get($nm){		
 		if (($n = $this->_check_prefixed_property($nm,'orm')) || ($n = $this->_check_prefixed_property($nm,'ns'))){
 			if (is_null($this->$n)){
 				if (isset($this->_loaders_[$n]))
@@ -635,8 +636,22 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		} else if (is_object($value)){
 			$this->_ref_prop_value($this->_get_object_key_values($value), $fc, $refvalues);
 		} else
-			$refvalues[] = (string)$value;	
+			$refvalues[] = $value;	
 	}
+	
+	private function _get_key_type($classname){
+		if ($orm = $this->_get_orm_config($classname)){
+			if (count($orm['keys']) > 1)
+				throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+			switch ($orm['properties'][$orm['keys'][0]]['type']){
+				case 'reference':return $this->_get_key_type($orm['properties'][$orm['keys'][0]]['classname']);break;
+				case 'scalar':return $orm['properties'][$orm['keys'][0]]['datatype'];break;
+				default:throw new TCoreException(TCoreException::ERR_BAD_VALUE);break;
+			}
+		}
+		throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+	}
+	
 	
 	private function _reference_value($value,$meta){
 		if ($value instanceof TNOrmObjectLoader){
@@ -654,17 +669,28 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			}	
 			$value = $temp;
 		}
+		
+		$datatype = $this->_get_key_type($meta['classname']);
+		if ($datatype != 'string' && $value === '')
+			$value = null;
 		return is_array($value)?$value:array($value);
 	}
 	
 	private function _get_scalar_prop($object,$prop,$datatype){
+		if ($datatype != 'string' && $object->$prop === '')
+			return null;
 		switch ($datatype){
+			case 'int':return (int)$object->$prop;break;
+			case 'float':
+			case 'double':return (float)$object->$prop;break;
+			case 'bool':return TConvertions::ConvertToBoolean($object->$prop);break;
 			case 'date':
-			case 'TDate':if ($object->$prop instanceof TDate){
-				if ($this->_date_format_)
-					return $object->$prop->ToString($this->_date_format_);
-				return $object->$prop;
-			}break;
+				case 'TDate':
+				if ($object->$prop instanceof TDate){
+					if ($this->_date_format_)
+						return $object->$prop->ToString($this->_date_format_);
+					return $object->$prop;
+				}break;
 		}
 		return $object->$prop;
 	}
@@ -720,9 +746,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	private function _filter_from_object($orm,$object,&$tables,$fieldtype = 1){
 		$filter = array();
+		
 		foreach ($orm['keys'] as $prop)
 			$this->_form_filter_condition($filter, $object, $prop, $orm['properties'][$prop], $tables, $fieldtype);
-			
+		
 		if (count($filter) == count($orm['keys']))
 			return $filter;	
 		
@@ -791,8 +818,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				'values' => array()
 			);
 			$n = count($orm['tables'][$table]);
-			if (!empty($keyvalues))
-				for ($i = 0; $i < $n; $i++)
+			for ($i = 0; $i < $n; $i++)
+				if (isset($keyvalues[$i]))
 					$tables[$table]['keys'][$orm['tables'][$table][$i]] = $keyvalues[$i];
 		}
 	}
@@ -812,9 +839,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param object $object
  * @return object
  */	
-	public function Save($object, array $propeties_mask = array()){
+	public function Save($object, array $propeties_mask = array(), $origin = null){
 		if ($orm = $this->_get_orm_config($object)){
-			$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
+			if ($origin)
+				$keyvalues = $this->_entity_keys($origin, $orm, $emptyid);
+			else
+				$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
+						
 			$tables = array();
 		
 			foreach ($orm['properties'] as $prop => $meta){
@@ -826,20 +857,20 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							$n = count($meta['fields']);
 							for ($i = 0; $i < $n; $i++){
 								$this->_check_save_tables($meta['fields'][$i]['table'], $orm, $tables,$keyvalues);
-								if (!isset($tables[$meta['fields'][$i]['table']]['keys'][$meta['fields'][$i]['name']]))
+								if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0))	
 									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
 							}
 						}break;
 						case 'scalar':
 						default:{
 							$this->_check_save_tables($meta['field']['table'], $orm, $tables,$keyvalues);
-							if (!isset($tables[$meta['field']['table']]['keys'][$meta['field']['name']]))
+							if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0))	
 								$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
 						}break; 
 					}	
 				}
 			}	
-		
+			
 			$this->_ioc_driver_->BeginTransaction();
 			try {
 				$maintable = true;
@@ -870,7 +901,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					}
 				
 					$ds = new TTable($t, null, array(), $filter, array(), array());
-					
+										
 					if ($emptyid || $abcent){
 						$merged = $table['keys'] + $table['values'];
 						if ($maintable && !empty($orm['nestedsets'])){
@@ -994,6 +1025,88 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return null;
 	}
 	
+	
+	private function _filter_parse_property($ptr,array $name,$orm,array &$operands, array &$tables,array &$join){
+		if (!isset($orm['properties'][$name[$ptr]])){
+			if ($ptr > 0)
+				throw new TNOrmException(TNOrmException::ERR_INVALID_PROPERTY,array('property'=>$name[$ptr]));
+			return false;
+		}
+		
+		if (($ptr + 1) == count($name)){
+			switch ($orm['properties'][$name[$ptr]]['type']){
+				case 'collection':{
+					if (count($orm['properties'][$name[$ptr]]['mtm']) > 1){
+						$colorm = $this->_get_orm_config($orm['properties'][$name[$ptr]]['mtm']['class']);
+						$fp = $colorm['properties'][$orm['properties'][$name[$ptr]]['mtm']['property']];
+					} else {
+						$colorm = $this->_get_orm_config($orm['properties'][$name[$ptr]]['classname']);
+						if (count($colorm['keys']) > 1)
+							throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+						$fp = $colorm['properties'][$colorm['keys'][0]];
+					}
+			
+					if (count($fp['fields']) > 1)
+						throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+			
+					$coljoin = array();
+					$fields = array();
+					$ad = array();
+					$colds = $this->_form_ds($colorm, $coljoin, $tables, $fields, $ad);
+					$conditions = array();
+					foreach ($orm['properties'][$name[$ptr]]['fields'] as $fld){
+						$jp = $colorm['properties'][$fld['property']];
+						if (count($jp['fields']) > 1)
+							throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+						$jfld = $jp['fields'][0];
+						$conditions[] = new TCondition(TConditionType::C_EQUAL, array(
+								$this->_create_field($fld['name'], $tables[$fld['table']], ($tables[$fld['table']] instanceof TNestedSets)?1:0),
+								$this->_create_field($jfld['name'], $tables[$jfld['table']], ($tables[$jfld['table']] instanceof TNestedSets)?1:0)
+						));
+					}
+			
+					$join[] = new TJoin($colds, TJoin::JOIN_INNER, $conditions);
+						
+					$field = &$fp['fields'][0];
+					$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0);
+				}break;
+				case 'reference':{
+					if (count($orm['properties'][$name[$ptr]]['fields']) > 1)
+						throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+					$field = &$orm['properties'][$name[$ptr]]['fields'][0];
+					$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0);
+				}break;
+				case 'scalar':
+				default:$operands[] = $this->_create_field($orm['properties'][$name[$ptr]]['field']['name'], $tables[$orm['properties'][$name[$ptr]]['field']['table']], ($tables[$orm['properties'][$name[$ptr]]['field']['table']] instanceof TNestedSets)?1:0);
+			}	
+			return true;		
+		} 
+			
+		if ($orm['properties'][$name[$ptr]]['type'] != 'reference'){
+			throw new TNOrmException(TNOrmException::ERR_NOT_REFERENCE,array('property'=>$name[$ptr]));
+			return false;
+		}
+		
+		$ref_orm = $this->_get_orm_config($orm['properties'][$name[$ptr]]['classname']);
+		$np = &$ref_orm['properties'][$name[$ptr + 1]];
+		if (count($np['fields']) > 1)
+			throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
+		
+		$alias = $name[0].$ptr;
+		$mtable = ($ptr==0)?$orm['properties'][$name[$ptr]]['fields'][0]['table']:($name[0].$ptr - 1);
+		
+		$tables[$alias] = new TTable($np['fields'][0]['table'],$alias);
+		
+		$join[] = new TJoin($tables[$alias], TJoin::JOIN_INNER, 
+					array(new TCondition(TConditionType::C_EQUAL, array(
+							$this->_create_field($ref_orm['tables'][$np['fields'][0]['table']][0], $tables[$alias],0),
+							$this->_create_field($orm['properties'][$name[$ptr]]['fields'][0]['name'], $tables[$mtable],0)
+						))));
+			
+		return $this->_filter_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join);
+	}
+	
+	
 // @todo Implement operations in orm list filters	
 	
 	private function _filter_from_conditions(array &$filter,$orm,&$tables,$conditions, &$join){
@@ -1001,59 +1114,20 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			if ($condition instanceof TOrmCondition){
 				$operands = array();
 				foreach ($condition->Operands as $o)
-					if (is_string($o) && isset($orm['properties'][$o])){
-						switch ($orm['properties'][$o]['type']){
-							case 'collection':{
-								if (count($orm['properties'][$o]['mtm']) > 1){
-									$colorm = $this->_get_orm_config($orm['properties'][$o]['mtm']['class']);
-									$fp = $colorm['properties'][$orm['properties'][$o]['mtm']['property']];
-								} else {
-									$colorm = $this->_get_orm_config($orm['properties'][$o]['classname']);
-									if (count($colorm['keys']) > 1)
-										throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
-									$fp = $colorm['properties'][$colorm['keys'][0]];
-								}
-								
-								if (count($fp['fields']) > 1)
-									throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
-								
-								$coljoin = array();
-								$fields = array();
-								$ad = array(); 
-								$colds = $this->_form_ds($colorm, $coljoin, $tables, $fields, $ad);
-								$conditions = array();
-								foreach ($orm['properties'][$o]['fields'] as $fld){
-									$jp = $colorm['properties'][$fld['property']];
-									if (count($jp['fields']) > 1)
-										throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
-									$jfld = $jp['fields'][0];	
-									$conditions[] = new TCondition(TConditionType::C_EQUAL, array(
-										$this->_create_field($fld['name'], $tables[$fld['table']], ($tables[$fld['table']] instanceof TNestedSets)?1:0),
-										$this->_create_field($jfld['name'], $tables[$jfld['table']], ($tables[$jfld['table']] instanceof TNestedSets)?1:0)
-									));
-								}
-								
-								$join[] = new TJoin($colds, TJoin::JOIN_INNER, $conditions); 	
-									
-								foreach ($fp['fields'] as $field)
-									$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0); 
-							}break;
-							case 'reference':{
-								if (count($orm['properties'][$o]['fields']) > 1)
-									throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
-								foreach ($orm['properties'][$o]['fields'] as $field)
-									$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0); 
-							}break;
-							case 'scalar':
-							default: $operands[] = $this->_create_field($orm['properties'][$o]['field']['name'], $tables[$orm['properties'][$o]['field']['table']], ($tables[$orm['properties'][$o]['field']['table']] instanceof TNestedSets)?1:0);
-						}
+					if (is_string($o)){
+						$ptables = $tables;
+						$pjoin = $join;
+						if ($this->_filter_parse_property(0, explode('.',$o), $orm, $operands, $ptables, $pjoin)){
+							$tables = $ptables;
+							$join = $pjoin;
+						} else
+							$operands[] = $o;
 					} else {
 						if ($o instanceof IIdentity)
 							$operands[] = $o->ItemId();
 						else	
 							$operands[] = $o;
-					}
-								
+					}							
 				$filter[] = new TCondition($condition->Type, $operands);
 			} else if ($condition instanceof TOperation){
 				$temp = array();
@@ -1101,9 +1175,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			$filter = array();
 			
-			if (is_object($dummy)){
+			if (is_object($dummy))
 				$filter = $this->_filter_from_object($orm, $dummy, $tables);
-			}
 
 			$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
 			
@@ -1215,8 +1288,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					}
 					$assign = $new_val != $this->_get_object_key_values($dummy->$property);	
 				}
-				if ($assign)
+				if ($assign){
 					$dummy->$property = new TNOrmObjectLoader($row,$meta,$this,$assume_descendants);
+				}
 			}break;
 			case 'collection':{
 				if (!isset($dummy->$property)) 

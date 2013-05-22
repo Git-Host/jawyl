@@ -19,7 +19,7 @@ class TFileSystem {
 		}
 	}
 	
-	public function ListFiles($dir){
+	public static function ListFiles($dir){
 		$temp = array_filter(scandir($dir),create_function('$v', 'return $v != "." && $v != "..";'));
 		array_walk($temp,create_function('&$v, $k, $d','$v = pathinfo($d."/".$v);'),$dir);
 		return $temp;

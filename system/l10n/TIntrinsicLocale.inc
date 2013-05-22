@@ -140,8 +140,8 @@ class TIntrinsicLocale extends TLocale {
       * @return float
       */                
      public function StrToFloat($str){
-             return floatval(preg_replace('/[^\d\.]/','',str_replace($this->symbols["decseparator"],'.',$str))); 
-         }
+          return floatval(preg_replace('/[^\d\.]/','',str_replace($this->symbols["decseparator"],'.',$str))); 
+     }
 
 
 	/**

@@ -89,8 +89,8 @@ abstract class TMySqlAdapter implements IMySqlConnection {
 			$value = (string)$value;
 		
 		if (is_string($value)){
-			if ($value == '')
-				return 'null';
+			/*if ($value == '')
+				return 'null';*/
 			if (($value == 'true') || ($value == 'false'))
 				return $this->Quote(TConvertions::ConvertToBoolean($value));
 			return $this->quoteString($value);
@@ -440,7 +440,6 @@ class TMySqliConnection extends TMySqlAdapter {
 		if ($value instanceof TDate)
 			$value = $value->ToString('Y-m-d H:i:s');
 		if (is_bool($value)) $value = $value?1:0;
-		if ($value === '') $value = null;
 	}
 		
 	/**

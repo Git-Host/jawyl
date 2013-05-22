@@ -9,6 +9,35 @@
  * @version 0.0.1 alpha  
 */
 
+class TDateTimeInterval {
+	private $_di_;
+	
+	public function __construct(DateInterval $i){
+		$this->_di_ = $i;
+	}
+	
+	public function DateIntervalObject(){
+		return $this->_di_;
+	}
+	
+	public function Value($accuracy){
+		if (!$accuracy)
+			$accuracy = 6;
+		$result = array();
+		
+		foreach ((array)$this->_di_ as $nm=>$value){
+			if ($value != 0){
+				$result[$nm] = $value;
+				$accuracy--;	
+			}
+			if ($accuracy == 0)
+				break;
+		}		
+		return $result;
+	}
+}
+
+
 /**
  * @package CoreRuntimeClasses
  * @subpackage Utilities
@@ -112,6 +141,10 @@
 			if (!$accurate)
 				$diff = round($diff);
 			return $diff;	
+		}
+		
+		public function Interval(TDate $date){
+			return new TDateTimeInterval($this->DateTimeObject()->diff($date->DateTimeObject()));
 		}
 		
 /**
@@ -256,5 +289,11 @@
 		public function DateTimeStamp(){
 			return mktime(0,0,0,$this->Month,$this->Day,$this->Year);
 		}
+		
+		public function DateTimeObject(){
+			$dt = new DateTime();
+			$dt->setTimeStamp($this->_timestamp_);
+			return $dt;
+		} 
 	}
 ?>
