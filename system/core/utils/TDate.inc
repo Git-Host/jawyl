@@ -241,7 +241,7 @@ class TDateTimeInterval {
 			elseif (is_int($date))
 				$this->_timestamp_ = $date;
 			elseif (is_string($date)){
-				$this->_timestamp_ = $this->fromString($date,TI18n::Locale()->DateFormat());
+				$this->_timestamp_ = $this->fromString($date,TI18n::Locale()->DateTimeFormat());
 				if (is_null($this->_timestamp_))
 					$this->_timestamp_ = strtotime($date);	
 			} 
