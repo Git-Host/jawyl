@@ -846,7 +846,7 @@
 				if (count($notapplied) > 0){
 					$sef_url .= '?';
 					foreach ($notapplied as $key)
-						if ($parameters[$key])
+						if (!is_null($parameters[$key]))
 						$sef_url = $sef_url.'&'.$key.'='.rawurlencode($parameters[$key]);
 				}
 				$url = $url.$sef_url;
