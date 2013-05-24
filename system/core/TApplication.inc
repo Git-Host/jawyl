@@ -683,7 +683,8 @@
  */						
 		public function Redirect($url){
 			$this->Session()->Close();
-			header('Location:'.$url);
+			if (!headers_sent())
+				header('Location:'.$url);
 			die;
 		} 
 		
