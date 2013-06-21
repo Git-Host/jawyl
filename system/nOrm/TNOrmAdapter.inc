@@ -508,8 +508,10 @@ class TNOrmObject implements INOrmObject {
 	public function __get($nm){		
 		if (($n = $this->_check_prefixed_property($nm,'orm')) || ($n = $this->_check_prefixed_property($nm,'ns'))){
 			if (is_null($this->$n)){
-				if (isset($this->_loaders_[$n]))
+				if (isset($this->_loaders_[$n])){
 					$this->$n = $this->_loaders_[$n]->Value();
+					unset($this->_loaders_[$n]);
+				}
 			}
 			return $this->$n;
 		}
@@ -687,10 +689,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			case 'date':
 			case 'TDate':{
 				$v = $object->$prop;
-				if (!($v instanceof TDate))
-					$v = new TDate($v);
-				if ($this->_date_format_)
-					return $v->ToString($this->_date_format_);
+				if (!is_null($v)){
+					if (!($v instanceof TDate))
+						$v = new TDate($v);
+					if ($this->_date_format_)
+						return $v->ToString($this->_date_format_);
+				}
 				return $v;
 			}break;
 		}
@@ -906,6 +910,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 										
 					if ($emptyid || $abcent){
 						$merged = $table['keys'] + $table['values'];
+						
 						if ($maintable && !empty($orm['nestedsets'])){
 							$parentprop = $orm['nestedsets']['parent'];
 							$filter = array();
@@ -1036,7 +1041,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			return false;
 		}
 		
-		$pfld = $orm['properties'][$name[$ptr]]["type"] == "scalar"?$orm['properties'][$name[$ptr]]['field']:$orm['properties'][$name[$ptr]]['fields'][0];
+		$pfld = ($orm['properties'][$name[$ptr]]["type"] == "scalar")?$orm['properties'][$name[$ptr]]['field']:$orm['properties'][$name[$ptr]]['fields'][0];
 		$mtable = ($ptr == 0)?$pfld['table']:($name[$ptr - 1].($ptr - 1));
 		
 		if (($ptr + 1) == count($name)){			
@@ -1066,7 +1071,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
 						$jfld = $jp['fields'][0];
 						$conditions[] = new TCondition(TConditionType::C_EQUAL, array(
-								$this->_create_field($fld['name'], $tables[$fld['table']], ($tables[$fld['table']] instanceof TNestedSets)?1:0),
+								$this->_create_field($fld['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0),
 								$this->_create_field($jfld['name'], $tables[$jfld['table']], ($tables[$jfld['table']] instanceof TNestedSets)?1:0)
 						));
 					}
@@ -1074,7 +1079,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$join[] = new TJoin($colds, TJoin::JOIN_INNER, $conditions);
 						
 					$field = &$fp['fields'][0];
-					$operands[] = $this->_create_field($field['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0);
+					$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0);
 				}break;
 				case 'reference':{
 					if (count($orm['properties'][$name[$ptr]]['fields']) > 1)
