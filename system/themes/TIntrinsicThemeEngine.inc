@@ -499,7 +499,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			$cf = $this->CompileDir."/".$filename;
 			$filename = $this->TemplateDir."/".$filename;
 		} else {
-			$cf = str_ireplace($this->TemplateDir,'', $filename);
+			$cf = str_ireplace($this->TemplateDir,$this->CompileDir,$filename);
 		}
 		if ($this->_need_compile($filename,$cf)){
 			$compiletext = $this->_compile($filename,$preprocessor);

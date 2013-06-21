@@ -26,7 +26,7 @@ class TXmlStrictLinkMenuItem extends TXmlLinkMenuItem  {
 	public function Url(){
 		$page = $this->node->getAttribute("page");
 		if ($page)
-			return $this->source->Application()->CurrentService()->Url($page,$this->node->getAttribute("controller"),$this->node->getAttribute("method"),$this->Parameters());
+			return $this->source->Application()->CurrentService()->Url($page,$this->node->getAttribute("controller")?$this->node->getAttribute("controller"):null,$this->node->getAttribute("method")?$this->node->getAttribute("method"):null,$this->Parameters());
 		return $this->node->getAttribute("url");
 	}
 	

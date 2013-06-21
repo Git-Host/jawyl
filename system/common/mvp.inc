@@ -750,6 +750,7 @@ abstract class TWidget extends TResponseElement {
 			$skin = $this->SkinFile;
 		if (!$skin)
 			$skin = $this->Skin($engine);
+
 		if ($skin) 
 			$engine->ProcessTemplate($this,$skin,$this->CacheLifeTime);
 		else {

@@ -105,6 +105,11 @@
  * @var string
  */		
 		private $_prev_override_dir_;
+
+/**
+ * @var string
+ */
+		private $_prev_ext_dir_;
 		
 /**
  * @var string
@@ -115,6 +120,11 @@
  */		
 		private $_override_dir_;
 
+/**
+ * @var string
+ */
+		private $_ext_dir_;		
+		
 /**
  * @var string
  */		
@@ -209,6 +219,11 @@
 		public static $OverrideDirectory = 'override';
 		
 /**
+ * @var string
+ */
+		public static $ExtensionsDirectory = 'private';
+		
+/**
  * @var int
  */		
 		public static $Environment = self::ENV_PRODUCTION;
@@ -269,6 +284,13 @@
 					}
 						
 					return $this->_override_dir_;
+				}break;
+				case 'ExtensionsDir':{
+					if ($this->_prev_ext_dir_ != self::$ExtensionsDirectory){
+						$this->_ext_dir_ = $this->AdjustPath(self::$ExtensionsDirectory);
+						$this->_prev_ext_dir_ = self::$ExtensionsDirectory;
+					}				
+					return $this->_ext_dir_;
 				}break;
 				case 'FileStoragePath':return $this->_file_storage_path_;break;
 				case 'Shared':return $this->_shared_;break;
@@ -366,6 +388,8 @@
 		public function AppPath(){return $this->AppPath;}
 		
 		public function PrivateDir(){return $this->PrivateDir;}
+		
+		public function ExtensionsDir(){return $this->ExtensionsDir;}
 		
 		public function IocTypesCompileDir(){return $this->IocTypesCompileDir;}
 		
@@ -712,7 +736,7 @@
 					}
 				}
 			
-				$this->_compile_plugins($this->PrivateDir.'/plugins', $this->ConfCompileDir.'/plugins');
+				$this->_compile_plugins($this->ExtensionsDir.'/plugins', $this->ConfCompileDir.'/plugins');
 					
 				$config_file = $this->ConfCompileDir.'/application.php';
 			

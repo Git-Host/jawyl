@@ -469,7 +469,7 @@ abstract class TIntrinsicPageService extends TPageService {
 					$this->Application()->PrivateDir()."/".$this->Name()."/".$filename.".xml",
 					$this->Application()->ConfCompileDir()."/".$this->Name()."/".$filename,
 					$this->Application()->OverrideDir()."/".$this->Name()."/".$filename.".xml",
-					$this->Application()->PrivateDir()."/modules/".$this->Name()."/".$filename
+					$this->Application()->ExtensionsDir()."/modules/".$this->Name()."/".$filename
 					);
 	}
 	
