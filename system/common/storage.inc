@@ -1104,13 +1104,6 @@ abstract class TDBDriver extends TConfigurable implements IDBDriver {
  * @var IDBACLManager
  */	
 	protected $_ioc_acl_;
-	
-	public function __construct($name, IConfigurable $container = null){
-		if ($container)
-			parent::__construct($name,$container);
-		else
-			parent::__construct($name);
-	}
 
 	public function __get($nm){
 		switch ($nm){
