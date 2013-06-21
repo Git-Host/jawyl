@@ -39,8 +39,8 @@ interface IAjaxEngine {
 abstract class TAjaxEngine extends TConfigurable implements IAjaxEngine {
 	protected $jsonItems = array();
 	
-	public function __construct($name, IConfigurable $container = null){
-		parent::__construct($name,$container);
+	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
+		parent::__construct($name,$container,$application);
 	}	
 /**
  * Outputs error message formated according to response content type

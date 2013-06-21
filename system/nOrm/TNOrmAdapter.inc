@@ -1,6 +1,7 @@
 <?php
 require_once 'common/orm.inc';
 require_once 'common/acid.inc';
+require_once 'core/utils/repository.inc';
 
 class TClassOrmConfig {
 	private $_classname_;
@@ -526,6 +527,7 @@ class TNOrmObject implements INOrmObject {
 /**
  * @author dkrasilnikov@gmail.com
  * @property IDBDriver $Driver
+ * @property IKeyValueRepository $OrmSettings
  */
 
 class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchyStorage, ITransactionProvider {
@@ -536,6 +538,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @var IDBDriver
  */	
 	protected $_ioc_driver_;
+	
+/**
+ * @var IKeyValueRepository
+ */	
+	protected $_ioc_orm_settings_;
 	
 	private $_use_config_ = 3;
 	
@@ -553,6 +560,15 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	private $_lazy_loading_ = false;
 
+	
+	private function _enrich_descendants($class, array $assumed_descendants){
+		if ($this->OrmSettings){
+			$osad = $this->OrmSettings->GetValue($class.".AssumedDescendants");
+			if (is_array($osad))
+				return array_unique(array_merge($assumed_descendants,$osad));
+		}
+		return $assumed_descendants;
+	}
 	
 	private function _form_ds_field($orm,$meta,$tables,&$fields){
 		switch ($meta['type']){ 
@@ -803,7 +819,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();
-			$assume_classes = $assume_descendants;
+			$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
+			$assume_classes = $assume_descendants;			
 			$ds = $this->_form_ds($orm, $join, $tables, $fields,$assume_descendants);
 			$ds->Fields = $fields;
 			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
@@ -1009,6 +1026,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();
+			$assume_descendants = $this->_enrich_descendants($orm["classname"], $assume_descendants);
 			$assume_classes = $assume_descendants;
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			$ds->Filter = $this->_filter_from_object($orm, $object, $tables, 2);
@@ -1189,8 +1207,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$tables = array();
 			$fields = array();	
 			
-			$break = !empty($assume_descendants);
+			$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
 			$assume_classes = $assume_descendants;
+			
+			$break = !empty($assume_classes);
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			$filter = array();
 			
@@ -1444,7 +1464,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$join = array(); 
 			$tables = array();
 			$fields = array();
+			
+			$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
 			$assume_classes = $assume_descendants;
+			
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
 			if (is_object($dummy))
 				$filter = $this->_filter_from_object($orm, $dummy, $tables, 2);
