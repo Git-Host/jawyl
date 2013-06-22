@@ -504,19 +504,21 @@ abstract class TIntrinsicPageService extends TPageService {
 		return $this->getPage($this->__accessdenied__);
 	}
 	
-	private function _check_page($path){
-		return  is_file($path.".xml") || is_file($path."_loader.php") || is_dir($path);   
+	private function _check_page($path){		
+		return  is_file($this->Application()->PrivateDir()."/".$this->Name()."/".$path.".xml")
+		|| is_file($this->Application()->OverrideDir()."/".$this->Name()."/".$path.".xml")  
+		|| is_file($this->Application()->ConfCompileDir()."/".$this->Name()."/".$path."_loader.php") 
+		|| is_dir($this->Application()->PrivateDir()."/".$this->Name()."/".$path);   
 	}
 	
 	protected function handleRequest(TRequest $request){
 		$request->IsAjax = $request->IsAjax || ($request->ajaxcall == "on");
 		unset($request->ajaxcall);
 		if ($request->path){
-			$base_path = $this->Application()->PrivateDir()."/".$this->Name()."/";
 			$path_parts = array_filter(preg_split('/[\\\\\\/]/',$request->path));
 			$cnt = count($path_parts);
 			$ptr = $cnt;
-			while (($ptr > 0) && !$this->_check_page($base_path.join("/",array_slice($path_parts,0,$ptr))))
+			while (($ptr > 0) && !$this->_check_page(join("/",array_slice($path_parts,0,$ptr))))
 				$ptr--;	
 			$request->page = join("/",array_slice($path_parts,0,$ptr));
 			$request->path_remainder = array_slice($path_parts,$ptr,$cnt - $ptr);
