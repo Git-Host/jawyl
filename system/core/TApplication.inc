@@ -512,6 +512,8 @@
 		}
 		
 		private function _compile_plugins($indir,$outdir,$service = null){
+			if (file_exists($indir))
+				TFileSystem::ForceDir($outdir);
 			if (file_exists($indir) && file_exists($outdir) && $this->_check_need_plugin_compile($indir, $outdir)){				
 				$files = TFileSystem::ListFiles($indir);
 				$confs = array();
@@ -736,7 +738,7 @@
 					}
 				}
 			
-				$this->_compile_plugins($this->ExtensionsDir.'/plugins', $this->ConfCompileDir.'/plugins');
+				$this->_compile_plugins($this->ExtensionsDir().'/plugins', $this->ConfCompileDir.'/plugins');
 					
 				$config_file = $this->ConfCompileDir.'/application.php';
 			
