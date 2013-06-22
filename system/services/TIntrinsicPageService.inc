@@ -155,12 +155,15 @@ class TIntrinsicPage extends TPage {
 	}
 	
 	private static function _compile_page_contents($filenames,TIntrinsicPageService $service, &$counter, &$classes, &$text){
-		$dom = new DOMDocument();
-		$dom->preserveWhiteSpace = false;
-		$dom->Load($filenames[0]);
-		if (TConvertions::ConvertToBoolean($service->ValidateConfig))
-			if (!$dom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
-				throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);		
+		if (file_exists($filenames[0])){
+			$dom = new DOMDocument();
+			$dom->preserveWhiteSpace = false;
+			$dom->Load($filenames[0]);
+			if (TConvertions::ConvertToBoolean($service->ValidateConfig))
+				if (!$dom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
+					throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
+		}
+		
 		$override = false;
 		if (file_exists($filenames[2])){
 			$override = true;
@@ -171,8 +174,12 @@ class TIntrinsicPage extends TPage {
 				if (!$odom->schemaValidate($service->Application()->SysPath()."/schemas/page.xsd"))
 					throw new TCoreException(TCoreException::ERR_CONF_INCORRECT);
 		}
-
-		$classname = trim($dom->firstChild->getAttribute("classname"));
+		
+		if (!(isset($dom) || $override))
+			throw new TCoreException(TCoreException::ERR_APPCONF_INCORRECT);
+		
+		if (isset($dom))
+			$classname = trim($dom->firstChild->getAttribute("classname"));
 		
 		if ($override){
 			if (trim($odom->firstChild->getAttribute("classname")))
@@ -196,7 +203,7 @@ class TIntrinsicPage extends TPage {
 				$parent = $odom->firstChild->getAttribute("parent");
 		}
 		
-		if (!$parent)
+		if (!$parent && isset($dom))
 			if ($dom->firstChild->getAttribute("parent"))
 				$parent = $dom->firstChild->getAttribute("parent");
 		
@@ -207,13 +214,12 @@ class TIntrinsicPage extends TPage {
 			}
 		}
 		
-		if ($v = $override?($odom->firstChild->getAttribute("cache")?$odom->firstChild->getAttribute("cache"):$dom->firstChild->getAttribute("cache")):$dom->firstChild->getAttribute("cache"))
+		if ($v = $override?($odom->firstChild->getAttribute("cache")?$odom->firstChild->getAttribute("cache"):(isset($dom)?$dom->firstChild->getAttribute("cache"):null)):$dom->firstChild->getAttribute("cache"))
 			$text .= '$this->caching = "'.$v.'";'."\n";
-		if ($v = $override?($odom->firstChild->getAttribute("title")?$odom->firstChild->getAttribute("title"):$dom->firstChild->getAttribute("title")):$dom->firstChild->getAttribute("title"))
+		if ($v = $override?($odom->firstChild->getAttribute("title")?$odom->firstChild->getAttribute("title"):(isset($dom)?$dom->firstChild->getAttribute("title"):null)):$dom->firstChild->getAttribute("title"))
 			$text .= '$this->title = "'.$v.'";'."\n";
-		if ($v = $override?($odom->firstChild->getAttribute("template")?$odom->firstChild->getAttribute("template"):$dom->firstChild->getAttribute("template")):$dom->firstChild->getAttribute("template"))
+		if ($v = $override?($odom->firstChild->getAttribute("template")?$odom->firstChild->getAttribute("template"):(isset($dom)?$dom->firstChild->getAttribute("template"):null)):$dom->firstChild->getAttribute("template"))
 			$text .= '$this->templateName = "'.$v.'";'."\n";
-
 		
 		if ($override)
 			self::_compile_elements($odom->firstChild, $real_classname, '$this', new DOMXPath($odom), $text, $counter,$classes,$service);
@@ -253,7 +259,8 @@ class TIntrinsicPage extends TPage {
 	private static function _check_need_compile(array $config,$compiled,TIntrinsicPageService $service){
 		return true;
 		if (!is_file($compiled.".php")) return true;
-		if (filemtime($config[0]) > filemtime($compiled.".php")) return true;
+		if (file_exists($config[0]))
+			if (filemtime($config[0]) > filemtime($compiled.".php")) return true;
 		if (file_exists($config[2]))
 			if (filemtime($config[2]) > filemtime($compiled.".php")) return true;
 
