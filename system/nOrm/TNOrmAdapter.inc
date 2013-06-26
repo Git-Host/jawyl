@@ -489,7 +489,7 @@ class TNOrmObject implements INOrmObject {
 	}
 	
 	public function __set($nm,$value){
-		if ($n = $this->_check_prefixed_property($nm,'orm')){
+		if ($n = $this->_check_prefixed_property($nm,'orm')){			
 			$this->$n = $value;
 			if ($value instanceof TNOrmLoader){
 				$this->_loaders_[$n] = $value;
