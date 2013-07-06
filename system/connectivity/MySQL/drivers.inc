@@ -419,7 +419,7 @@ class TMySqliConnection extends TMySqlAdapter {
 	}
 
 	public function __destruct(){
-		$this->Close();
+		//$this->Close();
 	}
 
 	public function Begin(){
@@ -433,7 +433,10 @@ class TMySqliConnection extends TMySqlAdapter {
 	}
 	
 	public function Close(){
-		$this->_connection_->close();
+		if ($this->_connection_ && $this->_connection_->thread_id){
+			$this->_connection_->kill($this->_connection_->thread_id);
+			$this->_connection_->close();
+		}
 	}
 
 	private function _prepare_param(&$value){

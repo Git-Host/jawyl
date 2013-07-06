@@ -23,6 +23,10 @@
  * @see TApplication
  */
 	final class THttpRequest extends TRequest {
+		const PM_GET = 'get';
+		const PM_POST = 'post';
+		const PM_COOKIE = 'cookie';
+		
 		private $_get_parameters_ = array();
 		private $_post_parameters_ = array();
 		private $_file_parameters_ = array();
@@ -122,6 +126,16 @@
 			if (!is_null($value))		
 				return $value;
 			return null;	
+		}
+		
+		public function ParameterMethod($name){
+			if (isset($this->_get_parameters_[$name]))
+				return self::PM_GET;
+			if (isset($this->_post_parameters_[$name]) || isset($this->_file_parameters_[$name]))
+				return self::PM_POST;
+			if ($this->Cookie($name))
+				return self::PM_COOKIE;
+			return false; 
 		}
 		
 /**
