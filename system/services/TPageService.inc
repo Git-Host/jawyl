@@ -232,10 +232,17 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			$result = parent::Handle($request);
 		} catch (TExposableException $e){
 			$this->exception = $e;
+			$result = false;
 			if ($this->isAjax)
 				$this->AjaxEngine->Error($this,$e->getMessage());
-			$result = false;	
+			else if ($request->ParameterMethod('method') == THttpRequest::PM_GET){
+				$this->Application()->Session()->Set('__EXPOSED_ERROR__',$this->exception);
+				$this->CleanCall();
+			}	
 		}
+		
+		if ($exception = $this->Application()->Session()->Get('__EXPOSED_ERROR__'))
+			$this->exception = $exception;
 					
 		if (!$this->isAjax)
 			return $this->respond($request);
