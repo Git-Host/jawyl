@@ -317,8 +317,11 @@ require_once 'core.inc';
  	 */
 	public function __get($nm){
 		if ($n = $this->_check_ioc($nm, $type, $is_ioc_array)){
-			if ($is_ioc_array)
+			if ($is_ioc_array){
+				if (!is_array($this->$n))
+					return array();
 				return $this->getIocArrayMember($this->$n, $type);
+			}
 			return $this->getIocMember($this->$n, $type);	
 		}
 		if (($n = $this->_check_suffix($nm, 'json'))
