@@ -871,10 +871,12 @@
 			
 			if (!is_null($sef_url)){
 				if (count($notapplied) > 0){
-					$sef_url .= '?';
+					$q = false;
 					foreach ($notapplied as $key)
-						if (!is_null($parameters[$key]))
-						$sef_url = $sef_url.'&'.$key.'='.rawurlencode($parameters[$key]);
+						if (!is_null($parameters[$key])){
+							if (!$q) {$sef_url .= '?';$q = true;}
+							$sef_url = $sef_url.'&'.$key.'='.rawurlencode($parameters[$key]);
+						}
 				}
 				$url = $url.$sef_url;
 			} else {
