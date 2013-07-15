@@ -236,13 +236,15 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			if ($this->isAjax)
 				$this->AjaxEngine->Error($this,$e->getMessage());
 			else if ($request->ParameterMethod('method') == THttpRequest::PM_GET){
-				$this->Application()->Session()->Set('__EXPOSED_ERROR__',$this->exception);
+				$this->Application()->Session()->Set('__EXPOSED_ERROR__',array($this->exception->getCode(),$this->exception->getMessage()));
 				$this->CleanCall();
 			}	
 		}
 		
-		if ($exception = $this->Application()->Session()->Get('__EXPOSED_ERROR__'))
-			$this->exception = $exception;
+		if ($exception = $this->Application()->Session()->Get('__EXPOSED_ERROR__')){
+			$this->exception = new Exception($exception[1],$exception[0]);
+			$this->Application()->Session()->Set('__EXPOSED_ERROR__',null);
+		}
 					
 		if (!$this->isAjax)
 			return $this->respond($request);
