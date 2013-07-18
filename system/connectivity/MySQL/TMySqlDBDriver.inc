@@ -697,7 +697,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		else
 			$coltype = self::transformColType($def->Type);
 		$result = array();
-		$result[] = "`".$def->Name."` ".$coltype.($def->Nullable?" NULL":" NOT NULL").(isset($def->Default)?(sprintf(" DEFAULT %s",$this->quote_smart($def->Default))):"").(($def->AutoAssigned && ($def->Type == TDataType::INTEGER || $def->Type == TDataType::BIGINT))?" AUTO_INCREMENT":"").($def->PrimaryKey?" PRIMARY KEY":"");
+		$result[] = "`".$def->Name."` ".$coltype.($def->Nullable?" NULL":" NOT NULL").(isset($def->Default)?(sprintf(" DEFAULT %s",$this->quote_smart($def->Default))):"").(($def->AutoAssigned && ($def->Type->TypeCode == TDataType::INTEGER || $def->Type->TypeCode == TDataType::BIGINT))?" AUTO_INCREMENT":"").($def->PrimaryKey?" PRIMARY KEY":"");
 		if ($def->Type instanceof TTableReferenceType){
 			$result[] = "INDEX `i".$def->Name."` (`".$def->Name."`)";
 			$result[] = "CONSTRAINT `fk_".$this->RealTableName($tablename)."_".$def->Name."` FOREIGN KEY `".$def->Name."` (`".$def->Name."`) REFERENCES `".$this->RealTableName($def->Type->MasterField->Table)."` (`".$def->Type->MasterField->Name."`) ON DELETE ".self::transformRefIntegrity($def->Type->OnDelete)." ON UPDATE ".self::transformRefIntegrity($def->Type->OnUpdate);

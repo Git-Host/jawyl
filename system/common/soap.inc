@@ -289,8 +289,7 @@ class TSoapServer extends TConfigurable implements ISoapServer {
 	protected $_ioc_xsl_post_processor_;
 	
 	
-	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
-		parent::__construct($name,$container,$application);
+	protected function afterConstruct(){
 		$this->httpMeta = new THttpMeta();
 		$this->httpMeta->ContentType = THttpMeta::TYPE_XML;
 		$this->options = new TSoapOptions();

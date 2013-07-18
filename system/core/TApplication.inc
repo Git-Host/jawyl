@@ -373,7 +373,7 @@
 			$this->_relative_path_ = preg_replace('/\?.*$/','',str_ireplace($this->_root_,'',$this->_uri_));
 			if (!$this->_root_) $this->_root_ = '/';
 
-			parent::__construct('');
+			parent::__construct('',null,$this);
 		}
 		
 /**

@@ -28,11 +28,19 @@ require_once 'core.inc';
  	
  	public static $CompileIocTypes = false;
  	
+ 	
+ 	protected function beforeConstruct(){}
+ 	
+ 	protected function afterConstruct(){}
+ 	
+ 	protected function beforeDestruct(){}
+ 	
 /**
  * class constructor. You need to pass it a unique name of configurable object.
  * @param string $name name of object being created
  */ 	
 	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
+		$this->beforeConstruct();
  		$this->name = $name;
  		$this->_application_ = $application;
  		$this->container = $container;
@@ -47,9 +55,11 @@ require_once 'core.inc';
  				//self::$_ioc_types_[get_class($this)] = $ioctypes;
  			}
  		}
+ 		$this->afterConstruct();
  	}
  	
- 	public function __destruct(){
+ 	public final function __destruct(){
+ 		$this->beforeDestruct();
  		$this->container = null;
  		foreach ($this->_components_ as $nm => $c) 
  			unset($this->_components_[$nm]);

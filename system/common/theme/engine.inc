@@ -70,6 +70,12 @@ interface IThemeEngine {
 	public function ProcessTemplate($context, $filename, $cachelifetime = 0, IPreProcessor $preprocessor = null);
 
 	public function OutputCache();
+	
+/**
+ * @param string $themename
+ * @return bool
+ */	
+	public function ThemeExists($themename);
 }
 
 /**
@@ -80,12 +86,6 @@ interface IThemeEngine {
  * @see TConfigurable 
  */
 abstract class TThemeEngine extends TConfigurable implements IThemeEngine {
-/**
- * constructor.
- * @param string $name engine name
- */
-	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
-		parent::__construct($name,$container,$application);
-	}
+
 }
 ?>

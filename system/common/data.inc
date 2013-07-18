@@ -4,6 +4,7 @@
  * @subpackage Data
  * @category System
  * abstract base class for data types
+ * @property string $TypeCode
  */
 	abstract class TDataType {
 		const STRING = "STRING";
