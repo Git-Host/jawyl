@@ -546,14 +546,26 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return str_replace('|','/',str_ireplace($docroot,'',$theme_dir));
 	}
 	
-	public function ThemeDir(){
+	private function _theme_dir($nm){
 		$themes_dir = $this->Application()->AppPath().'/themes';
 		if ($this->ThemesDir)
-			$themes_dir = $this->ThemesDir; 
+			$themes_dir = $this->ThemesDir;
 		if (!is_dir($themes_dir))
-			mkdir($themes_dir);	
-		return $themes_dir."/".$this->ThemeName;		
-	}		
+			mkdir($themes_dir);
+		return $themes_dir."/".$nm;
+	}
+	
+	public function ThemeDir(){
+		return $this->_theme_dir($this->ThemeName);		
+	}	
+
+	/**
+	 * @param string $themename
+	 * @return bool
+	 */
+	public function ThemeExists($themename){
+		return file_exists($this->_theme_dir($themename));
+	}	
 	
 /**
  * @see IThemeEngine::TemplateExtension()

@@ -15,8 +15,7 @@ class TSoapClient extends TConfigurable {
 	
 	protected $wsdl;
 	
-	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
-		parent::__construct($name,$container,$application);
+	protected function afterConstruct(){
 		$this->options = new TSoapOptions();
 	}
 	

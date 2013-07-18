@@ -63,7 +63,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 /**
  * @var IAjaxEngine
  */	
-	protected $_ioc_ajax_engine_;	
+	protected $_ioc_ajax_engine_;
+	
 /**
  * @var string
  */	
@@ -322,6 +323,11 @@ abstract class TPageService extends TService {
  * @var IAjaxEngine
  */	
 	protected $_ioc_ajax_engine_;
+
+/**
+ * @var IUserAgentDetector
+ */
+	protected $_ioc_u_a_detector_;	
 	
 /**
  * gets page by page id 
@@ -415,7 +421,7 @@ abstract class TPageService extends TService {
 	protected function checkRequest(TRequest $request){
 		return $request instanceof THttpRequest;
 	}
-	
+		
 /**
  * gets page that fits request and calls its Handle method
  * @return boolean

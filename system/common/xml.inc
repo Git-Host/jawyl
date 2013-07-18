@@ -30,8 +30,7 @@ class TXSLTransformer extends TConfigurable implements IXSLTransformer {
 	private $_use_php_functions_ = false;
 	private $_parameters_ = array();
 	
-	public function __construct($name, IConfigurable $container = null, IApplication $application = null){
-		parent::__construct($name,$container,$application);
+	protected function afterConstruct(){
 		$this->_xsl_ = new DOMDocument();
 		$this->_processor_ = new XSLTProcessor();	
 	}
