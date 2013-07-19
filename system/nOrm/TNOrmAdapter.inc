@@ -1328,6 +1328,14 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							$v = new TDate($v);
 						}
 					}break;
+					case 'TFile':{
+						if (!is_null($v))
+							$v = new TFile($this->Application(),basename($v),$v);
+					}break;
+					case 'TImage':{
+						if (!is_null($v))
+							$v = new TImage($this->Application(),basename($v),$v);
+					}break;
 					case 'int':$v = (int)$v;break;
 					case 'float':$v = (float)$v;break;	
 				}
@@ -1378,6 +1386,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				case 'float':$type = TItemPropertyType::PT_DEC;break;
 				case 'date':
 				case 'TDate':$type = TItemPropertyType::PT_DATE;break;
+				case 'TFile':$type = TItemPropertyType::PT_FILE;break;
+				case 'TImage':$type = TItemPropertyType::PT_IMAGE;break;
 				case 'bool':$type = TItemPropertyType::PT_BOOL;break;
 			}
 			return new TOrmPropertyMeta($nm, $nm, $type);
