@@ -726,11 +726,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					case 'reference':{
 						$v = $this->_reference_value($object->$propname, $orm['properties'][$propname]);
 						foreach ($v as $val)
-							if (!is_null($val))
-								$result[] = $val;
+							$result[] = $val;
 					}break;
 					case 'scalar':
-					default:if (!is_null($object->$propname)) $result[] = $this->_get_scalar_prop($object,$propname,$orm['properties'][$propname]['datatype']);break;
+					default:$result[] = $this->_get_scalar_prop($object,$propname,$orm['properties'][$propname]['datatype']);break;
 				}
 			}
 		}
@@ -850,10 +849,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	
 	private function _entity_keys($object,$orm,&$emptyid){
 		$keyvalues = $this->_get_object_key_values($object);
-		$emptyid = false;
-		$n = count($orm['keys']);
-		if (count($keyvalues) != $n)
-			$emptyid = true;
+		$temp = array_filter($keyvalues);
+		$emptyid = empty($temp);
 		return $keyvalues;
 	}
 	
