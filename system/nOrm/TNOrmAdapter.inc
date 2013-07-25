@@ -218,8 +218,10 @@ class TClassOrmConfig {
 		$text .= ',"properties"=>array(';
 		
 		$temp = array();
+		$prop_index = 0;
+		
 		foreach ($this->_properties_ as $prop=>$data){
-			$pt = '"'.$prop.'"=>array("type"=>"'.$data['type'].'","defclass"=>"'.$data['defclass'].'",';
+			$pt = '"'.$prop.'"=>array("index"=>'.$prop_index.',"type"=>"'.$data['type'].'","defclass"=>"'.$data['defclass'].'",';
 			switch ($data['type']){
 				case 'scalar':$pt .= '"datatype"=>"'.$data['datatype'].'","field"=>array("name"=>"'.$data['field']['name'].'","table"=>"'.$data['field']['table'].'")';break;
 				case 'reference':
@@ -249,6 +251,7 @@ class TClassOrmConfig {
 			}
 			$pt .= ')';
 			$temp[] = $pt;
+			$prop_index++;
 		}
 		$text .= join(',',$temp).'));';
 		return $text;
@@ -736,12 +739,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $result;
 	}
 	
-	private function _create_field($name,$table,$type){
+	private function _create_field($name,$table,$type = 0, $alias = null){
 		switch ($type){
-			case 1:return new TNestedSetsField($name,TNestedSetsField::SUBSET_FIELD,null,$table);
-			case 2:return new TNestedSetsField($name,TNestedSetsField::BASE_FIELD,null,$table);
+			case 1:return new TNestedSetsField($name,TNestedSetsField::SUBSET_FIELD,$alias,$table);
+			case 2:return new TNestedSetsField($name,TNestedSetsField::BASE_FIELD,$alias,$table);
 		}
-		return new TTableField($name,null,$table);
+		return new TTableField($name,$alias,$table);
 	}
 	
 	private function _form_filter_condition(array &$filter, $object, $prop, array $meta, array $tables, $fieldtype){
@@ -809,7 +812,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param object $object
  * @return object
  */	
-	public function Load($object, array $assume_descendants = array()){
+	public function Load($object, array $assume_descendants = array(), array $greedy = array()){
 		if ($orm = $this->_get_orm_config($object)){			
 			if ($this->_lazy_loading_ && $this->_bool_unique_objects_){
 				if ($result = $this->_loaded_object($object, $orm))
@@ -821,6 +824,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
 			$assume_classes = $assume_descendants;			
 			$ds = $this->_form_ds($orm, $join, $tables, $fields,$assume_descendants);
+			foreach ($greedy as $prop)
+				$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);			
+			
 			$ds->Fields = $fields;
 			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
 			$ds->Join = $join;
@@ -1049,7 +1055,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	}
 	
 	
-	private function _filter_parse_property($ptr,array $name,$orm,array &$operands, array &$tables,array &$join){
+	private function _parse_property($ptr,array $name,$orm,array &$operands, array &$tables,array &$join,$greedy_fetch_alias = null){
 		if (!isset($orm['properties'][$name[$ptr]])){
 			if ($ptr > 0)
 				throw new TNOrmException(TNOrmException::ERR_INVALID_PROPERTY,array('property'=>$name[$ptr]));
@@ -1059,7 +1065,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		$pfld = ($orm['properties'][$name[$ptr]]["type"] == "scalar")?$orm['properties'][$name[$ptr]]['field']:$orm['properties'][$name[$ptr]]['fields'][0];
 		$mtable = ($ptr == 0)?$pfld['table']:($name[$ptr - 1].($ptr - 1));
 		
-		if (($ptr + 1) == count($name)){			
+		if (($ptr + 1) == count($name)){	
 			switch ($orm['properties'][$name[$ptr]]['type']){
 				case 'collection':{
 					if (count($orm['properties'][$name[$ptr]]['mtm']) > 1){
@@ -1100,10 +1106,16 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					if (count($orm['properties'][$name[$ptr]]['fields']) > 1)
 						throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
 					$field = &$orm['properties'][$name[$ptr]]['fields'][0];
-					$operands[] = $this->_create_field($field['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0);
+					if ($greedy_fetch_alias)
+						$greedy_fetch_alias .= '_'.$field['name'];										
+					$operands[] = $this->_create_field($field['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0,$greedy_fetch_alias);
 				}break;
 				case 'scalar':
-				default:$operands[] = $this->_create_field($orm['properties'][$name[$ptr]]['field']['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0);
+				default:{
+					if ($greedy_fetch_alias)
+						$greedy_fetch_alias .= '_'.$orm['properties'][$name[$ptr]]['field']['name'];	
+					$operands[] = $this->_create_field($orm['properties'][$name[$ptr]]['field']['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0, $greedy_fetch_alias);
+				}break;
 			}				
 			return true;		
 		} 
@@ -1112,6 +1124,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			throw new TNOrmException(TNOrmException::ERR_NOT_REFERENCE,array('property'=>$name[$ptr]));
 			return false;
 		}
+		
+		if ($greedy_fetch_alias)
+			$greedy_fetch_alias .= '_'.$orm['properties'][$name[$ptr]]['index'];
 		
 		$ref_orm = $this->_get_orm_config($orm['properties'][$name[$ptr]]['classname']);
 		$np = &$ref_orm['properties'][$name[$ptr + 1]];
@@ -1136,7 +1151,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							$this->_create_field($orm['properties'][$name[$ptr]]['fields'][0]['name'], $tables[$mtable],0)
 						))));
 		}
-		return $this->_filter_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join);
+		return $this->_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join, $greedy_fetch_alias);
 	}
 	
 	private function _parse_filter_operand($operand, &$filter, $orm,&$tables,&$join){
@@ -1144,7 +1159,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$ptables = $tables;
 			$pjoin = $join;
 				
-			if ($this->_filter_parse_property(0, explode('.',$operand), $orm, $filter, $ptables, $pjoin)){
+			if ($this->_parse_property(0, explode('.',$operand), $orm, $filter, $ptables, $pjoin)){
 				$tables = $ptables;
 				$join = $pjoin;
 			} else
@@ -1185,6 +1200,20 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $sort;
 	}
 	
+	private function _form_greedy_property($name,$orm, &$fields, &$tables, &$join){
+		$path =  explode('.',$name);
+		$porm = $orm;
+		for ($i = 0; $i < count($path); $i++)
+			if ($porm['properties'][$path[$i]]['type'] == 'reference'){
+				$norm = $this->_get_orm_config($porm['properties'][$path[$i]]['classname']);
+				$nm = array_slice($path, 0, $i + 1);
+				foreach ($norm['properties'] as $pn=>$p){
+					$this->_parse_property(0, array_merge($nm,array($pn)), $orm, $fields, $tables, $join,'gp');
+				}
+				$porm = $norm;
+			}
+	}
+	
 /**
  * 
  * Fetches a collection of objects from storage
@@ -1205,6 +1234,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			
 			$break = !empty($assume_classes);
 			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
+			
+			foreach ($greedy as $prop)
+				$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);
+			
 			$filter = array();
 			
 			if (is_object($dummy))
@@ -1534,10 +1567,40 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param mixed $row
  * @param object|string $dummy
  */	
-	public function Create($row,$dummy, array $assumed_descendants = array(), array $assumed_classes = array()){
-		if (is_array($row))
-			$row = (object)$row;
+	public function Create($row, $dummy, array $assumed_descendants = array(), array $assumed_classes = array()){
 		if ($orm = $this->_get_orm_config($dummy)){
+			if (is_array($row)){
+				$greedy = array();	
+				foreach ($row as $key=>$value)
+					if (preg_match('/gp(_\d+)+_(\w+)/',$key))
+						$greedy[$key] = $value;
+				
+				if (!empty($greedy)){
+					$row = array_diff_key($row, $greedy);
+					$temp = array();
+					foreach ($greedy as $key=>$value){
+						$parts = array();
+						preg_match('/^((?:\d+_)+)([^\d].*)$/',preg_replace('/^gp_/','',$key),$parts);
+						$t = explode('_',$parts[1]);
+						array_pop($t);
+						array_push($t, $parts[2]);
+						$parts = $t;
+						$nm = $orm['prop_by_index'][$parts[0]];
+						if (!isset($temp[$nm]))
+							$temp[$nm] = array();
+						if (count($parts) == 2)
+							$temp[$nm][$parts[1]] = $value;
+						else 
+							$temp[$nm]['gp_'.join('_',array_slice($parts, 1))] = $value;
+					}
+					
+					$greedy = array();
+					foreach ($temp as $nm=>$r)
+						$greedy[$nm] = $this->Create($r, $orm['properties'][$nm]['classname']);
+				}
+				$row = (object)$row;
+			}
+		
 			$cn = $orm['classname'];
 			foreach ($assumed_descendants as $c=>$keyfields){
 				$isit = true;
@@ -1572,7 +1635,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			foreach ($orm['properties'] as $name=>$prop){
 				if (!in_array($name,$orm['keys']))
 					$this->_assign_property($dummy, $name, $prop, $row, $assumed_classes);
-			}		
+			}
+
+			if (!empty($greedy))
+				foreach ($greedy as $nm=>$obj)
+					$dummy->$nm = $obj;
 			return $dummy;
 		}
 		return null;
@@ -1674,6 +1741,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$ormconfig = false;
 				if (file_exists($filename))
 					include $filename;
+				$ormconfig['prop_by_index'] = array();
+				foreach ($ormconfig['properties'] as $nm=>$p)
+					$ormconfig['prop_by_index'][$p['index']] = $nm;
 				$this->_loaded_orms_[$cn] = $ormconfig;
 			}
 		} 
