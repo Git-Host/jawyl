@@ -96,13 +96,13 @@ interface IORMStorage {
  * @param object $object
  * @return object
  */	
-	public function Load($object, array $assume_descendants = array());
+	public function Load($object, array $assume_descendants = array(), array $greedy = array());
 /** 
  * Saves object to storage, returns saved object
  * @param object $object
  * @return object
  */	
-	public function Save($object, array $propeties_mask = array(), $origin);
+	public function Save($object, array $propeties_mask = array(), $origin = null);
 	
 /** 
  * Deleted object from storage, returns true on success
