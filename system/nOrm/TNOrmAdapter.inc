@@ -1139,35 +1139,31 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $this->_filter_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join);
 	}
 	
-	
-// @todo Implement operations in orm list filters	
+	private function _parse_filter_operand($operand, &$filter, $orm,&$tables,&$join){
+		if (is_string($operand)){
+			$ptables = $tables;
+			$pjoin = $join;
+				
+			if ($this->_filter_parse_property(0, explode('.',$operand), $orm, $filter, $ptables, $pjoin)){
+				$tables = $ptables;
+				$join = $pjoin;
+			} else
+				$filter[] = $operand;
+		}
+		else if ($operand instanceof IIdentity)
+			$filter[] = $operand->ItemId();
+		else if ($operand instanceof TOperation){
+			$operands = array();
+			foreach ($operand->Operands as $o)
+				$this->_parse_filter_operand($o, $operands, $orm, $tables, $join);
+			$filter[] = ($operand instanceof TCondition)?new TCondition($operand->Type, $operands):new TOperation($operand->Type,$operands);
+		} else
+			$filter[] = $operand;
+	}
 	
 	private function _filter_from_conditions(array &$filter,$orm,&$tables,$conditions, &$join){
 		foreach ($conditions as $condition)
-			if ($condition instanceof TOrmCondition){
-				$operands = array();
-				foreach ($condition->Operands as $o)
-					if (is_string($o)){
-						$ptables = $tables;
-						$pjoin = $join;
-											
-						if ($this->_filter_parse_property(0, explode('.',$o), $orm, $operands, $ptables, $pjoin)){
-							$tables = $ptables;
-							$join = $pjoin;
-						} else
-							$operands[] = $o;
-					} else {
-						if ($o instanceof IIdentity)
-							$operands[] = $o->ItemId();
-						else	
-							$operands[] = $o;
-					}							
-				$filter[] = new TCondition($condition->Type, $operands);
-			} else if ($condition instanceof TOperation){
-				$temp = array();
-				$this->_filter_from_conditions($temp, $orm, $tables, $condition->Operands, $join);
-				$filter[] = ($condition instanceof TCondition)?new TCondition($condition->Type,$temp):new TOperation($condition->Type,$temp);
-			}
+			$this->_parse_filter_operand($condition, $filter, $orm, $tables, $join);
 	}
 	
 	private function _form_sorting($orm,$tables,$sorting){
