@@ -855,12 +855,9 @@
 			$pth = str_ireplace($dr,'',$rp);	
 			$pth = str_replace('|','/',$pth);
 			
-			if (!$pth || $pth[0] != '/')
+			if ((!$pth || $pth[0] != '/') && !$force_absolute)
 				$pth = '/'.$pth;
-			
-			if (!preg_match('/.*[\/\\\\]$/',$pth))
-				$pth .= '/'; 				
-				
+							
 			$url = $pth;
 			$sef_url = null;
 			
@@ -870,6 +867,8 @@
 			}
 			
 			if (!is_null($sef_url)){
+				if (!preg_match('/.*[\/\\\\]$/',$pth))
+					$pth .= '/'; 				
 				if (count($notapplied) > 0){
 					$q = false;
 					foreach ($notapplied as $key)
