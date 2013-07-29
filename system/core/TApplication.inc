@@ -260,6 +260,8 @@
 		
 		private $_lang_;
 		
+		private $_host_;
+		
 /**
 * @ignore
 * */		
@@ -298,8 +300,19 @@
 				case 'Root':return $this->_root_;break;
 				case 'RelativePath':return $this->_relative_path_;break;
 				case 'Path':return get_include_path();break;
-				case 'Host':return $_SERVER['HTTP_HOST'];break;
-				case 'Port':return $_SERVER['SERVER_PORT'];break;
+				case 'Host':{
+					if (!$this->_host_){
+						if ($_SERVER['HTTP_HOST']){
+							$v = explode(":",$_SERVER['HTTP_HOST']);
+							$this->_host_ = $v[0];
+						} else if ($_SERVER['SERVER_NAME'])
+							$this->_host_ = $_SERVER['SERVER_NAME'];
+					}
+					return $this->_host_;
+				}break;
+				case 'Port':{
+					return $_SERVER['SERVER_PORT'];
+				}break;
 				case 'Domain':return $this->Host.($this->Port?(($this->Port != '80')?':'.$this->Port:''):'');
 				case 'ConfCompileDir':{
 					if ($this->_prev_configcompile_dir_ != self::$ConfigCompileDirectory){
@@ -867,8 +880,9 @@
 			}
 			
 			if (!is_null($sef_url)){
-				if (!preg_match('/.*[\/\\\\]$/',$pth))
-					$pth .= '/'; 				
+				if (!preg_match('/.*[\/\\\\]$/',$url))
+					$url .= '/'; 
+				
 				if (count($notapplied) > 0){
 					$q = false;
 					foreach ($notapplied as $key)
