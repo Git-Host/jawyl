@@ -880,7 +880,7 @@
 			}
 			
 			if (!is_null($sef_url)){
-				if (!preg_match('/.*[\/\\\\]$/',$url))
+				if (!preg_match('/.*[\/\\\\]$/',$url) && $sef_url && ($sef_url[0] != '/'))
 					$url .= '/'; 
 				
 				if (count($notapplied) > 0){
