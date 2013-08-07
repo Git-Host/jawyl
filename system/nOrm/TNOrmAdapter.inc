@@ -640,6 +640,16 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$real_descendants = array();
 			foreach ($assumed_descendants as $cname)
 				if (is_subclass_of($cname, $orm['classname'])){
+					if ($pcname = get_parent_class($cname)){
+						while ($pcname != $orm['classname']){
+							if (!isset($real_descendants[$pcname])){
+								$this->_form_assumed_descender($ds,$orm, $pcname,  $prevkeys, $join, $tables, $fields,$kv);
+								//$real_descendants[$pcname] = $kv;
+							}
+							$pcname = get_parent_class($pcname);
+						}
+					}
+				
 					$this->_form_assumed_descender($ds,$orm, $cname,  $prevkeys, $join, $tables, $fields,$kv);
 					$real_descendants[$cname] = $kv;
 				}	
