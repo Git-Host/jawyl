@@ -72,7 +72,6 @@
  * @property-write string $SessionHandler sets current session handler by its name, when session is open setting this property leads to exception.
  * 
  * @property string $PrivateDir gets and sets application private directory relative to TApplication::$AppPath. defaults to "private". 
- * @property string $Shared gets and sets application public shared directory relative to TApplication::$Root, used to store client resources such as javascript and css. defaults to "shared".
  * @property string $Path gets and sets application import paths array in the form of semicolon delimited list
  * @property string $ConfigDir
  * @property string $OverrideDir
@@ -143,10 +142,6 @@
  */		
 		private $_ioccompile_dir_;
 		
-/**
- * @var string
- */		
-		private $_shared_ = '/shared';
 /**
  * @var string
  */		
@@ -295,7 +290,6 @@
 					return $this->_ext_dir_;
 				}break;
 				case 'FileStoragePath':return $this->_file_storage_path_;break;
-				case 'Shared':return $this->_shared_;break;
 				case 'URI':return $this->_uri_;break;
 				case 'Root':return $this->_root_;break;
 				case 'RelativePath':return $this->_relative_path_;break;
@@ -411,8 +405,6 @@
 		public function OverrideDir(){return $this->OverrideDir;}
 		
 		public function Sef(){return $this->Sef;}
-		
-		public function Shared(){return $this->Shared;}
 		
 		public function Root(){return $this->Root;}
 
@@ -938,7 +930,6 @@
 		public function __set($nm,$value){
 			switch ($nm){
 				case 'TimeZone':date_default_timezone_set($value);break;
-				case 'Shared':$this->_shared_ = preg_replace('/\A[\\\\\/]?(.*)[\\\\\/]?\z/','/$1',$value);break;
 				case 'Language':{
 					$this->_lang_ = $value;
 					setlocale(LC_ALL,$value);

@@ -73,12 +73,6 @@ interface IApplication extends IConfigurable {
 	public function Sef();
 	
 /**
- * get application web shared folder
- * @return string
- */
-	public function Shared();
-	
-/**
  * gets application root URL
  * @return string
  */

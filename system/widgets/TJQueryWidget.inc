@@ -45,16 +45,29 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	public static $JQueryWindowLoaded = false;
 	
 	public static $JQueryDragDropLoaded = false;
+	
+	protected $_conf_j_query_path_ = null;
+	
+	private $_theme_jquery_exists_ = false;
 
 	public function JQueryPath(){
-		if ($this->Application()->CurrentService()->CurrentPage()->JQueryPath)
-			return $this->Application()->CurrentService()->CurrentPage()->JQueryPath;
-		if ($this->Application()->CurrentService()->JQueryPath)
-			return $this->Application()->CurrentService()->JQueryPath;
-		if ($this->Application()->JQueryPath)
-			return $this->Application()->JQueryPath;
-		return $this->Application()->Shared()."/js/jquery/"; 
+		if ($this->JQueryPath)
+			return $this->JQueryPath;
+		if ($this->currentEngine)
+			if ($this->_theme_jquery_exists_ || file_exists($this->currentEngine->ThemeDir()."/js/jquery/")){
+				$this->_theme_jquery_exists_ = true;
+				return $this->currentEngine->ThemeUrl()."/js/jquery/"; 
+			}
+		return "/js/jquery/";
 	}
+	
+	public function __set($nm, $value){
+		switch ($nm){
+			case 'JQueryPath':$this->_conf_j_query_path_ = $this->Application()->AdjustPath($value);break;
+			default:parent::__set($nm,$value);break;
+		}
+	}
+	
 	
 /**
  * loads jquery accordion plugin
@@ -124,7 +137,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 /**
  * 
  */	
-	public function LoadResources(){
+	protected function resourceLoad(){
 		if (!self::$JQueryLoaded){
 		?>
 <script type="text/javascript" src="<?php echo $this->JQueryPath(); ?>jquery-min.js"></script>
