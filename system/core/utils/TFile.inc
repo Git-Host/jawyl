@@ -81,17 +81,7 @@
    	}
    	
    	protected function formLink($path){
-/*
- * @todo move path to link logic to TApplication 
- * 
- */   		
-   		$path = preg_replace('/[\\/\\\\]/','|',$path);
-   		$docroot = preg_replace('/[\\/\\\\]/','|',$_SERVER["DOCUMENT_ROOT"]);
-   		$link = str_ireplace($docroot,"",$path);
-   		$link = str_replace('|','/',$link);
-   		if ($link[0] != '/')
-   			$link = '/'.$link;
-   		return $link;
+   		return $this->storage->UrlFromPath($path);
    	}
 
 /**
