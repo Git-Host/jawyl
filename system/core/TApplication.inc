@@ -851,6 +851,20 @@
 		}
 		
 /**
+ * @param string $path
+ * @return string
+ */
+		public function UrlFromPath($path){
+			$path = preg_replace('/[\\/\\\\]/','|',$path);
+			$docroot = preg_replace('/[\\/\\\\]/','|',$_SERVER["DOCUMENT_ROOT"]);
+			$link = str_ireplace($docroot,"",$path);
+			$link = str_replace('|','/',$link);
+			if ($link[0] != '/')
+				$link = '/'.$link;
+			return $link;			
+		}		
+		
+/**
  * Constructs an url to request a specified service
  * @param string $service optional service name, if not specified current service is used 
  * @param array $parameters optional request parameters array  
@@ -1032,7 +1046,8 @@
 			if ($mimetype)
 				header('Content-Type: '.$mimetype);
 			header('Content-Length: '.filesize($file));
-			header('Cache-Control: public');
+			//header('Cache-Control: public');
+			header('Cache-Control: max-age=60, must-revalidate');			
 			header('ETag: '.filemtime($file));
 			echo file_get_contents($file);
 		}

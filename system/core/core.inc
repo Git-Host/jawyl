@@ -1,9 +1,15 @@
 <?php
 interface IFileStorage {
 /**
- * @return strings
+ * @return string
  */	
 	public function FileStoragePath();
+
+/**
+ * @param string $path
+ * @return string
+ */	
+	public function UrlFromPath($path);
 }
 
 /**
@@ -159,7 +165,7 @@ interface IApplication extends IConfigurable {
  * @return string
  */
 	public function Url($service = null,array $parameters = array(),$base = null, $force_absolute = false);
-	
+		
 /**
  * @param string $name
  * @return string
