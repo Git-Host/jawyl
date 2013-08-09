@@ -426,7 +426,7 @@ abstract class TPageService extends TService {
  * gets page that fits request and calls its Handle method
  * @return boolean
  */		
-	protected function handleRequest(TRequest $request){		
+	protected function handleRequest(TRequest $request){	
 		if (!$request->page){
 			$this->page = $this->getDefaultPage();
 		} else 

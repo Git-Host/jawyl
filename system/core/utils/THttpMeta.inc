@@ -98,7 +98,7 @@ class THttpMeta {
 		switch ($contentType){
 			case self::TYPE_XML:return "Content-Type:application/xml; charset=utf-8";break;
 			case self::TYPE_JS:
-			case self::TYPE_JSON:return "Content-Type:text/javascript; charset=utf-8";break;
+			case self::TYPE_JSON:return "Content-Type:text/x-js; charset=utf-8";break;
 			case self::TYPE_HTML:return "Content-Type:text/html; charset=utf-8";break;
 			case self::TYPE_CSS:return "Content-Type:text/css; charset=utf-8";break;
 			case self::TYPE_GIF:return "Content-Type:img/gif";break;

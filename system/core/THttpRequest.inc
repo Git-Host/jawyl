@@ -171,8 +171,8 @@
  * @return string 
  */
 		public function Header($nm){
-			if (isset($_SERVER[strtoupper($nm)]))
-				return $_SERVER[strtoupper($nm)];
+			if (isset($_SERVER['HTTP_'.strtoupper($nm)]))
+				return $_SERVER['HTTP_'.strtoupper($nm)];
 			return null;
 		}
 		

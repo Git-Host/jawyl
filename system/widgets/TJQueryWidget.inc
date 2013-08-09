@@ -75,7 +75,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	protected function loadAccordion(){
 		if (!self::$JQueryAccordionLoaded){
 ?>
-<script type='text/javascript' src='<?php echo $this->JQueryPath(); ?>jquery.jawyl.accordion.js'></script>
+<script type='text/javascript' src='<?php echo $this->Application()->AssetUrl("jquery/jquery.jawyl.accordion.js"); ?>'></script>
 <?php			
 			self::$JQueryAccordionLoaded = true;
 		}
@@ -87,7 +87,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	protected function loadFileUpload(){
 		if (!self::$JQueryFileUploadLoaded){
 ?>
-<script type='text/javascript' src='<?php echo $this->JQueryPath(); ?>jquery.jawyl.fileupload.js'></script>
+<script type='text/javascript' src='<?php echo $this->Application()->AssetUrl("jquery/jquery.jawyl.fileupload.js"); ?>'></script>
 <?php			
 			self::$JQueryFileUploadLoaded = true;
 		}
@@ -99,7 +99,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	protected function loadForms(){
 		if (!self::$JQueryFormLoaded){
 ?>
-<script type='text/javascript' src='<?php echo $this->JQueryPath(); ?>jquery.form.js'></script>
+<script type='text/javascript' src='<?php echo $this->Application()->AssetUrl("jquery/jquery.form.js"); ?>'></script>
 <?php			
 			self::$JQueryFormLoaded = true;
 		}
@@ -111,7 +111,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	protected function loadTabControl(){
 		if (!self::$JQueryTabControlLoaded){
 ?>
-<script type='text/javascript' src='<?php echo $this->JQueryPath(); ?>jquery.jawyl.tabcontrol.js'></script>
+<script type='text/javascript' src='<?php echo $this->Application()->AssetUrl("jquery/jquery.jawyl.tabcontrol.js"); ?>'></script>
 <?php			
 			self::$JQueryTabControlLoaded = true;
 		}
@@ -123,7 +123,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 	protected function loadDraggable(){
 		if (!self::$JQueryDragDropLoaded){
 ?>
-<script type='text/javascript' src='<?php echo $this->JQueryPath(); ?>jquery.jawyl.draggable.js'></script>
+<script type='text/javascript' src='<?php echo $this->Application()->AssetUrl("jquery/jquery.jawyl.draggable.js"); ?>'></script>
 <?php			
 			self::$JQueryDragDropLoaded = true;
 		}
