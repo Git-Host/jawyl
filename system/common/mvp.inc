@@ -761,11 +761,16 @@ abstract class TWidget extends TResponseElement {
 				$this->stopCache($engine,$this->Name(),$this->CacheLifeTime);
 		}
 	}
+	
+	public function LoadResources(IThemeEngine $engine){
+		$this->currentEngine = $engine;
+		$this->resourceLoad();
+	}
 
 /**
  * loads resources needed for widget functionality
  */	
-	public abstract function LoadResources();
+	protected abstract function resourceLoad();
 
 /**
  * default widget output

@@ -109,7 +109,7 @@ abstract class TSkinnableWidget extends TSourcedWidget {
 			include $file;
 	}
 	
-	public function LoadResources(){
+	protected function resourceLoad(){
 		$cssfile = $this->externalCss();
 		if ($cssfile){
 ?>
