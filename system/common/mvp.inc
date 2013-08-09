@@ -770,7 +770,7 @@ abstract class TWidget extends TResponseElement {
 /**
  * loads resources needed for widget functionality
  */	
-	protected abstract function resourceLoad();
+	protected function resourceLoad(){}
 
 /**
  * default widget output
