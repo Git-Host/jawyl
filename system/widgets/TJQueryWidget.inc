@@ -147,7 +147,7 @@ abstract class TJQueryWidget extends TSkinnableWidget implements IFilePropertyPu
 			self::$JQueryLoaded = true;
 		}
 		$this->linkCustomResources();
-		parent::LoadResources();
+		parent::resourceLoad();
 	}
 
 /**

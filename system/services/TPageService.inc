@@ -202,7 +202,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 	public function LoadResources(){
 		$widgets = $this->Widgets();
 		foreach ($widgets as $w){
-			$w->LoadResources();
+			$w->LoadResources($this->ThemeEngine);
 		}
 	}
 /**
