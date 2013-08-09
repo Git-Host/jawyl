@@ -159,6 +159,12 @@ interface IApplication extends IConfigurable {
  * @return string
  */
 	public function Url($service = null,array $parameters = array(),$base = null, $force_absolute = false);
+	
+/**
+ * @param string $name
+ * @return string
+ */	
+	public function AssetUrl($name);
 }
 
 

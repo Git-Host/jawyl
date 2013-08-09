@@ -797,9 +797,8 @@
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
-				
-			$handled = false;
 			
+			$handled = false;
 			if ($servicename){
 				$this->_current_service_ = $this->GetService($servicename);
 				if ($this->_current_service_){
@@ -841,6 +840,15 @@
  * @see TService 
  */						
 		public function CurrentService(){return $this->_current_service_;}
+		
+		
+/**
+ * @param string $name
+ * @return string
+ */
+		public function AssetUrl($name){
+			return $this->Url(null,array("__asset__"=>$name));
+		}
 		
 /**
  * Constructs an url to request a specified service
@@ -885,6 +893,7 @@
 				}
 				$url = $url.$sef_url;
 			} else {
+				$url .= '/';
 				if ((!is_null($service)) || (count(array_values($parameters)) > 0))
 					$url .= '?';
 				if (!is_null($service))
@@ -1004,10 +1013,47 @@
 			}
 		}
 		
+		private static function __send_asset($file){
+			if (isset($_SERVER["HTTP_IF_NONE_MATCH"])){
+				if (filemtime($file) == $_SERVER["HTTP_IF_NONE_MATCH"]){
+					header('HTTP/1.0 304 Not Modified',true,304);
+					header("Connection: Close");
+					return;
+				}
+			} 
+			
+			$mimetype = false;		
+			if (function_exists('finfo_open')){
+				$finfo = finfo_open(FILEINFO_MIME);
+				$mimetype = finfo_file($finfo, $file);
+				finfo_close($finfo);
+			} else if (function_exists('mime_content_type'))
+				$mimetype = mime_content_type($file);
+			if ($mimetype)
+				header('Content-Type: '.$mimetype);
+			header('Content-Length: '.filesize($file));
+			header('Cache-Control: public');
+			header('ETag: '.filemtime($file));
+			echo file_get_contents($file);
+		}
+		
 /**
 * Application main method, which launches runtime. Called once in the initial script. 
 */		
 		public static function Run($callerPath){
+			if (isset($_GET["__asset__"])){
+				$asset = rawurldecode($_GET["__asset__"]);
+				$appdir = realpath(dirname($callerPath));
+				if (file_exists($appdir.'/assets/'.$asset)){	
+					self::__send_asset($appdir.'/assets/'.$asset);
+					die;
+				}
+				$sys = realpath(dirname(__FILE__).'/../..');
+				if (file_exists($sys.'/assets/'.$_GET["__asset__"]))
+					self::__send_asset($sys.'/assets/'.$asset);
+				die;	
+			}
+			
 			if (!ini_get('date.timezone'))
 				date_default_timezone_set('Asia/Vladivostok');	
 			self::$_runtime_successfull_ = false;
