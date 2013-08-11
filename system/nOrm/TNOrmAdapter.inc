@@ -1157,7 +1157,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		if (!isset($tables[$alias])){
 			$tables[$alias] = new TTable($rtn,$alias);
 		
-			$join[] = new TJoin($tables[$alias], TJoin::JOIN_INNER, 
+			$join[] = new TJoin($tables[$alias], TJoin::JOIN_LEFT, 
 					array(new TCondition(TConditionType::C_EQUAL, array(
 							$this->_create_field($ref_orm['tables'][$rtn][0], $tables[$alias],0),
 							$this->_create_field($orm['properties'][$name[$ptr]]['fields'][0]['name'], $tables[$mtable],0)
