@@ -907,7 +907,8 @@
 				}
 				$url = $url.$sef_url;
 			} else {
-				$url .= '/';
+				if ($url != '/')
+					$url .= '/';
 				if ((!is_null($service)) || (count(array_values($parameters)) > 0))
 					$url .= '?';
 				if (!is_null($service))

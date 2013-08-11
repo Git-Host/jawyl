@@ -564,6 +564,10 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 				$f = fopen($filename,'a');
 				$d = new TDate();			
 				fwrite($f,$d.':'.$q."\n");
+				$p = "";
+				foreach ($parameters as $pn=>$pv)
+					$p .= $pn."=".$pv.",";
+				fwrite($f,$d.'параметры:'.$p."\n");
 				fclose($f);
 			}
 		}
