@@ -549,12 +549,12 @@
 				foreach ($routs as $route){
 					$regexp = $xpath->query('regexp',$route);
 					if ($regexp->length > 0)
-						$regexp = $regexp->item(0)->nodeValue;
+						$regexp = addslashes($regexp->item(0)->nodeValue);
 					else
 						$regexp = null;
 					$request = $xpath->query('request',$route);
 					if ($request->length > 0)
-						$request = $request->item(0)->nodeValue;
+						$request = addslashes($request->item(0)->nodeValue);
 					else
 						$resquest = null;
 					$service = $xpath->query('service',$route);
@@ -794,6 +794,14 @@
 				self::$_request_ = new TConsoleCall();
 			}
 						
+			if (self::$_request_->__asset__){
+				$syspath = realpath(dirname(__FILE__).'/../..');
+				if (file_exists($this->AppPath().'/assets/'.self::$_request_->__asset__))
+					self::__send_asset($this->AppPath().'/assets/'.self::$_request_->__asset__);
+				else if (file_exists($syspath.'/assets/'.self::$_request_->__asset__))
+					self::__send_asset($syspath.'/assets/'.self::$_request_->__asset__);
+			}
+			
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
@@ -1029,11 +1037,11 @@
 		}
 		
 		private static function __send_asset($file){
-			if (isset($_SERVER["HTTP_IF_NONE_MATCH"])){
-				if (filemtime($file) == $_SERVER["HTTP_IF_NONE_MATCH"]){
+			if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])){
+				if (gmdate('D, d M Y H:i:s \G\M\T',filemtime($file)) == $_SERVER["HTTP_IF_MODIFIED_SINCE"]){
 					header('HTTP/1.0 304 Not Modified',true,304);
 					header("Connection: Close");
-					return;
+					die;
 				}
 			} 
 			
@@ -1044,32 +1052,21 @@
 				finfo_close($finfo);
 			} else if (function_exists('mime_content_type'))
 				$mimetype = mime_content_type($file);
+
 			if ($mimetype)
 				header('Content-Type: '.$mimetype);
+			
 			header('Content-Length: '.filesize($file));
-			//header('Cache-Control: public');
-			header('Cache-Control: max-age=60, must-revalidate');			
-			header('ETag: '.filemtime($file));
+			header('Cache-Control: public');
+			header('Last-Modified: '.gmdate('D, d M Y H:i:s \G\M\T', filemtime($file)));		
 			echo file_get_contents($file);
+			die;
 		}
 		
 /**
 * Application main method, which launches runtime. Called once in the initial script. 
 */		
-		public static function Run($callerPath){
-			if (isset($_GET["__asset__"])){
-				$asset = rawurldecode($_GET["__asset__"]);
-				$appdir = realpath(dirname($callerPath));
-				if (file_exists($appdir.'/assets/'.$asset)){	
-					self::__send_asset($appdir.'/assets/'.$asset);
-					die;
-				}
-				$sys = realpath(dirname(__FILE__).'/../..');
-				if (file_exists($sys.'/assets/'.$_GET["__asset__"]))
-					self::__send_asset($sys.'/assets/'.$asset);
-				die;	
-			}
-			
+		public static function Run($callerPath){			
 			if (!ini_get('date.timezone'))
 				date_default_timezone_set('Asia/Vladivostok');	
 			self::$_runtime_successfull_ = false;

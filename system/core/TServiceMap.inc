@@ -59,7 +59,7 @@
 */
 		public function MakeUri($service,array $parameters = array(), array &$notapplied  = array()){
 			if (!in_array("service",$this->_request_params_)) 
-				if ($service != $this->_service_) {
+				if ($this->_service_ && $service != $this->_service_) {
 					return null;
 				}
 			
@@ -92,9 +92,10 @@
  * @see THttpRequest
 */			
 		public function GetRequest($uri, IApplication $application,$servicename = null){
-			if ($servicename)
+			if ($servicename && $this->_service_)
 				if ($this->_service_ != $servicename)
 					return null;
+			
 			preg_match($this->_regexp_,$uri,$params);
 			if (count($params) > 0){
 				$service = $this->_service_;
@@ -109,9 +110,9 @@
 				$request = new THttpRequest($service, $application);
 				foreach ($this->_defaults_ as $key=>$value)
 					if (!$request->__isset($key))
-						$request->setGetParameter($key,$value);
+						$request->setGetParameter($key,$value);				
 				foreach ($qp as $key=>$value)	
-					$request->setGetParameter($key,urldecode($value));
+					$request->setGetParameter($key,rawurldecode($value));
 				return $request;
 			}
 			return null;
