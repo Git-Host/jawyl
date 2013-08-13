@@ -1590,7 +1590,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				if (!empty($greedy)){
 					$row = array_diff_key($row, $greedy);
 					$temp = array();
-					foreach ($greedy as $key=>$value){
+					foreach ($greedy as $key=>$value)
+					if (!is_null($value)){
 						$parts = array();
 						preg_match('/^((?:\d+_)+)([^\d].*)$/',preg_replace('/^gp_/','',$key),$parts);
 						$t = explode('_',$parts[1]);

@@ -14,7 +14,16 @@
     			</patternset>
   			</fileset>
 		</copy>
-		<echo>Файлы system</echo>
+		<echo>Файлы system скопированы</echo>
+		<echo>Копирование assets</echo>
+		<copy todir="${tmp}" >
+  			<fileset dir="${src}">
+  				<patternset>
+  				<include name="assets/**" />
+    			</patternset>
+  			</fileset>
+		</copy>
+		<echo>Файлы assets скопированы</echo>
 		<zip destfile="${dest}" basedir="${tmp}" />
 		<delete dir="${tmp}" includeemptydirs="true" verbose="false" failonerror="false" />
 	</target>
