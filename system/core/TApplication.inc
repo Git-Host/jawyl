@@ -682,8 +682,7 @@
  * @see TApplication::getClass()
 */					
 		public function Instantiate($classname,array $arguments = array()){
-			$i = null;
-				
+			$i = null;	
 			if ($c = $this->GetClass($classname)){
 				if (count($arguments) == 0)	
 					$i = $c->newInstance();
@@ -771,8 +770,7 @@
 						$this->_compile_routes($this->PrivateDir.'/routes.xml');
 				}
 			}			
-			
-			
+				
 			if (file_exists($this->ConfCompileDir.'/init.0.php'))
 				include_once $this->ConfCompileDir.'/init.0.php';
 			include_once $this->ConfCompileDir.'/application.php';
@@ -782,32 +780,33 @@
 				include_once $this->ConfCompileDir.'/init.1.php';
 			$servicename = '';
 			$this->_call_type_ = isset($_SERVER['HTTP_HOST'])?self::CALL_HTTP:self::CALL_CONSOLE;
-			if ($this->_call_type_ == self::CALL_HTTP) {
+			
+			if ($this->_call_type_ == self::CALL_HTTP) {				
 				if (isset($_REQUEST['service'])) $servicename = $_REQUEST['service'];
 				if ($this->Sef){
 					include_once $this->ConfCompileDir.'/url.php';
 					self::$_request_ = $this->_service_map_->ParseUri($this->RelativePath,$this,$servicename);
 				}
 				if (!self::$_request_) 
-					self::$_request_ = new THttpRequest($servicename,$this);				
+					self::$_request_ = new THttpRequest($servicename,$this);
+
+				if (self::$_request_->__asset__){
+					$syspath = realpath(dirname(__FILE__).'/../..');
+					if (file_exists($this->AppPath().'/assets/'.self::$_request_->__asset__))
+						self::__send_asset($this->AppPath().'/assets/'.self::$_request_->__asset__);
+					else if (file_exists($syspath.'/assets/'.self::$_request_->__asset__))
+						self::__send_asset($syspath.'/assets/'.self::$_request_->__asset__);
+				}
 			} else {
 				self::$_request_ = new TConsoleCall();
-			}
-						
-			if (self::$_request_->__asset__){
-				$syspath = realpath(dirname(__FILE__).'/../..');
-				if (file_exists($this->AppPath().'/assets/'.self::$_request_->__asset__))
-					self::__send_asset($this->AppPath().'/assets/'.self::$_request_->__asset__);
-				else if (file_exists($syspath.'/assets/'.self::$_request_->__asset__))
-					self::__send_asset($syspath.'/assets/'.self::$_request_->__asset__);
 			}
 			
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
-			
+				
 			$handled = false;
-			if ($servicename){
+			if ($servicename){				
 				$this->_current_service_ = $this->GetService($servicename);
 				if ($this->_current_service_){
 					$handled = $this->_current_service_->Handle(self::Request());	

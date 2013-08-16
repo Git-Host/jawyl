@@ -162,6 +162,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _compile_expression($expr,$get_self = false,$bubble = true){
 		$expr = trim($expr);
+		if (is_numeric($expr))
+			return $expr;
 		if ($expr[0] == '`')
 			return str_replace('`','"',addslashes($expr));
 
@@ -303,6 +305,14 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		return $result.'; ?>';
 	}
 	
+	private function _arith_compile($matches){
+		$result = '<?php $this->_global_vars_["'.$matches[1].'"] = ';
+		$result .= $this->_compile_expression(trim($matches[2]),true);
+		$result .= ' '.$matches[3].' ';
+		$result .= $this->_compile_expression(trim($matches[4]),true);
+		return $result.'; ?>';
+	}	
+	
 	private function _varout_compile($matches){
 		$result = '<?php echo ';
 		$filters = explode('<', $matches[2]);
@@ -354,17 +364,24 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	
 	private function _compile_oper($matches){
 		switch ($matches[1]){
-			case 'if':{
-				if (count($matches) > 3)
-					return '<?php if ('.$this->_compile_expression($matches[2]).' == '.$this->_compile_expression($matches[3],true).') { ?>';
-				else
-					return '<?php if ('.$this->_compile_expression($matches[2]).') { ?>';
-			}break;
+			case 'if':
 			case 'ifnot':{
-				if (count($matches) > 3)
-					return '<?php if ('.$this->_compile_expression($matches[2]).' != '.$this->_compile_expression($matches[3],true).') { ?>'; 
+				$n = count($matches);
+				$not = $matches[1] == 'ifnot'?'!':''; 
+				if ($n > 4){
+					$oper = trim($matches[3]);
+					if (!$oper)
+						$oper = $not?('!='):'==';
+					
+					$result = '('.$this->_compile_expression($matches[2]).' '.$oper.' '.$this->_compile_expression($matches[4],true).')';
+					
+					if ($not && $oper != '==' && $oper != '!=')
+						$result = '(!'.$result.')';				
+					return '<?php if '.$result.' { ?>'; 
+				} /*else if ($n > 3)
+					return '<?php if ('.$this->_compile_expression($matches[2]).' '.$not.'= '.$this->_compile_expression($matches[3],true).') { ?>';*/ 
 				else
-					return '<?php if (!'.$this->_compile_expression($matches[2]).') { ?>';
+					return '<?php if ('.$not.$this->_compile_expression($matches[2]).') { ?>';
 			}break;
 			case 'is':return '<?php $__c__n__ = '.$this->_compile_expression($matches[2],true).'; if ($this->CurrentContext() instanceof $__c__n__) { ?> ';break;
 			case 'switch':return '<?php switch ('.$this->_compile_expression($matches[2]).') {';break;
@@ -381,7 +398,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		if ($preprocessor instanceof ITemplatePreProcessor)
 			$text = $preprocessor->PreProcess($text);
 			
-		$expr = '[_\w][_\w:]*|\$[_\w]+(?:\[[^\]]*\])*|`[^`]*`';
+		$expr = '[_\w][_\w:]*|\$[_\w]+(?:\[[^\]]*\])*|`[^`]*`|\d+(?:\.\d+)?';
 						
 		$text = $this->preCompile($text);
 		$text = preg_replace('/{%startcache\s+([_\w]+)\s+(\d+)\s*%}/','<?php if ($this->startCache("$1",$2)) { ?>',$text);
@@ -396,7 +413,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace('/{%iterate%}/','<?php $this->popContext(); } $this->_global_vars_["iterlevel"]--; ?>',$text);
 
 		$text = preg_replace_callback('/{%(if(?:not)?|is)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
-		$text = preg_replace_callback('/{%(if(?:not)?)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(if(?:not)?)\s+('.$expr.')(?:\s+(<=?|>=?)\s+|\s+)?('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 	/*	$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		$text = preg_replace_callback('/{%(is)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
@@ -417,6 +434,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace('/{%endwith%}/','<?php $this->popContext(); ?>',$text);
 		
 		$text = preg_replace_callback('/{%assign\\s+([_\w]+)(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?\s+('.$expr.')\s*%}/',array(&$this,"_assign_compile"),$text);
+		$text = preg_replace_callback('/{%assign\\s+([_\w]+)\s+('.$expr.')\s*(\+|-|\*|\/|%)\s*('.$expr.')\s*%}/',array(&$this,"_arith_compile"),$text);
 		$text = preg_replace_callback('/{(@?)%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?('.$expr.')\s*%}/',array(&$this,"_varout_compile"),$text);
 		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)(.*?)\s*%}/',array(&$this,"_rawout_compile"),$text);
 		$text = preg_replace('/{%\s*(.*?)\s*%}/','<?php echo $1; ?>',$text);
