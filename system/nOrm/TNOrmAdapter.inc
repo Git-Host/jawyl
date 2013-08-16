@@ -463,18 +463,9 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 	}
 }
 
-interface INOrmObject {
-/**
- * @return bool
- */	
-	public function WasMoved();
-}
-
-class TNOrmObject implements INOrmObject {
+class TNOrmObject {
 	
 	private $_loaders_ = array();
-	
-	private $_was_moved_ = false;
 	
 	private function _property_name_replace($matches){
 		return "_".strtolower($matches[0]);
@@ -504,10 +495,9 @@ class TNOrmObject implements INOrmObject {
 			if ($value instanceof TNOrmBranchLoader){
 				$this->_loaders_[$n] = $value;
 				$this->$n = null;
-			} else if (($value === false) || (is_object($value) && (get_class($this) == get_class($value)))){
-				$this->_was_moved_ = $this->$n != $value;
+			} else if (($value === false) || (is_object($value) && (get_class($this) == get_class($value))))			
 				$this->$n = $value;
-			} else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+			else throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		} 
 	}
 	
@@ -522,10 +512,6 @@ class TNOrmObject implements INOrmObject {
 			return $this->$n;
 		}
 		return null;
-	}
-	
-	public function WasMoved(){
-		return $this->_was_moved_;	
 	}
 } 
 
@@ -968,10 +954,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						}
 					} else if (!empty($fields)){
 						$this->_ioc_driver_->UpdateRecords($ds, $fields, $values);
-						if ($object instanceof INOrmObject){
-							if (!empty($orm['nestedsets']) && $object->WasMoved() && $maintable){
+						if (!empty($orm['nestedsets']) && $maintable && $origin){	
+							$parentprop = $orm['nestedsets']['parent'];
+							if ($this->_entity_keys($object->$parentprop,$orm,$em1) != $this->_entity_keys($origin->$parentprop, $orm, $em2)){
 								$src = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
-								$parentprop = $orm['nestedsets']['parent'];
 								$filter = array();
 								if (is_object($object->$parentprop))
 									$filter = $this->_filter_from_object($orm, $object->$parentprop, $tables);
