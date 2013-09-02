@@ -1024,7 +1024,8 @@
 			if (function_exists('stream_resolve_include_path')){
 				if ($inc = stream_resolve_include_path($class.'.inc'))
 					include_once $inc;
-			} else include $class.'.inc';
+			} else if (file_exists($class.'.inc')) 
+				include $class.'.inc';
 			
 			if (!self::_check_class($class)){
 				if (is_array(self::$Application->ClassLoader)){
