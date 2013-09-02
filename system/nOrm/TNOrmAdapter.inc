@@ -410,10 +410,12 @@ abstract class TNOrmLoader {
 
 class TNOrmObjectLoader extends TNOrmLoader {
 	protected function load(){
-		$this->adapter->LazyLoading = true;
-		if ($this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants))
-			$this->adapter->ProvideUniqueness($this->value);
-		$this->adapter->LazyLoading = false;
+		if ($this->adapter instanceof IORMStorage){
+			$this->adapter->LazyLoading = true;
+			if ($this->value = $this->adapter->Load($this->dummy,$this->assumeDescendants))
+				$this->adapter->ProvideUniqueness($this->value);
+			$this->adapter->LazyLoading = false;
+		}
 	}
 }
 
@@ -465,7 +467,7 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 
 class TNOrmObject {
 	
-	private $_loaders_ = array();
+	protected $loaders = array();
 	
 	private function _property_name_replace($matches){
 		return "_".strtolower($matches[0]);
@@ -486,14 +488,14 @@ class TNOrmObject {
 		if ($n = $this->_check_prefixed_property($nm,'orm')){
 			$this->$n = $value;
 			if (is_null($value))
-				unset($this->_loaders_[$n]);
+				unset($this->loaders[$n]);
 			if ($value instanceof TNOrmLoader){
-				$this->_loaders_[$n] = $value;
+				$this->loaders[$n] = $value;
 				$this->$n = null;
 			}
 		} else if ($n = $this->_check_prefixed_property($nm,'ns')){
 			if ($value instanceof TNOrmBranchLoader){
-				$this->_loaders_[$n] = $value;
+				$this->loaders[$n] = $value;
 				$this->$n = null;
 			} else if (($value === false) || (is_object($value) && (get_class($this) == get_class($value))))			
 				$this->$n = $value;
@@ -504,14 +506,25 @@ class TNOrmObject {
 	public function __get($nm){		
 		if (($n = $this->_check_prefixed_property($nm,'orm')) || ($n = $this->_check_prefixed_property($nm,'ns'))){
 			if (is_null($this->$n)){
-				if (isset($this->_loaders_[$n])){
-					$this->$n = $this->_loaders_[$n]->Value();
-					unset($this->_loaders_[$n]);
+				if (isset($this->loaders[$n])){
+					$this->$n = $this->loaders[$n]->Value();
+					unset($this->loaders[$n]);
 				}
 			}
 			return $this->$n;
 		}
 		return null;
+	}
+	
+	public function __sleep(){
+		foreach ($this->loaders as $nm=>$loader){
+			if ($loader instanceof TNOrmObjectLoader){
+				if (is_null($this->$nm))
+					$this->$nm = $loader->Value();
+				unset($this->loaders[$nm]);
+			}
+		}
+		return array_keys(get_object_vars($this));
 	}
 } 
 
@@ -702,7 +715,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			case 'int':return (int)$object->$prop;break;
 			case 'float':
 			case 'double':return (float)$object->$prop;break;
-			case 'bool':return TConvertions::ConvertToBoolean($object->$prop);break;
+			case 'bool':return is_null($object->$prop)?null:TConvertions::ConvertToBoolean($object->$prop);break;
 			case 'date':
 			case 'TDate':{
 				$v = $object->$prop;
@@ -1129,6 +1142,19 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		$ref_orm = $this->_get_orm_config($orm['properties'][$name[$ptr]]['classname']);
 		$np = &$ref_orm['properties'][$name[$ptr + 1]];
 		
+		if (is_null($np)){
+			$tad = array();
+			$tad = $this->_enrich_descendants($orm['properties'][$name[$ptr]]['classname'], $tad);
+			foreach ($tad as $ad){
+				$ref_orm = $this->_get_orm_config($ad);
+				$np = &$ref_orm['properties'][$name[$ptr + 1]];
+				if ($np) break;
+			}	
+		}
+		
+		if (is_null($np))
+			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		
 		if ($np["type"] == "reference" && count($np["fields"]) > 1)
 			throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
 		
@@ -1138,7 +1164,6 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$rtn = $np["fields"][0]["table"];
 		else
 			$rtn = $np["field"]["table"];
-		
 		
 		if (!isset($tables[$alias])){
 			$tables[$alias] = new TTable($rtn,$alias);
@@ -1152,31 +1177,43 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $this->_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join, $greedy_fetch_alias);
 	}
 	
-	private function _parse_filter_operand($operand, &$filter, $orm,&$tables,&$join){
+	private function _parse_filter_operand($operand, &$filter, $orm, &$tables, &$join, $ind = null, $rorm = null, array &$rjoin = array()){
 		if (is_string($operand)){
 			$ptables = $tables;
-			$pjoin = $join;
-				
-			if ($this->_parse_property(0, explode('.',$operand), $orm, $filter, $ptables, $pjoin)){
+			if ($rorm && ($ind > 0))
+				$pjoin = $rjoin;
+			else
+				$pjoin = $join;
+			
+			if ($this->_parse_property(0, explode('.',$operand), ($rorm && ($ind > 0))?$rorm:$orm, $filter, $ptables, $pjoin)){
 				$tables = $ptables;
-				$join = $pjoin;
+				if ($rorm && ($ind > 0))
+					$rjoin = $pjoin;
+				else
+					$join = $pjoin;
 			} else
 				$filter[] = $operand;
 		}
 		else if ($operand instanceof IIdentity)
 			$filter[] = $operand->ItemId();
 		else if ($operand instanceof TOperation){
-			$operands = array();
-			foreach ($operand->Operands as $o)
-				$this->_parse_filter_operand($o, $operands, $orm, $tables, $join);
+			$operands = array();	
+			$i = 0;		
+			foreach ($operand->Operands as $o){
+				$this->_parse_filter_operand($o, $operands, $orm, $tables, $join, $i, $rorm, $rjoin);
+				$i++;
+			}
 			$filter[] = ($operand instanceof TCondition)?new TCondition($operand->Type, $operands):new TOperation($operand->Type,$operands);
 		} else
 			$filter[] = $operand;
 	}
 	
-	private function _filter_from_conditions(array &$filter,$orm,&$tables,$conditions, &$join){
-		foreach ($conditions as $condition)
-			$this->_parse_filter_operand($condition, $filter, $orm, $tables, $join);
+	private function _filter_from_conditions(array &$filter,$orm,&$tables,$conditions, &$join, $rorm = null, array &$rjoin = array()){		
+		$i = 0;
+		foreach ($conditions as $condition){
+			$this->_parse_filter_operand($condition, $filter,$orm, $tables,$join,$i,$rorm,$rjoin);
+			$i++;
+		}
 	}
 	
 	private function _form_sorting($orm,$tables,$sorting){
@@ -1212,62 +1249,88 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			}
 	}
 	
+	protected function getTotalsDatasource($orm,$ds){
+		$cds = clone $ds;
+		$cfields = array();
+		foreach ($orm['keys'] as $keyprop)
+			if (isset($orm['properties'][$keyprop])){
+			switch ($orm['properties'][$keyprop]['type']){
+				case 'scalar':$cfields[] = $this->_create_field($orm['properties'][$keyprop]['field']['name'], $orm['properties'][$keyprop]['field']['table'], 0);break;
+				case 'reference':{
+					foreach ($orm['properties'][$keyprop]['fields'] as $cfld)
+						$cfields[] = $this->_create_field($cfld['name'], $cfld['table'], 0);break;
+				}break;
+			}
+		}
+		$cds->Fields = $cfields;
+		return new TDataSet(new TDataSet($cds,'cnt_base'),null,array(new TExpressionField('cnt', new TOperation(TOperationType::O_COUNT, array()))));
+	}
+	
+	protected function parseFetchOptions($dummy, array $orm,array $greedy = array(),array $conditions = array(), array &$fields, array &$tables, array &$assume_classes, array &$assume_descendants = array()){
+		$join = array();
+			
+		$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
+		$assume_classes = $assume_descendants;
+			
+		$break = !empty($assume_classes);
+		$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
+			
+		foreach ($greedy as $prop)
+			$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);
+			
+		$filter = array();
+			
+		if (is_object($dummy))
+			$filter = $this->_filter_from_object($orm, $dummy, $tables);
+		
+		$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
+			
+		$ds->Filter = $filter;
+		$ds->Join = $join;
+		return $ds;		
+	}
+	
+	
 /**
  * 
  * Fetches a collection of objects from storage
- * @param object|ReflectionClass|string $dummy
+ * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
  * @param TOrmCondition[] $conditions
  * @param TOrmSorting[] $sorting
  * @param int $offset
  * @param int $count
  */	
-	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){
-		if ($orm = $this->_get_orm_config($dummy)){
-			$join = array(); 
-			$tables = array();
-			$fields = array();	
-			
-			$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
-			$assume_classes = $assume_descendants;
-			
-			$break = !empty($assume_classes);
-			$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
-			
-			foreach ($greedy as $prop)
-				$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);
-			
-			$filter = array();
-			
-			if (is_object($dummy))
-				$filter = $this->_filter_from_object($orm, $dummy, $tables);
+	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){		
+		$fields = array();
+		$tables = array();
+		$assume_classes = array();
+		$ds = false;
+		if ($dummy instanceof TOrmGlueSpec){
+			$orm = $this->_get_orm_config($dummy->LeftSide);
+			$orm2 = $this->_get_orm_config($dummy->RightSide);
+			if ($orm && $orm2){
+				$f2 = array();
+				$ac2 = array();
+				$ds = $this->parseFetchOptions($dummy->LeftSide,$orm,$greedy,$conditions,$fields,$tables,$assume_classes,$assume_descendants);
+				$jds = $this->parseFetchOptions($dummy->RightSide,$orm2,array(),array(),$f2,$tables,$ac2);
+				$jcnd = array();
+				$this->_filter_from_conditions($jcnd, $orm, $tables, $dummy->Conditions, $ds->Joins(), $orm2,$jds->Joins());
+				$ds->Join(new TJoin($jds, TJoin::JOIN_INNER, $jcnd));
+			}		
+		} else {
+			if ($orm = $this->_get_orm_config($dummy))
+				$ds = $this->parseFetchOptions($dummy,$orm,$greedy,$conditions,$fields,$tables,$assume_classes,$assume_descendants);
+		}
 
-			$this->_filter_from_conditions($filter, $orm, $tables, $conditions, $join);
-			
-			$ds->Filter = $filter;
-			$ds->Join = $join;
-						
+		if ($ds){
 			if (!is_null($total)){
-				$cds = clone $ds;
-				$cfields = array(); 
-				foreach ($orm['keys'] as $keyprop)
-					if (isset($orm['properties'][$keyprop])){
-						switch ($orm['properties'][$keyprop]['type']){
-							case 'scalar':$cfields[] = $this->_create_field($orm['properties'][$keyprop]['field']['name'], $orm['properties'][$keyprop]['field']['table'], 0);break;
-							case 'reference':{
-								foreach ($orm['properties'][$keyprop]['fields'] as $cfld)
-									$cfields[] = $this->_create_field($cfld['name'], $cfld['table'], 0);break;
-							}break;
-						}
-					}
-				$cds->Fields = $cfields;
-				$cds = new TDataSet(new TDataSet($cds,'cnt_base'),null,array(new TExpressionField('cnt', new TOperation(TOperationType::O_COUNT, array()))));
+				$cds = $this->getTotalsDatasource($orm, $ds);
 				$cntr = $this->_ioc_driver_->FetchRecords($cds);
 				foreach ($cntr as $cnt){
 					$total = $cnt['cnt'];
 					break;
 				}
 			}	
-			
 			$ds->Fields = $fields;
 			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
 			$ds->Offset = $offset;
@@ -1341,7 +1404,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$nm = $meta['field']['name'];
 				$v = $row->$nm;
 				switch ($meta['datatype']){
-					case 'bool':$v = TConvertions::ConvertToBoolean($v);break;
+					case 'bool':$v = is_null($v)?null:TConvertions::ConvertToBoolean($v);break;
 					case 'date':
 					case 'TDate':{
 						if (!is_null($v)){
@@ -1417,7 +1480,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			return new TOrmPropertyMeta($nm, $nm, $type);
 		} else {
 			switch ($prop['type']){
-				case 'collection':return new TOrmCollectionPropertyMeta($nm, $nm, $prop['classname']);break;
+				case 'collection':{
+					$fp = array();
+					foreach ($prop['fields'] as $f)
+						$fp[] = $f['property'];
+					return new TOrmCollectionPropertyMeta($nm, $nm, $prop['classname'],false,(count($fp) == 1)?$fp[0]:$fp);break;
+				}break;
 				case 'reference':return new TOrmReferencePropertyMeta($nm, $nm, $prop['classname']);break;
 			}
 		}

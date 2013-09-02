@@ -127,6 +127,11 @@ interface IApplication extends IConfigurable {
 	public function Instantiate($classname,array $arguments = array());
 	
 /**
+ * Reloads application infrastructure
+ */	
+	public function Reload();
+	
+/**
  * Gets a service with a specified name
  * @param string $name service name
  * @return TService

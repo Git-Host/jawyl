@@ -875,11 +875,11 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 			case "Service":return $this->Service();break;
 			case "Request":return $this->Request();break;
 			default:{
-					$item = $this->Item($nm);
-					if ($item) return $item;
-					$v = $this->service->__get($nm);
-					if ($v) return $v;
-					return parent::__get($nm);
+					if ($v = parent::__get($nm))
+						return $v;
+					if ($item = $this->Item($nm))
+						return $item;
+					return $this->service->__get($nm);
 			}break;
 		}
 	}

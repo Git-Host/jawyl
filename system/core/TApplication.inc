@@ -718,6 +718,10 @@
 			die;
 		} 
 		
+		public function Reload(){
+			$this->_config_load();
+		}
+		
 		private function _service_setup(IService $service){
 			$service_config = $this->ConfCompileDir.'/service.'.$service->Name().'.php';
 			if (file_exists($service_config)) include_once $service_config;
@@ -725,7 +729,7 @@
 			if (file_exists($service_config)) include_once $service_config;
 		}
 		
-		private function _app_run(){
+		private function _config_load(){
 			if (self::$CompileAppConfig){
 				TFileSystem::ForceDir($this->ConfCompileDir);
 				for ($i = 0; $i < 2; $i++){
@@ -741,11 +745,11 @@
 							$this->_compile_init($this->PrivateDir."/init.$i.xml",$this->ConfCompileDir."/init.$i.php");
 					}
 				}
-			
+					
 				$this->_compile_plugins($this->ExtensionsDir().'/plugins', $this->ConfCompileDir.'/plugins');
 					
 				$config_file = $this->ConfCompileDir.'/application.php';
-			
+					
 				$config = file_exists($config_file);
 				$src = file_exists($this->ConfigFile);
 				if (!$config){
@@ -758,26 +762,30 @@
 							$this->_compile_config($this->ConfigFile);
 					}
 				}
-			
+					
 				if (file_exists($this->PrivateDir.'/routes.xml') || file_exists($this->OverrideDir.'/routes.xml')){
 					if (
 							(!file_exists($this->ConfCompileDir.'/url.php'))
-							||	
+							||
 							(file_exists($this->PrivateDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->PrivateDir.'/routes.xml')))
 							||
 							(file_exists($this->OverrideDir.'/routes.xml') && (filemtime($this->ConfCompileDir.'/url.php') < filemtime($this->OverrideDir.'/routes.xml')))
 					)
 						$this->_compile_routes($this->PrivateDir.'/routes.xml');
 				}
-			}			
-				
+			}
+			
 			if (file_exists($this->ConfCompileDir.'/init.0.php'))
 				include_once $this->ConfCompileDir.'/init.0.php';
 			include_once $this->ConfCompileDir.'/application.php';
 			if (file_exists($this->ConfCompileDir.'/plugins/application.php'))
-				include_once $this->ConfCompileDir.'/plugins/application.php';			
+				include_once $this->ConfCompileDir.'/plugins/application.php';
 			if (file_exists($this->ConfCompileDir.'/init.1.php'))
 				include_once $this->ConfCompileDir.'/init.1.php';
+		}
+		
+		private function _app_run(){
+			$this->_config_load();
 			$servicename = '';
 			$this->_call_type_ = isset($_SERVER['HTTP_HOST'])?self::CALL_HTTP:self::CALL_CONSOLE;
 			

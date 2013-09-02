@@ -217,7 +217,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	}
 	
 	protected function callMethod($method,$var){
-		if (method_exists($this->currentContext(), $method))
+		if (is_object($this->currentContext()) && method_exists($this->currentContext(), $method))
 			return $this->currentContext()->$method($var);
 		if ($this->currentWidget())
 			if (method_exists($this->currentWidget(), $method))
