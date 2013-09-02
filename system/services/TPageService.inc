@@ -41,6 +41,32 @@ class TExposableException extends TException {
 	}
 }
 
+class TPageSecurityObject implements ISecurityObject, ISecurityChild {
+	
+	private $_name_;
+	
+	private $_service_;
+	
+	public function __construct($name, TPageService $service){
+		$this->_name_ = $name;
+		$this->_service_ = $service;
+	}
+	
+	/**
+	 * gets security object unique id.
+	 */
+	public function Soid(){
+		return $this->_service_->Soid().":".$this->_name_;
+	}
+	
+	/**
+	 * @return ISecurityObject[]
+	 */
+	public function SecurityParents(){
+		return array($this->_service_);
+	}	
+}
+
 
 /**
  * @package Services
@@ -394,18 +420,12 @@ abstract class TPageService extends TService {
 		$policy = $this->Policy();
 		$acl = $this->ACL();
 		
-		if (!($page instanceof TPage))
-			$page = $this->getPage($page);
-		
-		if (!($page instanceof TPage))
-			return false;
-		
-		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker && $page instanceof TPage){
+		if ($acl instanceof IACLManager && $policy instanceof IPolicyChecker){
 			$u = $acl->CurrentUser();
 			if (!$u instanceof ISecuritySubject)
 				$u = TAnonymousUser::Instance();
 						
-			return $policy->CheckPolicy($u,new TPagePolicy(TPagePolicy::PAGE_ACCESS,$page));
+			return $policy->CheckPolicy($u,new TPagePolicy(TPagePolicy::PAGE_ACCESS,($page instanceof TPage)?$page:new TPageSecurityObject($page, $this)));
 		}	
 		return true;
 	}

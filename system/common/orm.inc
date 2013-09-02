@@ -78,17 +78,39 @@ class TOrmReferencePropertyMeta extends TOrmPropertyMeta implements IReferencePr
 		$this->className = $classname;
 	}
 	
+	public function SetClassName($classname){
+		$this->className = $classname;
+	}
+	
 	public function ClassName(){
 		return $this->className;
 	}
 }
 
 class TOrmCollectionPropertyMeta extends TOrmReferencePropertyMeta {
-	public function __construct($name,$caption,$classname,$readonly = false){
+	public $FilterProperty;
+	
+	public function __construct($name,$caption,$classname,$readonly = false,$filterproperty = null){
 		parent::__construct($name, $caption, $classname,true,$readonly);
 		$this->Type = TItemPropertyType::PT_COLLECTION;
+		$this->FilterProperty = $filterproperty;
 	}
 } 
+
+class TOrmGlueSpec {
+	public $LeftSide;
+	public $RightSide;
+	public $Conditions;
+	
+	public function __construct($left, $right, array $conditions){
+		$this->LeftSide = $left;
+		$this->RightSide = $right;
+		if (empty($conditions))
+			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
+		$this->Conditions = $conditions;
+	}
+}
+
 
 interface IORMStorage {
 /**
@@ -113,7 +135,7 @@ interface IORMStorage {
 	
 /**
  * Fetches a collection of objects from storage
- * @param object|ReflectionClass|string $dummy
+ * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
  * @param string[] $greedy
  * @param TOrmCondition[] $conditions
  * @param TOrmSorting[] $sorting

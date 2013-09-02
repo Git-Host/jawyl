@@ -59,7 +59,7 @@
  */		
 		public function __construct($service = null, IFileStorage $file_storage = null){
 			parent::__construct($service,$file_storage);
-			$this->IsXmlHttpRequest = strtolower($this->Header("HTTP_X_REQUESTED_WITH")) == "xmlhttprequest";
+			$this->IsXmlHttpRequest = strtolower($this->Header("X_REQUESTED_WITH")) == "xmlhttprequest";
 			$this->IsAjax = $this->IsXmlHttpRequest;
 			
 			if (strtolower($this->Header('Content-Type')) == 'application/json')

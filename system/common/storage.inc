@@ -287,6 +287,11 @@ abstract class TDataSource {
 		}
 	}
 	
+	public function &Joins(){return $this->joins;}
+	public function &Fields(){return $this->fields;}
+	public function &Filters(){return $this->conditions;}
+	public function &SortOptions(){return $this->sorting;}
+	
 	public function __get($nm){
 		switch ($nm){
 			case "Name":return $this->Name();
