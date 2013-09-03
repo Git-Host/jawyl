@@ -1024,8 +1024,12 @@
 			if (function_exists('stream_resolve_include_path')){
 				if ($inc = stream_resolve_include_path($class.'.inc'))
 					include_once $inc;
-			} else if (file_exists($class.'.inc')) 
-				include $class.'.inc';
+			} else try {
+				include_once $class.'.inc';
+			} catch (ErrorException $e){
+				if (!stristr($e->getMessage(), 'failed to open stream'))
+					throw $e;
+			}
 			
 			if (!self::_check_class($class)){
 				if (is_array(self::$Application->ClassLoader)){
@@ -1094,7 +1098,7 @@
 		public static function AppErrorHandler($errno,$errstr,$errfile,$errline){
 			if (error_reporting() & $errno) {
 				$e = new ErrorException($errstr, $errno, $errno, $errfile,$errline);
-				TApplication::AppExceptionHandler($e);
+				//TApplication::AppExceptionHandler($e);
 				throw $e;
 				//throw new ErrorException($errstr, $errno, $errno, $errfile,$errline);
 				return false;
