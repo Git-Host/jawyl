@@ -1034,7 +1034,7 @@
 			if (!self::_check_class($class)){
 				if (is_array(self::$Application->ClassLoader)){
 					foreach (self::$Application->ClassLoader as $cl)
-							if ($cl->LoadClass($class)) break;
+						if ($cl->LoadClass($class)) break;
 				} else if (self::$Application->ClassLoader){
 					self::$Application->ClassLoader->LoadClass($class);
 				}
