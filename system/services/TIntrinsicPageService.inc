@@ -342,6 +342,12 @@ class TIntrinsicPage extends TPage {
 		return $this->Service()->OutPutCaching;
 	}
 
+	protected function beforeRespond($handle_result, THttpRequest $request){
+		$pth = $request->path_remainder;
+		if (!$handle_result && !empty($pth))
+			throw new TCoreException(TCoreException::ERR_RESOURCE_NOT_FOUND);
+	}	
+
 	public function Handle(THttpRequest $request){
 		if (is_array($request->path_remainder)){
 			$cnt = count($request->path_remainder);
@@ -353,8 +359,8 @@ class TIntrinsicPage extends TPage {
 						$request->controller = $controller;
 						$ptr++;
 					}
-					else if ($this->DefaultController){
-						if ($ctr = $this->Item($this->DefaultController))
+					else if ($this->DefaultPresenter){
+						if ($ctr = $this->Item($this->DefaultPresenter))
 							$request->controller = $controller;
 					}
 					else $ctr = $this;
@@ -369,13 +375,12 @@ class TIntrinsicPage extends TPage {
 						} 
 					}
 				
-				$request->path_remainder = array_slice($request->path_remainder,$ptr,$cnt - $ptr);
-				$cnt = count($request->path_remainder);				
+				$tmp = array_slice($request->path_remainder,$ptr,$cnt - $ptr);
+				$cnt = count($tmp);				
 				for ($i = $ptr; $i < $cnt; $i++)
-					$request->SetGetParameter($i - $ptr,$request->path_remainder[$i]);
+					$request->SetGetParameter($i - $ptr,$tmp[$i]);
 			} 
 		}
-		
 		parent::Handle($request);
 	}
 }
@@ -520,7 +525,7 @@ abstract class TIntrinsicPageService extends TPageService {
 			$ptr = $cnt;
 			while (($ptr > 0) && !$this->_check_page(join("/",array_slice($path_parts,0,$ptr))))
 				$ptr--;	
-			$request->page = join("/",array_slice($path_parts,0,$ptr));
+			$request->page = join("/",array_slice($path_parts,0,$ptr));			
 			$request->path_remainder = array_slice($path_parts,$ptr,$cnt - $ptr);
 		}
 		parent::handleRequest($request); 

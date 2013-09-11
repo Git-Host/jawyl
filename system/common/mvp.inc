@@ -990,8 +990,8 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 		$controllers = array();
 		if (isset($request->controller)) 
 			$controllers[] = $this->Item($request->controller);
-		if ($this->DefaultController && ($this->DefaultController != $request->controller))
-			$controllers[] = $this->Item($this->DefaultController);	
+		if ($this->DefaultController && ($this->DefaultPresenter != $request->controller))
+			$controllers[] = $this->Item($this->DefaultPresenter);	
 		$controllers[] = $this;
 		$controllers = array_filter($controllers);
 		$controller = null;
@@ -1020,7 +1020,7 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 		$result = $this->PostHandle($request,array($controller,$method));
 		
 		if ($result)
-			if (!(($controller->Name() == $this->DefaultController) && ($method == $controller->DefaultMethod)))
+			if (!(($controller->Name() == $this->DefaultPresenter) && ($method == $controller->DefaultMethod)))
 				$this->CleanCall();
 		return $result;
 	}

@@ -240,6 +240,10 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		return true;
 	}
 	
+	protected function beforeRespond($handle_result, THttpRequest $request){
+		
+	}
+	
 /**
  * tests request for being ajax request
  * When request is not ajax handles request as TResponse do, then calls Respond method
@@ -273,9 +277,10 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			$this->Application()->Session()->Set('__EXPOSED_ERROR__',null);
 		}
 					
-		if (!$this->isAjax)
+		if (!$this->isAjax){
+			$this->beforeRespond($result, $request);
 			return $this->respond($request);
-			
+		}	
 		$content = $this->Application()->Buffer()->StopRecording();
 		$this->SendHeaders();
 		$this->AjaxEngine->StartResponse($this,$this->request);
