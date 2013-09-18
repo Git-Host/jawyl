@@ -954,7 +954,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							$this->_ioc_driver_->NestedSetAddRecord($ds, $merged,$pk);
 						} else 
 							$this->_ioc_driver_->InsertRecords($ds, array(array_values($merged)), array_keys($merged),$pk);
-						
+
 						if ($emptyid && $orm['identity'] == 0 && $maintable){
 							foreach ($tables as $tn=>&$tbl)
 								if ($tn != $t)
@@ -1088,7 +1088,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
 						$fp = $colorm['properties'][$colorm['keys'][0]];
 					}
-			
+					
 					if (count($fp['fields']) > 1)
 						throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
 			
@@ -1242,9 +1242,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			if ($porm['properties'][$path[$i]]['type'] == 'reference'){
 				$norm = $this->_get_orm_config($porm['properties'][$path[$i]]['classname']);
 				$nm = array_slice($path, 0, $i + 1);
-				foreach ($norm['properties'] as $pn=>$p){
-					$this->_parse_property(0, array_merge($nm,array($pn)), $orm, $fields, $tables, $join,'gp');
-				}
+				foreach ($norm['properties'] as $pn=>$p)
+					if ($p['type'] != 'collection')
+						$this->_parse_property(0, array_merge($nm,array($pn)), $orm, $fields, $tables, $join,'gp');
 				$porm = $norm;
 			}
 	}
@@ -1291,16 +1291,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	}
 	
 	
-/**
- * 
- * Fetches a collection of objects from storage
- * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
- * @param TOrmCondition[] $conditions
- * @param TOrmSorting[] $sorting
- * @param int $offset
- * @param int $count
- */	
-	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){		
+	private function _get_data_source($dummy, &$tables, &$fields, &$orm, &$assume_classes, array $conditions = array(), array $greedy = array(), array &$assume_descendants = array()){
 		$fields = array();
 		$tables = array();
 		$assume_classes = array();
@@ -1316,13 +1307,50 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$jcnd = array();
 				$this->_filter_from_conditions($jcnd, $orm, $tables, $dummy->Conditions, $ds->Joins(), $orm2,$jds->Joins());
 				$ds->Join(new TJoin($jds, TJoin::JOIN_INNER, $jcnd));
-			}		
+			}
 		} else {
 			if ($orm = $this->_get_orm_config($dummy))
 				$ds = $this->parseFetchOptions($dummy,$orm,$greedy,$conditions,$fields,$tables,$assume_classes,$assume_descendants);
 		}
-
-		if ($ds){
+		return $ds;		
+	}
+	
+	
+/**
+ * Counts the number of specified objects
+ * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
+ * @param TOrmCondition[] $conditions
+ * @return int
+ */
+	public function Count($dummy,array $conditions = array()){
+		$fields = false;
+		$tables = false;
+		$orm = false;
+		
+		if ($ds = $this->_get_data_source($dummy, $tables, $fields, $orm, $assume_classes, $conditions)){
+			$ds = $this->getTotalsDatasource($orm, $ds);
+			$cntr = $this->_ioc_driver_->FetchRecords($ds);
+			foreach ($cntr as $cnt) return $cnt['cnt'];
+		}
+		return false;		
+	}	
+	
+	
+/**
+ * 
+ * Fetches a collection of objects from storage
+ * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
+ * @param TOrmCondition[] $conditions
+ * @param TOrmSorting[] $sorting
+ * @param int $offset
+ * @param int $count
+ */	
+	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null){		
+		$fields = false;
+		$tables = false;
+		$orm = false;
+		
+		if ($ds = $this->_get_data_source($dummy, $tables, $fields, $orm, $assume_classes, $conditions, $greedy, $assume_descendants)){
 			if (!is_null($total)){
 				$cds = $this->getTotalsDatasource($orm, $ds);
 				$cntr = $this->_ioc_driver_->FetchRecords($cds);
@@ -1644,8 +1672,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				if (!empty($greedy)){
 					$row = array_diff_key($row, $greedy);
 					$temp = array();
-					foreach ($greedy as $key=>$value)
-					if (!is_null($value)){
+					foreach ($greedy as $key=>$value){
 						$parts = array();
 						preg_match('/^((?:\d+_)+)([^\d].*)$/',preg_replace('/^gp_/','',$key),$parts);
 						$t = explode('_',$parts[1]);

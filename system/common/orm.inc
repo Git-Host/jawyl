@@ -12,7 +12,7 @@ class TOrmSorting {
  */	
 	public $Attribute;
 	
-	private $_type_ = TSortingType::SORT_ASC;
+	private $_type_;
 	
 /**
  * @param string $attr
@@ -22,6 +22,7 @@ class TOrmSorting {
 		$this->Attribute = $attr;
 		if (!is_null($type))
 			$this->_type_ = $type;
+		else $this->_type_ = new TSortingType(TSortingType::SORT_ASC);
 	}
 	
 	public function __get($nm){
@@ -133,12 +134,23 @@ interface IORMStorage {
  */	
 	public function Delete($object);
 	
+	
+	
+/**
+ * Counts the number of specified objects
+ * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
+ * @param TOrmCondition[] $conditions
+ * @return int
+ */	
+	public function Count($dummy,array $conditions = array());
+	
 /**
  * Fetches a collection of objects from storage
  * @param object|ReflectionClass|string|TOrmGlueSpec $dummy
  * @param string[] $greedy
  * @param TOrmCondition[] $conditions
  * @param TOrmSorting[] $sorting
+ * @return IIterator
  */	
 	public function Fetch($dummy,array $greedy = array(),array $conditions = array(),array $sorting = array(), array $assume_descendants = array(), $offset = null, $count = null, &$total = null);
 /**

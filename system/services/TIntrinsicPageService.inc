@@ -181,12 +181,10 @@ class TIntrinsicPage extends TPage {
 		if (isset($dom))
 			$classname = trim($dom->firstChild->getAttribute("classname"));
 		
-		if ($override){
-			if (trim($odom->firstChild->getAttribute("classname")))
-				$classname = $odom->firstChild->getAttribute("classname");
-		}
+		if ($override)
+			$classname = trim($odom->firstChild->getAttribute("classname"));
 		
-		if (!$classname){ 
+		if (!isset($classname) || !$classname){ 
 			$classname = "TIntrinsicPage";
 			$real_classname = $classname;
 		} else {

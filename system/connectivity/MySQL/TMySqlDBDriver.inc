@@ -55,9 +55,9 @@ class TMySqlDataSetProcessor {
 			if ($fld instanceof TNestedSetsField)
 				switch ($fld->Type){
 					case TNestedSetsField::BASE_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:$fld->DataSource->Name).self::NS_BASE_SUFFIX;break;
-					case TNestedSetsField::SUBSET_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:('['.$fld->DataSource->Name.']'));break;
+					case TNestedSetsField::SUBSET_FIELD:return ($fld->DataSource->Alias?$fld->DataSource->Alias:('`'.$this->driver->RealTableName($fld->DataSource->Name).'`'));break;
 				}	
-			return 	$fld->DataSource->Alias?$fld->DataSource->Alias:('['.$fld->DataSource->Name.']');
+			return 	$fld->DataSource->Alias?$fld->DataSource->Alias:('`'.$this->driver->RealTableName($fld->DataSource->Name).'`');
 		}
 		return '';	
 	}
@@ -272,11 +272,11 @@ class TMySqlDataSetProcessor {
 	protected function parseDataSource(TDataSource $ds, array $joinconditions){
 		$on = ((!empty($joinconditions))?(" on ".$this->parseOperations($joinconditions)):"");
 		if ($ds instanceof TNestedSets){
-			$result = "[".$ds->Name."]".($ds->Alias?" as ".$ds->Alias:"").$on;
-			$src = $ds->Alias?$ds->Alias:('['.$ds->Name.']');
+			$result = "`".$this->driver->RealTableName($ds->Name)."`".($ds->Alias?" as ".$ds->Alias:"").$on;
+			$src = $ds->Alias?$ds->Alias:('`'.$this->driver->RealTableName($ds->Name).'`');
 			if ($ds->BasesNeeded){
 				$base = ($ds->Alias?$ds->Alias:$ds->Name).self::NS_BASE_SUFFIX;
-				$result .= " inner join [".$ds->Name."] as ".$base." on ";
+				$result .= " inner join `".$this->driver->RealTableName($ds->Name)."` as ".$base." on ";
 				$d = $ds->IncludeBases?"=":"";
 				switch ($ds->Direction){
 					case TNestedSets::DIR_DOWN:{
@@ -300,7 +300,7 @@ class TMySqlDataSetProcessor {
 			$this->_fields_[] = $src.".".TMySqlDBDriver::NS_LEVEL_FIELD;
 			return $result;
 		} else if ($ds instanceof TTable){
-			return "[".$ds->Name."]".($ds->Alias?" as ".$ds->Alias:"").$on;
+			return "`".$this->driver->RealTableName($ds->Name)."`".($ds->Alias?" as ".$ds->Alias:"").$on;
 		} else if ($ds instanceof TDataSet){
 			$this->_subqueries_++;
 			$p = new TMySqlDataSetProcessor($ds, $this->driver,$this->_param_prefix_."_".$this->_subqueries_);
@@ -391,7 +391,7 @@ class TMySqlDataSetProcessor {
 	}
 	
 	public function DeleteQuery(){
-		$result = "delete `".$this->Targets."` from ".$this->From;
+		$result = "delete `".$this->driver->RealTableName($this->Targets)."` from ".$this->From;
 		if ($this->Where)
 			$result .= " where ".$this->Where;
 		return $result;		
@@ -519,6 +519,10 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		return $this->connection->LastId();
 	}
 	
+	public function LastGeneratedId(){
+		return $this->lastInsertId();
+	}
+	
 	private function _prepare_table_name($matches){
 		return "`".$this->RealTableName($matches[1])."`";
 	}	
@@ -556,7 +560,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 			$select = true; 
 		}
 		
-		$q = preg_replace_callback('/\[(\w[\w_]*)\]/',array($this,"_prepare_table_name"),$q);
+		//$q = preg_replace_callback('/\[(\w[\w_]*)\]/',array($this,"_prepare_table_name"),$q);
 
 		if ($this->_query_debug_){
 			if ($this->_conf_debug_file_){
@@ -849,6 +853,7 @@ class TMySqlDBDriver extends TDBDriver implements IAnsiSQLDBDriver {
 		try {
 			$i = 0;
 			$n = count($records);
+			
 			while ($i < $n){
 				$this->query($q1."values ".join(",",array_slice($records,$i,$this->BulkInsertAmount)));
 				$i = $i + $this->BulkInsertAmount;
