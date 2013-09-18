@@ -51,7 +51,7 @@
    		$this->Name = $name;
    		$this->MimeType = $type;
    		if (!$this->MimeType){
-   			if (function_exists("finfo_file") && file_exists($path)){
+   			if (function_exists("finfo_file") && !parse_url($path, PHP_URL_SCHEME) && file_exists($path)){
    				$finfo = finfo_open(FILEINFO_MIME_TYPE);
    				$this->MimeType = finfo_file($finfo, $path);
    				finfo_close($finfo);

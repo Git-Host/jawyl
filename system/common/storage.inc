@@ -942,6 +942,11 @@ interface IAnsiSQLDBDriver {
  * @return mixed
  */		
 	public function Scalar($q, array $parameters = array());
+	
+/**
+ * @return mixed
+ */	
+	public function LastGeneratedId();
 }
 
 
