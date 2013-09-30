@@ -52,6 +52,7 @@ class TClassOrmConfig {
 			$this->_properties_[$name]['type'] = $settings['type'];
 			$this->_properties_[$name]['classname'] = $settings['classname'];
 			$this->_properties_[$name]['defclass'] = $class;
+			$this->_properties_[$name]['greedy'] = isset($settings['greedy'])?$settings['greedy']:false;
 			$this->_properties_[$name]['mtm'] = explode('.',trim($settings['mtm']));
 			$this->_parse_refprop($name,$settings['type'],$settings['fields'],isset($settings['sorting'])?$settings['sorting']:array(),$default_tbl);
 	}
@@ -107,9 +108,9 @@ class TClassOrmConfig {
 			if (preg_match('/@orm.scalar\s+(\w[_\w\.]*)\s*$/m', $pdoc,$matches)){
 				$fld = explode('.',$matches[1]);
 				$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>(count($fld) > 1)?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
-			} elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
+			}/* elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
 				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'mtm'=>$matches[2][$i],'fields'=>$matches[3],'sorting'=>$matches[4]),$default_tbl,$rc->getName());
-			}
+			}*/
 		}
 		
 		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.scalar\s+(\w[_\w\.]*)\s*\}'.$lineend,$doc,$matches);
@@ -119,10 +120,10 @@ class TClassOrmConfig {
 			$this->_override_scalar_property($matches[2][$i], array('datatype'=>$matches[1][$i],'field'=>array('name'=>count($fld) > 1?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
 		}
 		
-		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)((?:\s+-s\s+[^\}]*)?)\s*\}'.$lineend,$doc,$matches);
+		preg_match_all('/@property\s+([_\w]+)\s+\$([_\w]+)\s*\{@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)((?:\s+-s\s+[^\}]*)?)(\s+greedy|\s*)\s*\}'.$lineend,$doc,$matches);
 		$n = count($matches[2]);
 		for ($i = 0; $i < $n; $i++){
-			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'mtm'=>$matches[4][$i],'fields'=>$matches[5][$i],'sorting'=>$matches[6][$i]),$default_tbl,$rc->getName());
+			$this->_override_ref_property($matches[2][$i], array('type'=>$matches[3][$i],'classname'=>$matches[1][$i],'mtm'=>$matches[4][$i],'fields'=>$matches[5][$i],'sorting'=>$matches[6][$i],'greedy'=>trim($matches[7][$i]) != ''),$default_tbl,$rc->getName());
 		}
 	}
 
@@ -220,12 +221,17 @@ class TClassOrmConfig {
 		$temp = array();
 		$prop_index = 0;
 		
+		$greedy = array();
+		
 		foreach ($this->_properties_ as $prop=>$data){
 			$pt = '"'.$prop.'"=>array("index"=>'.$prop_index.',"type"=>"'.$data['type'].'","defclass"=>"'.$data['defclass'].'",';
 			switch ($data['type']){
 				case 'scalar':$pt .= '"datatype"=>"'.$data['datatype'].'","field"=>array("name"=>"'.$data['field']['name'].'","table"=>"'.$data['field']['table'].'")';break;
 				case 'reference':
 				case 'collection':{
+					if ($data['greedy'])
+						$greedy[] = '"'.$prop.'"';
+					
 					$pt .= '"classname"=>"'.$data['classname'].'",';
 					if ($data['type'] == 'collection'){
 						if (count($data['mtm']) > 1)
@@ -253,7 +259,7 @@ class TClassOrmConfig {
 			$temp[] = $pt;
 			$prop_index++;
 		}
-		$text .= join(',',$temp).'));';
+		$text .= join(',',$temp).'),"greedy"=>array('.join(',',$greedy).'));';
 		return $text;
 	}
 }
@@ -505,7 +511,7 @@ class TNOrmObject {
 	
 	public function __get($nm){		
 		if (($n = $this->_check_prefixed_property($nm,'orm')) || ($n = $this->_check_prefixed_property($nm,'ns'))){
-			if (is_null($this->$n)){
+			if (is_null($this->$n)){					
 				if (isset($this->loaders[$n])){
 					$this->$n = $this->loaders[$n]->Value();
 					unset($this->loaders[$n]);
@@ -557,6 +563,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private $_date_format_;
 	
 	protected $_bool_unique_objects_;
+	
+	protected $_array_class_uniqueness_ = array();
 	
 	private $_loaded_orms_ = array();
 	
@@ -825,7 +833,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  */	
 	public function Load($object, array $assume_descendants = array(), array $greedy = array()){
 		if ($orm = $this->_get_orm_config($object)){			
-			if ($this->_lazy_loading_ && $this->_bool_unique_objects_){
+			if ($this->_lazy_loading_ && ($this->_bool_unique_objects_ || isset($this->_array_class_uniqueness_[$orm['classname']]))){
 				if ($result = $this->_loaded_object($object, $orm))
 					return $result;
 			}
@@ -835,15 +843,15 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$assume_descendants = $this->_enrich_descendants($orm["classname"],$assume_descendants);
 			$assume_classes = $assume_descendants;			
 			$ds = $this->_form_ds($orm, $join, $tables, $fields,$assume_descendants);
-			foreach ($greedy as $prop)
-				$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);			
-			
+			$this->_form_greedy_properties($greedy, $orm, $fields, $tables, $join);						
 			$ds->Fields = $fields;
 			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
 			$ds->Join = $join;
 			$result = $this->_ioc_driver_->FetchRecords($ds);
 			foreach ($result as $item){
-				return $this->Create($item,$object,$assume_descendants,$assume_classes);
+				$res = $this->Create($item,$object,$assume_descendants,$assume_classes);
+				$this->ProvideUniqueness($res);
+				return $res;
 			}
 		}
 		return null;
@@ -1235,6 +1243,12 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		return $sort;
 	}
 	
+	private function _form_greedy_properties(array $greedy, array $orm, array &$fields, array &$tables, array &$join){
+		$greedy = array_unique(array_merge($orm["greedy"],$greedy));
+		foreach ($greedy as $prop)
+			$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);		
+	}
+	
 	private function _form_greedy_property($name,$orm, &$fields, &$tables, &$join){
 		$path =  explode('.',$name);
 		$porm = $orm;
@@ -1274,9 +1288,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			
 		$break = !empty($assume_classes);
 		$ds = $this->_form_ds($orm, $join, $tables, $fields, $assume_descendants);
-			
-		foreach ($greedy as $prop)
-			$this->_form_greedy_property($prop,$orm,$fields,$tables, $join);
+
+		$this->_form_greedy_properties($greedy, $orm, $fields, $tables, $join);
 			
 		$filter = array();
 			
@@ -1369,7 +1382,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	}
 
 	public function ProvideUniqueness($object){
-		if ($this->_bool_unique_objects_){
+		if ($this->_bool_unique_objects_ || isset($this->_array_class_uniqueness_[get_class($object)])){
 			if ($orm = $this->_get_orm_config($object)){
 				$id = join('|',$this->_get_object_key_values($object));
 				if (!isset($this->_loaded_objects_[$orm['classname']]))
@@ -1409,7 +1422,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	}
 	
 	private function _check_loaded($dummy,&$orm){
-		if ($this->_bool_unique_objects_){
+		if ($this->_bool_unique_objects_ || isset($this->_array_class_uniqueness_[$orm["classname"]])){
 			if (!isset($this->_loaded_objects_[$orm['classname']]))
 				return $dummy;
 			$id = $this->_get_object_key_values($dummy);

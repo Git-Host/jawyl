@@ -121,7 +121,7 @@
 				if (is_array($value))
 					array_walk_recursive($value, create_function('&$item,$key,$urldecode', '$item = stripslashes($urldecode?rawurldecode($item):$item);'), $urldecode);
 				else 
-        			$value = stripslashes($urldecode?rawurldecode($value):$value);
+        					$value = stripslashes($urldecode?rawurldecode($value):$value);
 			}
 			if (!is_null($value))		
 				return $value;
@@ -214,7 +214,7 @@
 		}
 		
 		public function Cookie($nm){
-			if (key_exists($nm,$_COOKIE)){
+			if (isset($_COOKIE[$nm])){
 				$v = $this->_accept_value($_COOKIE[$nm]);
 				if ($v) return $v;
 			}
