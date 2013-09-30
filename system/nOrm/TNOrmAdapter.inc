@@ -977,7 +977,14 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						$this->_ioc_driver_->UpdateRecords($ds, $fields, $values);
 						if (!empty($orm['nestedsets']) && $maintable && $origin){	
 							$parentprop = $orm['nestedsets']['parent'];
-							if ($this->_entity_keys($object->$parentprop,$orm,$em1) != $this->_entity_keys($origin->$parentprop, $orm, $em2)){
+							$opp = $object->$parentprop;
+							$orpp = $origin->$parentprop;
+							$move = false;
+							if (($opp && !$orpp) || (!$opp && $orpp)) 
+								$move = true;
+							else if ($opp && $orpp)
+								$move = $this->_entity_keys($opp,$orm,$em1) != $this->_entity_keys($orpp, $orm, $em2);
+							if ($move){
 								$src = new TNestedSets($t, null, null, null, null, array(), $filter, array(), array());
 								$filter = array();
 								if (is_object($object->$parentprop))
