@@ -156,13 +156,17 @@ class TDateTimeInterval {
  * @return int 
  */
 		protected function fromString($time,$format){
+			var_dump($format);
 			$parse_string = preg_replace('/([\\\^\$\.\|\?\*\+\(\)\{\}])/','\\\$1',$format);
 			$parse_string = preg_replace('/[jn]/','(\d)',$parse_string);
 			$parse_string = preg_replace('/[dmyGHis]/','(\d{2})',$parse_string);
 			$parse_string = preg_replace('/[Y]/','(\d{4})',$parse_string);
 			$parse_string = $parse_string;
+			var_dump($parse_string);
 			preg_match_all('/d|j|m|n|Y|y|G|H|i|s/',$format,$params);
 			preg_match_all('/'.$parse_string.'/',$time,$test,PREG_SET_ORDER);
+			
+			var_dump($test);
 			
 			if (count($test) == 0) return null;
 			if (count($test[0]) < 1) return null;
@@ -242,6 +246,8 @@ class TDateTimeInterval {
 				$this->_timestamp_ = $date;
 			elseif (is_string($date)){
 				$this->_timestamp_ = $this->fromString($date,TI18n::Locale()->DateTimeFormat());
+				if (is_null($this->_timestamp_))
+					$this->_timestamp_ = $this->fromString($date,TI18n::Locale()->DateFormat());
 				if (is_null($this->_timestamp_))
 					$this->_timestamp_ = strtotime($date);	
 			} 
