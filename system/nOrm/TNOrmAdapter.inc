@@ -2,6 +2,7 @@
 require_once 'common/orm.inc';
 require_once 'common/acid.inc';
 require_once 'core/utils/repository.inc';
+require_once 'core/utils/TSortUtils.inc';
 
 class TClassOrmConfig {
 	private $_classname_;
@@ -644,7 +645,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		
 		if (!empty($assumed_descendants)){
 			array_filter($assumed_descendants,create_function('$a','return class_exists($a,false);'));
-			usort($assumed_descendants, create_function('$a,$b','return is_subclass_of($a,$b)?1:(is_subclass_of($b,$a)?-1:0);'));
+			TSortUtils::FastSort($assumed_descendants,create_function('$a,$b','return is_subclass_of($a,$b)?1:(is_subclass_of($b,$a)?-1:0);'));
 			$real_descendants = array();
 			foreach ($assumed_descendants as $cname)
 				if (is_subclass_of($cname, $orm['classname'])){
