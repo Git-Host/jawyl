@@ -643,7 +643,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		}
 		
 		if (!empty($assumed_descendants)){
-			usort($assumed_descendants, create_function('$a,$b','return (class_exists($a,false) && class_exists($b,false) && is_subclass_of($a,$b))?1:(is_subclass_of($b,$a)?-1:0);'));
+			array_filter($assumed_descendants,create_function('$a','return class_exists($a,false);'));
+			usort($assumed_descendants, create_function('$a,$b','return is_subclass_of($a,$b)?1:(is_subclass_of($b,$a)?-1:0);'));
 			$real_descendants = array();
 			foreach ($assumed_descendants as $cname)
 				if (is_subclass_of($cname, $orm['classname'])){
