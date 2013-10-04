@@ -266,6 +266,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 					case 'jsl':$result .= 'addcslashes(';break;
 					case 'trm':$result .= 'trim(';break;
 					case 'q':$result .= 'htmlentities(';break;
+					case 'ue':$result .= 'urlencode(';break;
+					case 'rue':$result .= 'rawurlencode(';break;
 					default:{
 						if ($this->_get_content_filter($fn))
 							$result .= '$this->_get_content_filter("'.$fn.'")->Filter(';
