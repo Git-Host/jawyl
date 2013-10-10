@@ -904,7 +904,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						case 'reference':{
 							$v = $this->_reference_value($object->$prop,$meta);
 							$n = count($meta['fields']);
-							for ($i = 0; $i < $n; $i++){
+							for ($i = 0; $i < $n; $i++)
+							if (isset($v[$i])){
 								$this->_check_save_tables($meta['fields'][$i]['table'], $orm, $tables,$keyvalues);
 								if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0))	
 									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
