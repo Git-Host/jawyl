@@ -712,9 +712,11 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$value = $temp;
 		}
 		
-		$datatype = $this->_get_key_type($meta['classname']);
-		if ($datatype != 'string' && $value === '')
-			$value = null;
+		if ($value === ''){
+			$datatype = $this->_get_key_type($meta['classname']);
+			if ($datatype != 'string' && $value === '')
+				$value = null;
+		}
 		return is_array($value)?$value:array($value);
 	}
 	
@@ -1182,14 +1184,32 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		else
 			$rtn = $np["field"]["table"];
 		
-		if (!isset($tables[$alias])){
+		if (!isset($tables[$alias])){			
 			$tables[$alias] = new TTable($rtn,$alias);
 		
-			$join[] = new TJoin($tables[$alias], TJoin::JOIN_LEFT, 
-					array(new TCondition(TConditionType::C_EQUAL, array(
-							$this->_create_field($ref_orm['tables'][$rtn][0], $tables[$alias],0),
-							$this->_create_field($orm['properties'][$name[$ptr]]['fields'][0]['name'], $tables[$mtable],0)
-						))));
+			$jcond = array();
+			$ref_prop = false;
+			$ref_prop_name = false;
+			foreach ($orm['properties'][$name[$ptr]]['fields'] as $rfld){
+				if ($ref_prop_name != $rfld["property"]){
+					$ref_prop = $ref_orm["properties"][$rfld["property"]];
+					$ref_prop_name = $rfld["property"];
+					$key_index = 0;
+				}
+				if ($ref_prop["type"] == "reference"){
+					$jcond[] = new TCondition(TConditionType::C_EQUAL, array(
+							$this->_create_field($ref_prop["fields"][$key_index]["name"], $tables[$alias],0),
+							$this->_create_field($rfld['name'], $tables[$mtable],0)
+					));
+					$key_index++;
+				} else 
+					$jcond[] = new TCondition(TConditionType::C_EQUAL, array(
+							$this->_create_field($ref_prop["field"]["name"], $tables[$alias],0),
+							$this->_create_field($rfld['name'], $tables[$mtable],0)
+						)); 
+			}
+			
+			$join[] = new TJoin($tables[$alias], TJoin::JOIN_LEFT, $jcond);
 		}
 		return $this->_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join, $greedy_fetch_alias);
 	}
