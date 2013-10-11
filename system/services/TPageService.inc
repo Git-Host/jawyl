@@ -31,7 +31,7 @@ class TPagePolicy extends TPolicy {
 }
 
 class TExposableException extends TException {
-	public function __construct($message,$msgcode = 0){
+	public function __construct($message,$msgcode = 256){
 		$this->code = $msgcode;
 		$this->message = $message;
 	}
@@ -244,6 +244,17 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		
 	}
 	
+	private function _exposable_exception_handling(Exception $e, THttpRequest $request){
+		$this->exception = $e;
+		$result = false;
+		if ($this->isAjax)
+			$this->AjaxEngine->Error($this,$e->getMessage());
+		else if ($request->ParameterMethod('method') == THttpRequest::PM_GET){
+			$this->Application()->Session()->Set('__EXPOSED_ERROR__',array($this->exception->getCode(),$this->exception->getMessage()));
+			$this->CleanCall();
+		}
+	}
+	
 /**
  * tests request for being ajax request
  * When request is not ajax handles request as TResponse do, then calls Respond method
@@ -258,18 +269,16 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		if ($this->isAjax)
 			$this->Application()->Buffer()->StartRecording();
 			
+		$result = false;
 		try {	
 			$this->exception = null;
 			$result = parent::Handle($request);
 		} catch (TExposableException $e){
-			$this->exception = $e;
-			$result = false;
-			if ($this->isAjax)
-				$this->AjaxEngine->Error($this,$e->getMessage());
-			else if ($request->ParameterMethod('method') == THttpRequest::PM_GET){
-				$this->Application()->Session()->Set('__EXPOSED_ERROR__',array($this->exception->getCode(),$this->exception->getMessage()));
-				$this->CleanCall();
-			}	
+			$this->_exposable_exception_handling($e,$request);
+		} catch (Exception $e){
+			if ($e->getCode() == E_USER_ERROR || $e->getCode() == E_USER_WARNING || $e->getCode() == E_USER_NOTICE)
+				$this->_exposable_exception_handling($e,$request);
+			else throw $e;
 		}
 		
 		if ($exception = $this->Application()->Session()->Get('__EXPOSED_ERROR__')){
