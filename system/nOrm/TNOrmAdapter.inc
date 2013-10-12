@@ -449,7 +449,7 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 		parent::__construct($row, $meta, $adapter,$assume_descendants);
 		$this->sorting = array();
 		foreach ($meta['sorting'] as $sort){
-			$this->sorting[] = new TOrmSorting($sort['property'],new TSortingType($sort['type']));
+			$this->sorting[] = new TOrmSorting(($this->_mtm_ref_prop_?$this->_mtm_ref_prop_.'.':'').$sort['property'],new TSortingType($sort['type']));
 		}
 	}
 	
@@ -462,7 +462,7 @@ class TNOrmCollectionLoader extends TNOrmLoader {
 	}
 	
 	protected function load(){
-		$this->value = $this->adapter->Fetch($this->dummy,array(),array(),$this->sorting,$this->assumeDescendants);
+		$this->value = $this->adapter->Fetch($this->dummy,$this->_mtm_ref_prop_?array($this->_mtm_ref_prop_):array(),array(),$this->sorting,$this->assumeDescendants);
 		if ($this->_mtm_ref_prop_)
 			$this->value = new TNOrmMtmCollectionIterator($this->value,$this->_mtm_ref_prop_);
 	}
@@ -1131,7 +1131,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$join[] = new TJoin($colds, TJoin::JOIN_INNER, $conditions);
 						
 					$field = &$fp['fields'][0];
-					$operands[] = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0);
+					$p_fld = $this->_create_field($field['name'], $tables[$field['table']], ($tables[$field['table']] instanceof TNestedSets)?1:0);
 				}break;
 				case 'reference':{
 					if (count($orm['properties'][$name[$ptr]]['fields']) > 1)
@@ -1139,16 +1139,17 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$field = &$orm['properties'][$name[$ptr]]['fields'][0];
 					if ($greedy_fetch_alias)
 						$greedy_fetch_alias .= '_'.$field['name'];										
-					$operands[] = $this->_create_field($field['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0,$greedy_fetch_alias);
+					$p_fld = $this->_create_field($field['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0,$greedy_fetch_alias);
 				}break;
 				case 'scalar':
 				default:{
 					if ($greedy_fetch_alias)
 						$greedy_fetch_alias .= '_'.$orm['properties'][$name[$ptr]]['field']['name'];	
-					$operands[] = $this->_create_field($orm['properties'][$name[$ptr]]['field']['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0, $greedy_fetch_alias);
+					$p_fld = $this->_create_field($orm['properties'][$name[$ptr]]['field']['name'], $tables[$mtable], ($tables[$mtable] instanceof TNestedSets)?1:0, $greedy_fetch_alias);
 				}break;
-			}				
-			return true;		
+			}	
+			$operands[] = $p_fld;
+			return $p_fld;		
 		} 
 			
 		if ($orm['properties'][$name[$ptr]]['type'] != 'reference'){
@@ -1254,12 +1255,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		}
 	}
 	
-	private function _form_sorting($orm,$tables,$sorting){
+	private function _form_sorting($orm,&$tables,$sorting,&$join){
 		$sort = array();
+		$flds = array();
 		foreach ($sorting as $s){
 			if ($s->Type == TSortingType::SORT_SHUFFLE)
 				$sort[] = new TSorting(new TTableField(''),$s->Type);	
-			else if (isset($orm['properties'][$s->Attribute]))
+			else if (isset($orm['properties'][$s->Attribute])){
 				switch ($orm['properties'][$s->Attribute]['type']){
 					case 'collection':break;
 					case 'reference':{
@@ -1269,6 +1271,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					}break;
 					default:$sort[] = new TSorting($this->_create_field($orm['properties'][$s->Attribute]['field']['name'], $tables[$orm['properties'][$s->Attribute]['field']['table']], ($tables[$orm['properties'][$s->Attribute]['field']['table']] instanceof TNestedSets)?1:0), $s->Type);break;	
 				}
+			} else if ($gsf = $this->_form_greedy_property($s->Attribute, $orm, $flds, $tables, $join))
+					$sort[] = new TSorting($gsf, $s->Type);
 		}
 		return $sort;
 	}
@@ -1282,15 +1286,21 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private function _form_greedy_property($name,$orm, &$fields, &$tables, &$join){
 		$path =  explode('.',$name);
 		$porm = $orm;
-		for ($i = 0; $i < count($path); $i++)
+		$result = false;
+		$n = count($path);
+		for ($i = 0; $i < $n; $i++)
 			if ($porm['properties'][$path[$i]]['type'] == 'reference'){
 				$norm = $this->_get_orm_config($porm['properties'][$path[$i]]['classname']);
 				$nm = array_slice($path, 0, $i + 1);
 				foreach ($norm['properties'] as $pn=>$p)
-					if ($p['type'] != 'collection')
-						$this->_parse_property(0, array_merge($nm,array($pn)), $orm, $fields, $tables, $join,'gp');
+					if ($p['type'] != 'collection'){
+						$r = $this->_parse_property(0, array_merge($nm,array($pn)), $orm, $fields, $tables, $join,'gp');
+						if (($i == $n - 2) && ($pn == $path[$i + 1]))
+							$result = $r;
+					}
 				$porm = $norm;
 			}
+		return $result;
 	}
 	
 	protected function getTotalsDatasource($orm,$ds){
@@ -1401,9 +1411,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 					$total = $cnt['cnt'];
 					break;
 				}
-			}	
+			}				
 			$ds->Fields = $fields;
-			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
+			
+			$sjoin = array();
+			$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting, $sjoin);
+			if (!empty($sjoin))
+				$ds->Join = $sjoin;
 			$ds->Offset = $offset;
 			$ds->Count = $count;
 			return new TNOrmIterator($this->_ioc_driver_->FetchRecords($ds),$orm['classname'],$this,$assume_descendants,$assume_classes);
@@ -1655,7 +1669,10 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$ds->Count = $count;
 			if ($direct){
 				$ds->Depth = 0;
-				$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting);
+				$sjoin = array();
+				$ds->Sorting = $this->_form_sorting($orm, $tables, $sorting, $sjoin);
+				if (!empty($sjoin))
+					$ds->Join = $sjoin;				
 				return new TNOrmIterator($this->_ioc_driver_->NestedSetFetch($ds), $orm['classname'], $this, $assume_descendants,$assume_classes);
 			} 
 			$ns = $this->_ioc_driver_->NestedSetFetch($ds);
