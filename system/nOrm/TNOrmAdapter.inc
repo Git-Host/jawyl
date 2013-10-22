@@ -1288,8 +1288,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		$porm = $orm;
 		$result = false;
 		$n = count($path);
-		for ($i = 0; $i < $n; $i++)
-			if ($porm['properties'][$path[$i]]['type'] == 'reference'){
+		for ($i = 0; $i < $n; $i++){
+			if (isset($porm['properties'][$path[$i]]) && $porm['properties'][$path[$i]]['type'] == 'reference'){
 				$norm = $this->_get_orm_config($porm['properties'][$path[$i]]['classname']);
 				$nm = array_slice($path, 0, $i + 1);
 				foreach ($norm['properties'] as $pn=>$p)
@@ -1299,7 +1299,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 							$result = $r;
 					}
 				$porm = $norm;
-			}
+			} else break;
+		}
 		return $result;
 	}
 	
