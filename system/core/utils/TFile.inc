@@ -273,6 +273,9 @@
    			if (!is_null($e))
    				throw $e;
    			
+   			if (filesize($this->path) == 0)
+   				throw new TUploadException(UPLOAD_ERR_NO_FILE);
+   			
    			if ($this->_stored_) return $this->path;
    			
    			if ($filename){

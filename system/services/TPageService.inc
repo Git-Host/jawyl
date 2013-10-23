@@ -273,6 +273,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		try {	
 			$this->exception = null;
 			$result = parent::Handle($request);
+			if (!$this->isAjax)
+				$this->beforeRespond($result, $request);
 		} catch (TExposableException $e){
 			$this->_exposable_exception_handling($e,$request);
 		} catch (Exception $e){
@@ -285,11 +287,11 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 			$this->exception = new Exception($exception[1],$exception[0]);
 			$this->Application()->Session()->Set('__EXPOSED_ERROR__',null);
 		}
-					
-		if (!$this->isAjax){
-			$this->beforeRespond($result, $request);
+		
+		if (!$this->isAjax)
 			return $this->respond($request);
-		}	
+				
+					
 		$content = $this->Application()->Buffer()->StopRecording();
 		$this->SendHeaders();
 		$this->AjaxEngine->StartResponse($this,$this->request);
