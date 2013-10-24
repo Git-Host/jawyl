@@ -246,11 +246,11 @@
  * @param array $file php uploaded file structure
  */   		
    		public function __construct(IFileStorage $storage, array $file){
-   			if ($file["error"] != UPLOAD_ERR_OK){
+   			if ($file["error"] != UPLOAD_ERR_OK || filesize($file["tmp_name"]) == 0){
    				$this->_error_ = $file["error"];
    				$this->storage = $storage;
-   			} else
-   				parent::__construct($storage, $file["name"],$file["tmp_name"],$file["type"],$file["size"]);
+   			} else 
+   			 	parent::__construct($storage, $file["name"],$file["tmp_name"],$file["type"],$file["size"]);
    		}
 
 /**
@@ -272,9 +272,6 @@
    			}
    			if (!is_null($e))
    				throw $e;
-   			
-   			if (filesize($this->path) == 0)
-   				throw new TUploadException(UPLOAD_ERR_NO_FILE);
    			
    			if ($this->_stored_) return $this->path;
    			
