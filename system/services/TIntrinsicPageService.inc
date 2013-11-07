@@ -517,14 +517,16 @@ abstract class TIntrinsicPageService extends TPageService {
 	protected function handleRequest(TRequest $request){
 		$request->IsAjax = $request->IsAjax || ($request->ajaxcall == "on");
 		unset($request->ajaxcall);
-		if ($request->path){
+		if (preg_replace('/^\\//', '',$request->path)){
 			$path_parts = array_filter(preg_split('/[\\\\\\/]/',$request->path));
 			$cnt = count($path_parts);
 			$ptr = $cnt;
 			while (($ptr > 0) && !$this->_check_page(join("/",array_slice($path_parts,0,$ptr))))
 				$ptr--;	
-			$request->page = join("/",array_slice($path_parts,0,$ptr));			
-			$request->path_remainder = array_slice($path_parts,$ptr,$cnt - $ptr);
+			if (!empty($path_parts)){
+				$request->page = join("/",array_slice($path_parts,0,$ptr));			
+				$request->path_remainder = array_slice($path_parts,$ptr,$cnt - $ptr);
+			}
 		}
 		parent::handleRequest($request); 
 	}
