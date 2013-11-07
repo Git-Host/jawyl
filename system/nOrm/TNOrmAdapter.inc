@@ -836,7 +836,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @return object
  */	
 	public function Load($object, array $assume_descendants = array(), array $greedy = array()){
-		if ($orm = $this->_get_orm_config($object)){			
+		if ($orm = $this->_get_orm_config($object)){	
 			if ($this->_lazy_loading_ && ($this->_bool_unique_objects_ || isset($this->_array_class_uniqueness_[$orm['classname']]))){
 				if ($result = $this->_loaded_object($object, $orm))
 					return $result;
@@ -888,7 +888,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
  * @param object $object
  * @return object
  */	
-	public function Save($object, array $propeties_mask = array(), $origin = null){
+	public function Save($object, array $propeties_mask = array(), $origin = null){	
 		if ($orm = $this->_get_orm_config($object)){
 			if ($origin)
 				$keyvalues = $this->_entity_keys($origin, $orm, $emptyid);
@@ -896,30 +896,30 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$keyvalues = $this->_entity_keys($object, $orm, $emptyid);
 						
 			$tables = array();
-		
+			
+			foreach ($orm['tables'] as $t=>$keyfields)
+				$this->_check_save_tables($t, $orm, $tables,$keyvalues);
+			
 			foreach ($orm['properties'] as $prop => $meta){
-				if (($meta['type'] != 'collection') && (empty($propeties_mask) || isset($properties_mask[$prop])))
+				if ($meta['type'] != 'collection')
 				{
 					switch ($meta['type']){
 						case 'reference':{
 							$v = $this->_reference_value($object->$prop,$meta);
 							$n = count($meta['fields']);
-							for ($i = 0; $i < $n; $i++)
-							if (isset($v[$i])){
-								$this->_check_save_tables($meta['fields'][$i]['table'], $orm, $tables,$keyvalues);
-								if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0))	
+							for ($i = 0; $i < $n; $i++){
+								if (isset($v[$i]) && !(in_array($prop,$orm['keys']) && $orm['identity'] == 0) && (empty($propeties_mask) || isset($properties_mask[$prop])))	
 									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
 							}
 						}break;
 						case 'scalar':
 						default:{
-							$this->_check_save_tables($meta['field']['table'], $orm, $tables,$keyvalues);
-							if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0))	
+							if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0) && (empty($propeties_mask) || isset($properties_mask[$prop])))	
 								$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
 						}break; 
 					}	
 				}
-			}	
+			}
 			
 			$this->_ioc_driver_->BeginTransaction();
 			try {
@@ -954,7 +954,6 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 										
 					if ($emptyid || $abcent){
 						$merged = $table['keys'] + $table['values'];
-						
 						if ($maintable && !empty($orm['nestedsets'])){
 							$parentprop = $orm['nestedsets']['parent'];
 							$filter = array();
