@@ -32,12 +32,13 @@
 				return $v;
 			else if (is_string($v)){
 			    switch (strtolower($v)){
-			    	case "on":return true;break;
-			    	case "true":return true;break;
-			       	case "yes":return true;break;
-			    	case "off":return false;break;
-			    	case "false":return false;break;
-			    	case "no":return false;break;
+			    	case '0':return false;break;
+			    	case 'on':return true;break;
+			    	case 'true':return true;break;
+			       	case 'yes':return true;break;
+			    	case 'off':return false;break;
+			    	case 'false':return false;break;
+			    	case 'no':return false;break;
 			    	default:return ord($v) > 0;break;
 			    }
 			}
