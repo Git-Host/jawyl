@@ -1779,7 +1779,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			foreach ($orm['keys'] as $key)
 				$this->_assign_property($dummy, $key, $orm['properties'][$key], $row, $assumed_classes);
 			
-			$dummy = $this->_check_loaded($dummy, $orm);	
+			$dummy = clone $this->_check_loaded($dummy, $orm);	
 
 			if (!empty($orm['nestedsets'])){
 				$parentprop = $orm['nestedsets']['parent'];
