@@ -839,7 +839,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		if ($orm = $this->_get_orm_config($object)){	
 			if ($this->_lazy_loading_ && ($this->_bool_unique_objects_ || isset($this->_array_class_uniqueness_[$orm['classname']]))){
 				if ($result = $this->_loaded_object($object, $orm))
-					return $result;
+					return clone $result;
 			}
 			$join = array(); 
 			$tables = array();
