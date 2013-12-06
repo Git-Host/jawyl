@@ -94,5 +94,21 @@
 	  		if (is_object($v)) return array_values((array)$v);
 	  		return (array)$v;
 	  	} 
+	  	
+	  	public static function StrToHex($str){
+	  		$n = strlen($str);
+	  		$hex = "";
+	  		for ($i = 0; $i < $n; $i++)
+	  			$hex .= dechex(ord($str[$i]));
+	  		return $hex;	  		
+	  	}
+	  	
+	  	public static function HexToStr($hex){
+	  		$v = "";
+	  		$n = strlen($hex);
+	  		for ($i=0; $i < $n-1; $i+=2)
+	  			$v .= chr(hexdec($hex[$i].$hex[$i+1]));
+	  		return $v;	  		
+	  	}
 	}
 ?>
