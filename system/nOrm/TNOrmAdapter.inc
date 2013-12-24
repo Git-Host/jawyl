@@ -900,6 +900,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			foreach ($orm['tables'] as $t=>$keyfields)
 				$this->_check_save_tables($t, $orm, $tables,$keyvalues);
 			
+			$sets = array();
+			
 			foreach ($orm['properties'] as $prop => $meta){
 				if ($meta['type'] != 'collection')
 				{
@@ -918,6 +920,20 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 								$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
 						}break; 
 					}	
+				} else {
+					$v = $object->$prop;
+					if (!$emptyid && !empty($v) && is_array($v) && $meta['mtm']){
+						$sets[$prop] = array();
+						$o = new $meta['mtm']['class']();
+						$n = count($keyvalues);
+						for ($i = 0; $i < $n; $i++)
+							$o->$meta['fields'][$i]['property'] = $keyvalues[$i];
+							 
+						foreach ($v as $id){
+							$o->$meta['mtm']['property'] = $id;
+							$sets[$prop][] = clone $o;
+						}							
+					}
 				}
 			}
 			
@@ -999,8 +1015,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						}
 					}
 					$maintable = false;
-				}
+				}				
 				$this->_ioc_driver_->CommitTransaction();
+				if (!empty($sets)){
+					foreach ($sets as $p => $objs)
+						foreach ($objs as $obj)
+							$this->Save($obj);
+				}
 			} catch (Excetion $e){
 				$this->_ioc_driver_->RollbackTransaction();
 				throw $e;
@@ -1293,7 +1314,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$nm = array_slice($path, 0, $i + 1);
 				foreach ($norm['properties'] as $pn=>$p)
 					if ($p['type'] != 'collection'){
-						$r = $this->_parse_property(0, array_merge($nm,array($pn)), $orm, $fields, $tables, $join,'gp');
+						$r = $this->_parse_property(0, array_merge($nm,array($pn)), $norm, $fields, $tables, $join,'gp');
 						if (($i == $n - 2) && ($pn == $path[$i + 1]))
 							$result = $r;
 					}

@@ -58,7 +58,7 @@ class TOrmCondition {
  * @property bool $Nullable
  * @property bool $ReadOnly
  * @property bool $Required
- * @property int $Type
+ * @property string $Type
  */
 class TOrmPropertyMeta extends TPropertyMeta {
 	public function __set($nm,$value){
