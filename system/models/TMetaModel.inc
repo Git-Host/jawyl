@@ -100,7 +100,7 @@ class TMetaPropertyMeta implements IPropertyMeta {
 /**
  * @see IPropertyMeta::SetSelection()
  */		
-	public function SetSelection(array $selection){
+	public function SetSelection($selection){
 			$this->selection = $selection;
 	}
 /**
