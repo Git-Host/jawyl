@@ -49,9 +49,9 @@ require_once 'common/enum.inc';
 		public function Selection();
 /**
  * sets property value selection list
- * @param array $selection
+ * @param array|callable $selection
  */		
-		public function SetSelection(array $selection);
+		public function SetSelection($selection);
 /**
  * @return bool
  */		
@@ -227,7 +227,7 @@ require_once 'common/enum.inc';
  * sets property value selection list
  * @param array $selection
  */		
-		public function SetSelection(array $selection){
+		public function SetSelection($selection){
 			$this->selection = $selection;
 		}
 		
@@ -285,7 +285,7 @@ require_once 'common/enum.inc';
  * sets property value selection list
  * @param array $selection
  */		
-		public function SetSelection(array $selection){$this->meta->SetSelection($selection);}
+		public function SetSelection($selection){$this->meta->SetSelection($selection);}
 		
 		public function ReadOnly(){return $this->meta->ReadOnly();}
 		
