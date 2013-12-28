@@ -1314,7 +1314,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 				$nm = array_slice($path, 0, $i + 1);
 				foreach ($norm['properties'] as $pn=>$p)
 					if ($p['type'] != 'collection'){
-						$r = $this->_parse_property(0, array_merge($nm,array($pn)), $norm, $fields, $tables, $join,'gp');
+						$r = $this->_parse_property(0, array_merge($nm,array($pn)), $porm, $fields, $tables, $join,'gp');
 						if (($i == $n - 2) && ($pn == $path[$i + 1]))
 							$result = $r;
 					}
