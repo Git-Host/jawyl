@@ -270,7 +270,7 @@ class TNOrmIterator extends TIteratorAdapter {
 /**
  * @var TNOrmAdapter
  */	
-	private $_adapter_;
+	protected $adapter;
 
 	private $_assumed_descendants_ = array();
 	
@@ -279,7 +279,7 @@ class TNOrmIterator extends TIteratorAdapter {
 	public function __construct(IIterator $base, $classname, $adapter, array $assumed_descendants = array(), array $assumed_classes = array()){
 		parent::__construct($base);
 		$this->_classname_ = $classname;
-		$this->_adapter_ = $adapter;
+		$this->adapter = $adapter;
 		if (!empty($assumed_descendants))
 			$this->_assumed_descendants_ = $assumed_descendants;
 		if (!empty($assumed_classes))
@@ -289,7 +289,7 @@ class TNOrmIterator extends TIteratorAdapter {
 	public function Item() {
 		$row = parent::Item();
 		if (!is_null($row))
-			return $this->_adapter_->Create(parent::Item(), $this->_classname_, $this->_assumed_descendants_, $this->_assumed_classes_);
+			return $this->adapter->Create(parent::Item(), $this->_classname_, $this->_assumed_descendants_, $this->_assumed_classes_);
 		return null;
 	}
 }
