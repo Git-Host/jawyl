@@ -208,10 +208,7 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 		}
 		return null;
 	}
-/**
- * event dispatcher proxy
- */	
-	public function Dispath(TEvent $event){}
+
 /**
  * gets current content type of page
  * @return string 
