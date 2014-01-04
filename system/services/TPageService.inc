@@ -327,14 +327,14 @@ abstract class TUtilPage extends TPage {
 
 class TAccessDeniedPage extends TUtilPage {
 	public function SendHeaders(){
-		header('HTTP/1.0 403 Access denied!',true,403);
+		header('HTTP/1.0 403 Access denied',true,403);
 		parent::SendHeaders();
 	}
 }
 
 class TNotFoundPage extends TUtilPage {
 	public function SendHeaders(){
-		header('HTTP/1.0 404 Page not found!',true,404);
+		header('HTTP/1.0 404 Page not found',true,404);
 		parent::SendHeaders();
 	}
 }
