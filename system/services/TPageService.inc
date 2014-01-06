@@ -274,6 +274,8 @@ abstract class TPage extends TResponse implements ISecurityObject, ISecurityChil
 				$this->beforeRespond($result, $request);
 		} catch (TExposableException $e){
 			$this->_exposable_exception_handling($e,$request);
+		} catch (TUploadException $e){
+			$this->_exposable_exception_handling($e,$request);
 		} catch (Exception $e){
 			if ($e->getCode() == E_USER_ERROR || $e->getCode() == E_USER_WARNING || $e->getCode() == E_USER_NOTICE)
 				$this->_exposable_exception_handling($e,$request);
