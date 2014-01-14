@@ -298,20 +298,20 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	}
 	
 	private function _assign_compile($matches){
-		$result = '<?php $this->_global_vars_["'.$matches[1].'"] = ';
-		$filters = explode('<', $matches[2]);
+		$result = '<?php $this->_global_vars_["'.$matches[2].'"] = ';
+		$filters = explode('<', $matches[3]);
 		$result .= $this->_compile_filters_open($filters);
-		$val = trim($matches[3]); 
-		$result .= $this->_compile_expression($val,true); 
+		$val = trim($matches[4]); 
+		$result .= $this->_compile_expression($val,false,$matches[1] != "@"); 
 		$result .= $this->_compile_filters_close($filters);
 		return $result.'; ?>';
 	}
 	
 	private function _arith_compile($matches){
-		$result = '<?php $this->_global_vars_["'.$matches[1].'"] = ';
-		$result .= $this->_compile_expression(trim($matches[2]),true);
-		$result .= ' '.$matches[3].' ';
-		$result .= $this->_compile_expression(trim($matches[4]),true);
+		$result = '<?php $this->_global_vars_["'.$matches[2].'"] = ';
+		$result .= $this->_compile_expression(trim($matches[3]),false,$matches[1] != "@");
+		$result .= ' '.$matches[4].' ';
+		$result .= $this->_compile_expression(trim($matches[5]),false,$matches[1] != "@");
 		return $result.'; ?>';
 	}	
 	
@@ -435,8 +435,8 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace('/{%endswitch%}/',' } ?>',$text);
 		$text = preg_replace('/{%endwith%}/','<?php $this->popContext(); ?>',$text);
 		
-		$text = preg_replace_callback('/{%assign\\s+([_\w]+)(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?\s+('.$expr.')\s*%}/',array(&$this,"_assign_compile"),$text);
-		$text = preg_replace_callback('/{%assign\\s+([_\w]+)\s+('.$expr.')\s*(\+|-|\*|\/|%)\s*('.$expr.')\s*%}/',array(&$this,"_arith_compile"),$text);
+		$text = preg_replace_callback('/{(@?)%assign\\s+([_\w]+)(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?\s+('.$expr.')\s*%}/',array(&$this,"_assign_compile"),$text);
+		$text = preg_replace_callback('/{(@?)%assign\\s+([_\w]+)\s+('.$expr.')\s*(\+|-|\*|\/|%)\s*('.$expr.')\s*%}/',array(&$this,"_arith_compile"),$text);
 		$text = preg_replace_callback('/{(@?)%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)?('.$expr.')\s*%}/',array(&$this,"_varout_compile"),$text);
 		$text = preg_replace_callback('/{%\s*(\s+(?:(?:[_\w][_\w]*\s*\<\s*))+)(.*?)\s*%}/',array(&$this,"_rawout_compile"),$text);
 		$text = preg_replace('/{%\s*(.*?)\s*%}/','<?php echo $1; ?>',$text);

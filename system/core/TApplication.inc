@@ -471,9 +471,10 @@
 		}
 
 		private function _compile_init($inputfile,$outputfile){
-			if (file_exists($inputfile)){
+			if (file_exists($inputfile) || file_exists($this->OverrideDir.'/'.basename($inputfile))){
 				$app_config = '<?php'."\n";
-				$app_config .= $this->_compile_init_str($inputfile,$objid);
+				if (file_exists($inputfile))
+					$app_config .= $this->_compile_init_str($inputfile,$objid);
 				if (file_exists($this->OverrideDir.'/'.basename($inputfile)))
 					$app_config .= $this->_compile_init_str($this->OverrideDir.'/'.basename($inputfile),$objid);
 				$app_config .= '?>';

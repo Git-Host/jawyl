@@ -16,6 +16,7 @@ require_once 'core/TService.inc';
 require_once 'common/ajax.inc';
 require_once 'common/service/navigation.inc';
 require_once 'common/mvp.inc';
+require_once 'core/utils/agent.inc';
 
 
 class TPagePolicy extends TPolicy {
@@ -348,6 +349,11 @@ class TNotFoundPage extends TUtilPage {
  * @category System
  * abstract page service class
  * @property IThemeEngine $ThemeEngine theme engine to use for output, can be set by name
+ * @property IAjaxEngine $AjaxEngine
+ * @property IUserAgentDetector $UADetector
+ * @property string $UACookie
+ * @property string $MobileRedirect
+ * @property string $TabletRedirect
  */
 abstract class TPageService extends TService {
 	
@@ -369,6 +375,12 @@ abstract class TPageService extends TService {
  * @var IUserAgentDetector
  */
 	protected $_ioc_u_a_detector_;	
+	
+	protected $_conf_mobile_redirect_;
+	
+	protected $_conf_tablet_redirect_;
+	
+	protected $_conf_u_a_cookie_;
 	
 /**
  * gets page by page id 
@@ -463,6 +475,21 @@ abstract class TPageService extends TService {
  */		
 	protected function handleRequest(TRequest $request){	
 		if (!$request->page){
+			$ua = $this->UACookie?$request->Cookie($this->UACookie):false;
+			if ($nm = $this->UACookie){
+				if ($request->$nm){
+					setcookie($nm,$request->$nm);
+					$ua = $request->$nm;
+				}
+			}
+			
+			if ($this->UADetector || $ua){
+				if ($this->MobileRedirect && (($this->UADetector->IsMobile() && $ua != 'desktop') || $ua == 'mobile'))
+					$this->Application()->Redirect($this->MobileRedirect);
+				if ($this->TabletRedirect && (($this->UADetector->IsTablet() && $ua != 'desktop') || $ua == 'tablet'))
+					$this->Application()->Redirect($this->TabletRedirect);
+			}			
+			
 			$this->page = $this->getDefaultPage();
 		} else 
 			$this->page = $this->getPage($request->page);	
