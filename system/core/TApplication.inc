@@ -150,6 +150,12 @@
  * @var string
  */		
 		private $_root_;
+		
+/**
+ * @var string
+ */		
+		private $_doc_root_;
+		
 /**
  * @var string
  */		
@@ -258,6 +264,11 @@
 		private $_host_;
 		
 /**
+ * @var string
+ */		
+		private $_overwrite_base_ = false;
+		
+/**
 * @ignore
 * */		
 		public function __get($nm){
@@ -290,6 +301,8 @@
 					return $this->_ext_dir_;
 				}break;
 				case 'FileStoragePath':return $this->_file_storage_path_;break;
+				case 'DocumentRoot':return $this->_doc_root_?$this->_doc_root_:$_SERVER["DOCUMENT_ROOT"];break;
+				case 'OverwriteBase':return $this->_overwrite_base_;break;
 				case 'URI':return $this->_uri_;break;
 				case 'Root':return $this->_root_;break;
 				case 'RelativePath':return $this->_relative_path_;break;
@@ -872,11 +885,13 @@
  */
 		public function UrlFromPath($path){
 			$path = preg_replace('/[\\/\\\\]/','|',$path);
-			$docroot = preg_replace('/[\\/\\\\]/','|',$_SERVER["DOCUMENT_ROOT"]);
+			$docroot = preg_replace('/[\\/\\\\]/','|',$this->DocumentRoot);
 			$link = str_ireplace($docroot,"",$path);
 			$link = str_replace('|','/',$link);
 			if ($link[0] != '/')
 				$link = '/'.$link;
+			if ($this->OverwriteBase)
+				$link = $this->OverwriteBase.$link;
 			return $link;			
 		}		
 		
@@ -1004,6 +1019,8 @@
 					if (mb_internal_encoding($value))
 						$this->_string_encoding_ = $value;
 				}break;
+				case 'DocumentRoot':$this->_doc_root_ = $value;break;
+				case 'OverwriteBase':$this->_overwrite_base_ = filter_var($value, FILTER_VALIDATE_URL);break;
 				default:parent::__set($nm,$value);
 			}
 		}
