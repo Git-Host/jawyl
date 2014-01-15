@@ -191,6 +191,10 @@
  */		
 		protected $savePath;
 		
+		protected $domain = false;
+		
+		protected $sessName = false;
+		
 		protected $isOpen = false;
 		
 		public function Id(){
@@ -214,6 +218,9 @@
 			if ($this->isOpen)
 				$this->Close();
 			if (!$this->isOpen){
+				session_name($this->sessName?$this->sessName:($this->Application()->Name().'_SESSID'));
+				if ($this->domain)
+					ini_set('session.cookie_domain', $this->domain);
 				session_set_save_handler(array(&$this,"SessOpen"), array(&$this,"SessClose"), array(&$this,"SessRead"), array(&$this,"SessWrite"), array(&$this,"SessDestroy"), array(&$this,"GarbageCollection"));
 				session_start();
 				$this->isOpen = true;
@@ -325,6 +332,8 @@
 					$this->savePath = $this->Application()->AdjustPath($value);
 					TFileSystem::ForceDir($this->savePath);
 				}break;
+				case 'Domain':$this->domain = $value;break;
+				case 'SessionName':$this->sessName = $value;break;
 				default:parent::__set($nm, $value);break;
 			}
 		}
