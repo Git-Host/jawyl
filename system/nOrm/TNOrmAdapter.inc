@@ -713,8 +713,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		}
 		
 		if ($value === ''){
-			$datatype = $this->_get_key_type($meta['classname']);
-			if ($datatype != 'string' && $value === '')
+			if ($this->_get_key_type($meta['classname']) != 'string')
 				$value = null;
 		}
 		return is_array($value)?$value:array($value);
@@ -909,9 +908,13 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 						case 'reference':{
 							$v = $this->_reference_value($object->$prop,$meta);
 							$n = count($meta['fields']);
-							for ($i = 0; $i < $n; $i++){
-								if (isset($v[$i]) && !(in_array($prop,$orm['keys']) && $orm['identity'] == 0) && (empty($propeties_mask) || isset($properties_mask[$prop])))	
+							for ($i = 0; $i < $n; $i++)
+							if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0) 
+									&& (empty($propeties_mask) || isset($properties_mask[$prop]))){
+								if (isset($v[$i]))	
 									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
+								else if (!isset($tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']]))
+									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = null;
 							}
 						}break;
 						case 'scalar':
