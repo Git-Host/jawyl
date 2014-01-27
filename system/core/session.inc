@@ -215,8 +215,6 @@
 		}
 		
 		public function Open(){
-			if ($this->isOpen)
-				$this->Close();
 			if (!$this->isOpen){
 				session_name($this->sessName?$this->sessName:($this->Application()->Name().'_SESSID'));
 				if ($this->domain)
@@ -273,8 +271,10 @@
  * php session write handler
  */		
 		public function SessWrite($id, $sess_data){
- 	 		$sess_file = $this->savePath."/sess_$id";
- 	 		file_put_contents($sess_file,$sess_data);
+			if ($sess_data){
+ 	 			$sess_file = $this->savePath."/sess_$id";
+ 	 			file_put_contents($sess_file,$sess_data);
+			}
  	 		return true;
 		}
 		
