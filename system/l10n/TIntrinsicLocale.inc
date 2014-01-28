@@ -107,7 +107,7 @@ class TIntrinsicLocale extends TLocale {
 	public function DateFormat(){
 		if (!key_exists("date",$this->formats)) return "C";
 		$format = $this->formats["date"];
-		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
+		$format = str_replace('{ds}',$this->symbols["dateseparator"],$format);
 		return $format;
 	}
 
@@ -118,8 +118,8 @@ class TIntrinsicLocale extends TLocale {
 	public function DateTimeFormat(){
 		if (!key_exists("datetime",$this->formats)) return "C";
 		$format = $this->formats["datetime"];
-		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
-		$format = preg_replace('/\\{ts\\}/',$this->symbols["timeseparator"],$format);
+		$format = str_replace('{ds}',$this->symbols["dateseparator"],$format);
+		$format = str_replace('{ts}',$this->symbols["timeseparator"],$format);
 		return $format;
 	}
 
@@ -151,11 +151,11 @@ class TIntrinsicLocale extends TLocale {
 	public function CurrencyFormat(){
 		if (!key_exists("currency",$this->formats)) return "";
 		$format = $this->formats["currency"];
-		$format = preg_replace('/\\{dig\\}/',$this->symbols["digseparator"],$format);
-		$format = preg_replace('/\\{dec\\}/',$this->symbols["decseparator"],$format);
-		$format = preg_replace('/\\{dec\\}/',$this->symbols["decseparator"],$format);
-		$format = preg_replace('/\\{lc\\}/',$this->symbols["localcurrency"],$format);
-		$format = preg_replace('/\\{ic\\}/',$this->symbols["intercurrency"],$format);
+		$format = str_replace('{dig}',$this->symbols["digseparator"],$format);
+		$format = str_replace('{dec}',$this->symbols["decseparator"],$format);
+		$format = str_replace('{dec}',$this->symbols["decseparator"],$format);
+		$format = str_replace('{lc}',$this->symbols["localcurrency"],$format);
+		$format = str_replace('{ic}',$this->symbols["intercurrency"],$format);
 		return $format;
 	}
 
@@ -224,7 +224,7 @@ class TIntrinsicLocale extends TLocale {
 			return date("C",$timestamp);
 			
 		$format = $this->formats["date"];
-		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
+		$format = str_replace('{ds}',$this->symbols["dateseparator"],$format);
 		return date($format,$timestamp);
 	}
 
@@ -242,7 +242,7 @@ class TIntrinsicLocale extends TLocale {
 		return date("C",$timestamp);
 			
 		$format = $this->formats["time"];
-		$format = preg_replace('/\\{ts\\}/',$this->symbols["timeseparator"],$format);
+		$format = str_replace('{ts}',$this->symbols["timeseparator"],$format);
 		return date($format,$timestamp);
 	}
 
@@ -260,8 +260,8 @@ class TIntrinsicLocale extends TLocale {
 			return date(DATE_W3C,$timestamp);
 			
 		$format = $this->formats["datetime"];
-		$format = preg_replace('/\\{ds\\}/',$this->symbols["dateseparator"],$format);
-		$format = preg_replace('/\\{ts\\}/',$this->symbols["timeseparator"],$format);
+		$format = str_replace('{ds}',$this->symbols["dateseparator"],$format);
+		$format = str_replace('{ts}',$this->symbols["timeseparator"],$format);
 		return date($format,$timestamp);
 	}
 
@@ -278,8 +278,8 @@ class TIntrinsicLocale extends TLocale {
 		preg_match('/\\A([#0]*\\{dig\\}[#0]*(?:\\{dec\\}0*)?).*\\Z/',$format,$test);
 		$num = $this->doFormatNumber($number,$test[1]);
 		preg_match('/\\A[#0]*\\{dig\\}[#0]*(?:\\{dec\\}0*)?(.*)\\Z/',$format,$test);
-		$format = preg_replace('/\\{lc\\}/',$this->symbols["localcurrency"],$test[1]);
-		$format = preg_replace('/\\{ic\\}/',$this->symbols["intercurrency"],$format);
+		$format = str_replace('{lc}',$this->symbols["localcurrency"],$test[1]);
+		$format = str_replace('{ic}',$this->symbols["intercurrency"],$format);
 		return $num.$format;
 	}
 	
