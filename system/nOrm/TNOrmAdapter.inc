@@ -1189,10 +1189,9 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$tad = $this->_enrich_descendants($orm['properties'][$name[$ptr]]['classname'], $tad);
 			foreach ($tad as $ad){
 				$ref_orm = $this->_get_orm_config($ad);
-				$np = &$ref_orm1['properties'][$name[$ptr + 1]];
+				$np = &$ref_orm['properties'][$name[$ptr + 1]];
 				if ($np) break;
 			}
-			
 			if (is_null($np))
 				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		}
