@@ -101,15 +101,15 @@ class TClassOrmConfig {
 		$props = $rc->getProperties(ReflectionProperty::IS_PUBLIC & ~ReflectionProperty::IS_STATIC);
 		foreach ($props as $p)
 			if ($p->getDeclaringClass()->getName() == $rc->getName()){
-			$pdoc = $p->getDocComment();
-			$datatype = null;
-			if (preg_match('/@var\s+([_\w]+)/',$pdoc,$matches2))
-				$datatype = $matches2[1];
+				$pdoc = $p->getDocComment();
+				$datatype = null;
+				if (preg_match('/@var\s+([_\w]+)/',$pdoc,$matches2))
+					$datatype = $matches2[1];
 		
-			if (preg_match('/@orm.scalar\s+(\w[_\w\.]*)\s*$/m', $pdoc,$matches)){
-				$fld = explode('.',$matches[1]);
-				$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>(count($fld) > 1)?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
-			}/* elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
+				if (preg_match('/@orm.scalar\s+(\w[_\w\.]*)\s*$/m', $pdoc,$matches)){
+					$fld = explode('.',$matches[1]);
+					$this->_override_scalar_property($p->getName(), array('datatype'=>is_null($datatype)?'string':$datatype,'field'=>array('name'=>(count($fld) > 1)?$fld[1]:$fld[0],'table'=>count($fld) > 1?$fld[0]:$default_tbl)),$rc->getName());
+				}/* elseif ($datatype && preg_match('/@orm.(reference|collection)\s+((?:[_\w]+\.[_\w]+\s+)?)\s*((?:(?:[_\w]+)\s*\((?:(?:\s*\w[_\w\.]*\s*,?)+)\)\s*,?\s*)+)(?:\s+-s\s+((?:[_\w]+\((?:asc|desc)\))+))?\s*$/m', $doc,$matches)){
 				$this->_override_ref_property($p->getName(), array('type'=>$matches[1],'classname'=>$datatype,'mtm'=>$matches[2][$i],'fields'=>$matches[3],'sorting'=>$matches[4]),$default_tbl,$rc->getName());
 			}*/
 		}
@@ -1184,55 +1184,37 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 		
 		$ref_orm = $this->_get_orm_config($orm['properties'][$name[$ptr]]['classname']);
 		$np = &$ref_orm['properties'][$name[$ptr + 1]];
-		
 		if (is_null($np)){
 			$tad = array();
 			$tad = $this->_enrich_descendants($orm['properties'][$name[$ptr]]['classname'], $tad);
 			foreach ($tad as $ad){
 				$ref_orm = $this->_get_orm_config($ad);
-				$np = &$ref_orm['properties'][$name[$ptr + 1]];
+				$np = &$ref_orm1['properties'][$name[$ptr + 1]];
 				if ($np) break;
-			}	
+			}
+			
+			if (is_null($np))
+				throw new TCoreException(TCoreException::ERR_BAD_VALUE);
 		}
-		
-		if (is_null($np))
-			throw new TCoreException(TCoreException::ERR_BAD_VALUE);
-		/*
-		if ($np["type"] == "reference" && count($np["fields"]) > 1)
-			throw new TNOrmException(TNOrmException::ERR_COMPOSITE_KEY_FILTER);
-		*/
-		$alias = $name[$ptr].$ptr;
 		
 		if (($np["type"] == "reference") || ($np["type"] == "collection"))
 			$rtn = $np["fields"][0]["table"];
 		else
 			$rtn = $np["field"]["table"];
 		
+		$alias = $name[$ptr].$ptr;
+		
 		if (!isset($tables[$alias])){			
 			$tables[$alias] = new TTable($rtn,$alias);
-		
 			$jcond = array();
-			$ref_prop = false;
-			$ref_prop_name = false;
+			$key_index = 0;
 			foreach ($orm['properties'][$name[$ptr]]['fields'] as $rfld){
-				if ($ref_prop_name != $rfld["property"]){
-					$ref_prop = $ref_orm["properties"][$rfld["property"]];
-					$ref_prop_name = $rfld["property"];
-					$key_index = 0;
-				}
-				if ($ref_prop["type"] == "reference"){
-					$jcond[] = new TCondition(TConditionType::C_EQUAL, array(
-							$this->_create_field($ref_prop["fields"][$key_index]["name"], $tables[$alias],0),
+				$jcond[] = new TCondition(TConditionType::C_EQUAL, array(
+							$this->_create_field($ref_orm['tables'][$rtn][$key_index], $tables[$alias],0),
 							$this->_create_field($rfld['name'], $tables[$mtable],0)
-					));
-					$key_index++;
-				} else 
-					$jcond[] = new TCondition(TConditionType::C_EQUAL, array(
-							$this->_create_field($ref_prop["field"]["name"], $tables[$alias],0),
-							$this->_create_field($rfld['name'], $tables[$mtable],0)
-						)); 
+				));
+				$key_index++; 
 			}
-			
 			$join[] = new TJoin($tables[$alias], TJoin::JOIN_LEFT, $jcond);
 		}
 		return $this->_parse_property($ptr + 1, $name, $ref_orm, $operands, $tables, $join, $greedy_fetch_alias);
