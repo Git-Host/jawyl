@@ -16,6 +16,7 @@
  * File wrapper.
  * 
  * @todo implement links for aliased web-directories
+ * @todo refactor according to new file storage interface logic
  */
    class TFile {
 /**
@@ -159,8 +160,6 @@
    			TFileSystem::ForceDir(dirname($filename));
    			list($orig_width, $orig_height, $orig_type, $attr) = getimagesize($this->path);
    			
-   			
-   			
    			if (!$width)
    				$width = $orig_width;
    			if (!$height)
@@ -191,9 +190,9 @@
    		}
    }
    
-   class TExternalImage extends TImage {
-   		public function __construct(IFileStorage $storage, $url){
-   			parent::__construct($storage, '', $url);
+   class TExternalImage extends TImage {  	
+   		public function __construct(IFileStorage $storage, $url, $thumbnail = null){
+   			parent::__construct($storage, '', $url, $thumbnail?$thumbnail:$url);
    		}
    	
    		public function ImageType(){
@@ -205,7 +204,7 @@
    		}
    	 
    		public function GetThumbnailLink(){
-   			return $this->path;
+   			return $this->thumbnail;
    		}
    	
    		public function GetLink(){

@@ -1,4 +1,8 @@
 <?php
+/*
+ * @TODO: Make file storage as an abstraction layer: with saving and retrieving logic incapsulation
+ */
+
 interface IFileStorage {
 /**
  * @return string
@@ -71,6 +75,11 @@ interface IApplication extends IConfigurable {
  * @return string
  */
 	public function OverrideDir();
+	
+/**
+ * gets path to temporary files directory
+ */	
+	public function TmpDir();
 	
 /**
  * gets whether SEF urls are enabled

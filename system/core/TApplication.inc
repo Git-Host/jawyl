@@ -95,7 +95,12 @@
  * @var string
  */		
 		private $_app_path_;
-		
+
+/**
+ * @var string
+ */
+		private $_prev_tmp_dir_;
+				
 /**
  * @var string
  */		
@@ -114,6 +119,11 @@
  * @var string
  */		
 		private $_private_dir_;
+		
+/**
+ * @var string
+ */		
+		private $_tmp_dir_;
 /**
  * @var string
  */		
@@ -214,6 +224,12 @@
  * @var string
  */		
 		public static $PrivateDirectory = 'private';
+		
+/**
+ * @var string
+ */
+		public static $TemporaryFilesDirectory = 'private/tmp';
+				
 /**
  * @var string
  */		
@@ -284,6 +300,13 @@
 						$this->_prev_private_dir_ = self::$PrivateDirectory;
 					}
 					return $this->_private_dir_;
+				}break;
+				case 'TmpDir':{
+					if ($this->_prev_tmp_dir_ != self::$TemporaryFilesDirectory){
+						$this->_tmp_dir_ = $this->AdjustPath(self::$TemporaryFilesDirectory);
+						$this->_prev_tmp_dir_ = self::$TemporaryFilesDirectory;
+					}
+					return $this->_tmp_dir_;
 				}break;
 				case 'OverrideDir':{
 					if ($this->_prev_override_dir_ != self::$OverrideDirectory){
@@ -408,6 +431,8 @@
 		public function AppPath(){return $this->AppPath;}
 		
 		public function PrivateDir(){return $this->PrivateDir;}
+
+		public function TmpDir(){return $this->TmpDir;}		
 		
 		public function ExtensionsDir(){return $this->ExtensionsDir;}
 		

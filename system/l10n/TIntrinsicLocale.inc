@@ -105,7 +105,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function DateFormat(){
-		if (!key_exists("date",$this->formats)) return "C";
+		if (!key_exists("date",$this->formats)) return "c";
 		$format = $this->formats["date"];
 		$format = str_replace('{ds}',$this->symbols["dateseparator"],$format);
 		return $format;
@@ -116,7 +116,7 @@ class TIntrinsicLocale extends TLocale {
 	 * @return string
 	 */
 	public function DateTimeFormat(){
-		if (!key_exists("datetime",$this->formats)) return "C";
+		if (!key_exists("datetime",$this->formats)) return "c";
 		$format = $this->formats["datetime"];
 		$format = str_replace('{ds}',$this->symbols["dateseparator"],$format);
 		$format = str_replace('{ts}',$this->symbols["timeseparator"],$format);
