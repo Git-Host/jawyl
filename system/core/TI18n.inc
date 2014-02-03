@@ -253,11 +253,11 @@
 /**
  * @ignore
  */		
-		public function DateFormat(){return "C";}
+		public function DateFormat(){return "c";}
 /**
  * @ignore
  */		
-		public function DateTimeFormat(){return "C";}
+		public function DateTimeFormat(){return "c";}
 /**
  * @ignore
  */		
@@ -275,15 +275,15 @@
 /**
  * @ignore
  */		
-		public function FormatDate($timestamp){return date("C",$timestamp);}
+		public function FormatDate($timestamp){return date(DATE_ISO8601,$timestamp);}
 /**
  * @ignore
  */		
-		public function FormatTime($timestamp){return date("C",$timestamp);}
+		public function FormatTime($timestamp){return date(DATE_ISO8601,$timestamp);}
 /**
  * @ignore
  */		
-		public function FormatDateTime($timestamp){return date("C",$timestamp);}
+		public function FormatDateTime($timestamp){return date(DATE_ISO8601,$timestamp);}
 /**
  * @ignore
  */		
