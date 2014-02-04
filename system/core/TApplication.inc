@@ -1077,11 +1077,12 @@
 			if (!self::_check_class($class)){
 				if (is_array(self::$Application->ClassLoader)){
 					foreach (self::$Application->ClassLoader as $cl)
-						if ($cl->LoadClass($class)) break;
+						if ($cl->LoadClass($class)) return true;
 				} else if (self::$Application->ClassLoader){
-					self::$Application->ClassLoader->LoadClass($class);
+					return self::$Application->ClassLoader->LoadClass($class);
 				}
 			}			
+			return false;
 		}
 		
 		public static function OnShutdown(){
@@ -1126,7 +1127,7 @@
 				date_default_timezone_set('Asia/Vladivostok');	
 			self::$_runtime_successfull_ = false;
 			global $Application;
-			spl_autoload_register(array("TApplication","_autoloader"));
+			spl_autoload_register(array("TApplication","_autoloader"),true);
 			self::_adjust_environment();
 			if (self::$ErrorsCapture){
 				set_error_handler(array('TApplication','AppErrorHandler'));
