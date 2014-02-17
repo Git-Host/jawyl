@@ -849,6 +849,8 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			$this->_form_greedy_properties($greedy, $orm, $fields, $tables, $join);						
 			$ds->Fields = $fields;
 			$ds->Filter = $this->_filter_from_object($orm, $object,$tables);
+			if (count($ds->Filter) == 0)
+				return  null;
 			$ds->Join = $join;
 			$result = $this->_ioc_driver_->FetchRecords($ds);
 			foreach ($result as $item){
