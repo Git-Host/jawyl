@@ -1525,6 +1525,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			case 'scalar':{
 				$nm = $meta['field']['name'];
 				$v = $row->$nm;
+				if (!is_null($v))
 				switch ($meta['datatype']){
 					case 'bool':$v = is_null($v)?null:TConvertions::ConvertToBoolean($v);break;
 					case 'date':
