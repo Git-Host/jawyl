@@ -112,7 +112,7 @@ class TDateTimeInterval {
 			switch ($type){
 				case self::DP_DAY:$day = $value + $this->Day;break;
 				case self::DP_MONTH:$month = $value + $this->Month;break;
-				case self::DP_YEAR:$tyear = $value + $this->Year;break;
+				case self::DP_YEAR:$year = $value + $this->Year;break;
 				case self::DP_HOUR:$hour = $value + $this->Hour;break;
 				case self::DP_MINUTE:$minutes = $value + $this->Minutes;break;
 				case self::DP_SECOND:$seconds = $value + $this->Seconds;break;

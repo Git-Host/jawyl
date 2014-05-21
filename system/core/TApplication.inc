@@ -851,7 +851,6 @@
 			$servicename = self::$_request_->GetService();
 			if (!$servicename)
 				$servicename = $this->_default_service_name_;
-				
 			$handled = false;
 			if ($servicename){				
 				$this->_current_service_ = $this->GetService($servicename);

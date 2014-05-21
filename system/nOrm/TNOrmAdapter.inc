@@ -885,7 +885,7 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 	private function _entity_keys($object,$orm,&$emptyid){
 		$keyvalues = $this->_get_object_key_values($object);
 		$temp = array_filter($keyvalues);
-		$emptyid = empty($temp);
+		$emptyid = count($temp) < count($keyvalues);
 		return $keyvalues;
 	}
 	
