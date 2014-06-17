@@ -77,6 +77,11 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 	protected function processTag($name){
 		$v = $name; 
 		if (is_string($name)){
+			if (isset($this->_global_vars_[$name]))
+				$v = $this->_global_vars_[$name];
+			else if (defined($name))
+				$v = constant($name);			
+			
 			$cc = $this->currentContext();
 			if ($name == "context")
 				$v = $cc;
@@ -87,11 +92,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 			else if (method_exists($cc,"__get")){
 				$t = $cc->__get($name);
 				if (!is_null($t))
-					$v = $t;
-				else if (isset($this->_global_vars_[$name]))
-					$v = $this->_global_vars_[$name];
-				else if (defined($name))
-					$v = constant($name);		
+					$v = $t;		
 			}
 		}
 		echo $v;
@@ -111,6 +112,12 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$n = trim($name);
 		if ($n == "context")
 			return $cc;
+		
+		if (isset($this->_global_vars_[$n]))
+			return $this->_global_vars_[$n];
+		
+		if (defined($n))
+			return constant($n);		
 
 		if (is_object($cc)){
 			if (method_exists($cc,$n))
@@ -120,13 +127,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 				if (!is_null($v))
 					return $v;
 			}
-		}
-		
-		if (isset($this->_global_vars_[$n]))
-			return $this->_global_vars_[$n];
-		
-		if (defined($n))
-			return constant($n);		
+		}		
 		
 		if ($bubble){
 			if ($this->response){	
