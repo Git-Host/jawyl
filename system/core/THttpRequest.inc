@@ -171,9 +171,11 @@
  * @return string 
  */
 		public function Header($nm){
-			$nm = 'HTTP_'.strtoupper(str_replace('-', '_', $nm));
+			$nm = strtoupper(str_replace('-', '_', $nm));
 			if (isset($_SERVER[$nm]))
 				return $_SERVER[$nm];
+			else if (isset($_SERVER['HTTP_'.$nm]))
+				return $_SERVER['HTTP_'.$nm];
 			return null;
 		}
 		
