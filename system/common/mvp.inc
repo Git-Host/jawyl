@@ -894,10 +894,10 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
  * @param string $nm
  * @param mixed $value
  */	
-	public function SetCookie($name,$value,$expire = null, $path = null){
-		if (is_null($expire)) 
+	public function SetCookie($name,$value,$expire = null, $path = null, $http_only = false){
+		/*if (is_null($expire)) 
 			$expire = time()+86400;
-			
+		*/	
 		if (is_null($value))
 			$expire = time()-86400;
 			
@@ -913,12 +913,12 @@ abstract class TResponse extends TMVPObject implements IEventBroadCaster, IEvent
 			if (is_array($value))	
 				foreach ($value as $key=>$v)
 					if (!in_array($key, $unset))
-						$this->SetCookie($name."[$key]", $v, $expire, $path);
+						$this->SetCookie($name."[$key]", $v, $expire, $path, $http_only);
 
 			foreach ($unset as $u)
-				$this->SetCookie($name."[$u]", null, $expire, $path);
+				$this->SetCookie($name."[$u]", null, time()-86400, $path);
 		} else 
-			setcookie($name,$value,$expire,$path);
+			setcookie($name,$value,$expire,$path,null,null,$http_only);
 	}
 	
 /**
