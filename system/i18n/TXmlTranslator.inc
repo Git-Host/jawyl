@@ -91,7 +91,7 @@
 			if (is_dir($this->Application()->PrivateDir()."/languages/".$language))
 				$dir = $this->Application()->PrivateDir()."/languages/".$language;
 			$this->domains = array();
-			if (is_dir($dir)) {
+			if ($dir) {
     			if ($dh = opendir($dir)) {
         			while ($file = readdir($dh)){
             			if (is_file($dir."/".$file) && ($file != "..") && ($file != ".")){

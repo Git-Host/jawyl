@@ -194,14 +194,14 @@ class TAreasMenu extends TAreasWidget implements IMenu {
 								switch (dsp){
 									case "block":{
 										t = offset.top;
-										l = offset.left+$(this).outerWidth();
+										l = offset.left+$(this).width();
 									}break;
 									case "inline":{
 										t = offset.top+$(this).outerHeight();
 										l = offset.left;
 									}break;
 								}
-								zi = $(this).css("zIndex")+10;
+								zi = $(this).css("zIndex")+100;
 								$('#'+this.id+'_sm').css("left",l).css("top",t).css("zIndex",zi).show("fast");
 								$(document.body).one("mousemove",function(e){
 									$("div.areas-submenu").hide("fast");

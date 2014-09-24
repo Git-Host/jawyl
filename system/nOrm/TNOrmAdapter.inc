@@ -911,25 +911,25 @@ class TNOrmAdapter extends TConfigurable implements IORMStorage, IORMHierarchySt
 			foreach ($orm['properties'] as $prop => $meta){
 				if ($meta['type'] != 'collection')
 				{
-					switch ($meta['type']){
-						case 'reference':{
-							$v = $this->_reference_value($object->$prop,$meta);
-							$n = count($meta['fields']);
-							for ($i = 0; $i < $n; $i++)
-							if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0) 
-									&& (empty($propeties_mask) || isset($properties_mask[$prop]))){
-								if (isset($v[$i]))	
-									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
-								else if (!isset($tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']]))
-									$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = null;
-							}
-						}break;
-						case 'scalar':
-						default:{
-							if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0) && (empty($propeties_mask) || isset($properties_mask[$prop])))	
-								$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);
-						}break; 
-					}	
+					if (!(in_array($prop,$orm['keys']) && $orm['identity'] == 0)
+							&& (empty($propeties_mask) || 
+									isset($properties_mask[$prop])/* || 
+									(get_class($origin) == get_class($object) 
+											&& $origin->$prop != $object->$prop)*/)){
+						switch ($meta['type']){
+							case 'reference':{
+								$v = $this->_reference_value($object->$prop,$meta);
+								$n = count($meta['fields']);
+								for ($i = 0; $i < $n; $i++)
+									if (isset($v[$i]))	
+										$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = $v[$i];
+									else if (!isset($tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']]))
+										$tables[$meta['fields'][$i]['table']]['values'][$meta['fields'][$i]['name']] = null;
+							}break;
+							case 'scalar':
+							default:$tables[$meta['field']['table']]['values'][$meta['field']['name']] = $this->_get_scalar_prop($object,$prop,$meta['datatype']);break; 
+						}	
+					}
 				} else {
 					$v = $object->$prop;
 					if (!$emptyid && !empty($v) && is_array($v) && $meta['mtm']){
