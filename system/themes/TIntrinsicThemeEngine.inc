@@ -416,7 +416,7 @@ class TIntrinsicThemeEngine extends TThemeEngine implements ISecurityObject {
 		$text = preg_replace('/{%iterate%}/','<?php $this->popContext(); } $this->_global_vars_["iterlevel"]--; ?>',$text);
 
 		$text = preg_replace_callback('/{%(if(?:not)?|is)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
-		$text = preg_replace_callback('/{%(if(?:not)?)\s+('.$expr.')(?:\s+(<=?|>=?)\s+|\s+)?('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
+		$text = preg_replace_callback('/{%(if(?:not)?)\s+('.$expr.')(?:\s+(<=?|>=?|or|and)\s+|\s+)?('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 	/*	$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		$text = preg_replace_callback('/{%(ifnot)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
 		$text = preg_replace_callback('/{%(is)\s+('.$expr.')\s+('.$expr.')\s*%}/',array($this,'_compile_oper'),$text);
